@@ -1,7 +1,6 @@
 'use client';
 
 import { useSession, signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
@@ -17,7 +16,6 @@ const LLMAlchemy = dynamic(() => import('@/components/game/LLMAlchemy'), {
 
 export default function GamePage() {
   const { data: session, status } = useSession();
-  const router = useRouter();
 
   useEffect(() => {
     if (status === 'unauthenticated') {

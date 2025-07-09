@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Sparkles, Zap, X, GripHorizontal, User } from 'lucide-react';
-import { useSession, signOut } from 'next-auth/react';
+import { Sparkles, X, GripHorizontal, User } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 // Type definitions
 interface Element {
@@ -93,7 +93,6 @@ const CONSTANTS = {
 
 // Utility functions
 const isValidHexColor = (color: string): boolean => /^#[0-9A-F]{6}$/i.test(color);
-const sanitizeColor = (color: string): string => isValidHexColor(color) ? color : '#808080';
 const getElementSize = () => {
   if (window.innerWidth < CONSTANTS.BREAKPOINTS.sm) return CONSTANTS.ELEMENT_SIZES.sm;
   if (window.innerWidth < CONSTANTS.BREAKPOINTS.md) return CONSTANTS.ELEMENT_SIZES.md;
@@ -983,7 +982,6 @@ ${shared.responseFormat}`;
       navigator.vibrate([10, 10, 10]);
     }
     
-    const isEnergyMix = elem1.name === 'Energy' || elem2.energized;
     const targetEl = elem2.energized ? elem2 : (elem2.name === 'Energy' ? elem1 : elem2);
     
     if (elem1.name === 'Energy' && !elem2.energized) {
