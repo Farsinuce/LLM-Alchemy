@@ -1,7 +1,37 @@
-import Link from 'next/link';
+'use client'
+
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
 
 export default function Home() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  const handlePlayNow = async () => {
+    if (!session) {
+      // Create guest session
+      await signIn('guest', { redirect: false });
+    }
+    router.push('/game');
+  };
+
+  // Auto-redirect to game if already has session
+  useEffect(() => {
+    if (session) {
+      router.push('/game');
+    }
+  }, [session, router]);
+
+  if (status === 'loading') {
+    return (
+      <main className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-xl">Loading...</div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4">
       <div className="max-w-md w-full text-center">
@@ -16,12 +46,12 @@ export default function Home() {
         </p>
         
         <div className="space-y-4">
-          <Link 
-            href="/game"
+          <button 
+            onClick={handlePlayNow}
             className="block w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105"
           >
-            Play Now
-          </Link>
+            {session ? 'Continue Playing' : 'Play Now'}
+          </button>
           
           <div className="text-sm text-gray-400">
             Free to play • 50 combinations per day

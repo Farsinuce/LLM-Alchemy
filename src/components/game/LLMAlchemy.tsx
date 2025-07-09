@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Sparkles, Zap, X, GripHorizontal } from 'lucide-react';
+import { Sparkles, Zap, X, GripHorizontal, User } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
 
 // Type definitions
 interface Element {
@@ -105,6 +106,7 @@ const isTouchDevice =
   (("ontouchstart" in window) || navigator.maxTouchPoints > 0);
 
 const LLMAlchemy = () => {
+  const { data: session } = useSession();
   const [gameMode, setGameMode] = useState<string>('science'); // 'science' or 'creative'
   const [elements, setElements] = useState<Element[]>([
     { id: 'energy', name: 'Energy', emoji: '〰️', color: '#FFD700', unlockOrder: 0 },
@@ -1524,6 +1526,14 @@ ${shared.responseFormat}`;
             <span>Elements: {regularElementCount}</span>
             {gameMode === 'science' && endElementCount > 0 && (
               <span className="text-gray-300 text-base">Ends: {endElementCount}</span>
+            )}
+            {session && (
+              <div className="text-sm text-gray-400 flex items-center gap-1">
+                <User size={14} />
+                <span>
+                  {session.user.dailyLimit.count}/{session.user.dailyLimit.maxCount} today
+                </span>
+              </div>
             )}
           </div>
         </div>
