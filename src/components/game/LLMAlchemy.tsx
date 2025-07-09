@@ -494,7 +494,7 @@ const LLMAlchemy = () => {
           },
           type: 'mouseenter'
         };
-        showReasoningPopup(element, syntheticEvent as any);
+        showReasoningPopup(element, syntheticEvent as React.MouseEvent);
       }, 500);
     }
   };
