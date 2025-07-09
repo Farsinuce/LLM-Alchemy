@@ -92,7 +92,6 @@ const CONSTANTS = {
 };
 
 // Utility functions
-const isValidHexColor = (color: string): boolean => /^#[0-9A-F]{6}$/i.test(color);
 const getElementSize = () => {
   if (window.innerWidth < CONSTANTS.BREAKPOINTS.sm) return CONSTANTS.ELEMENT_SIZES.sm;
   if (window.innerWidth < CONSTANTS.BREAKPOINTS.md) return CONSTANTS.ELEMENT_SIZES.md;
@@ -585,27 +584,6 @@ const LLMAlchemy = () => {
     return findBestPosition(newX, newY, excludeIndex);
   };
 
-  const animateElementToPosition = (elementIndex: number, newX: number, newY: number) => {
-    // Mark element as animating and update position
-    setMixingArea(prevArea => 
-      prevArea.map(el => 
-        el.index === elementIndex 
-          ? { ...el, x: newX, y: newY, isAnimating: true }
-          : el
-      )
-    );
-    
-    // Remove animation flag after transition completes
-    setTimeout(() => {
-      setMixingArea(prevArea => 
-        prevArea.map(el => 
-          el.index === elementIndex 
-            ? { ...el, isAnimating: false }
-            : el
-        )
-      );
-    }, 300); // Match transition duration
-  };
 
   // Modular prompt building system - Fixed stale closure issue
   const buildSharedSections = useCallback((rarityTarget: string, currentGameMode: string) => ({
@@ -1314,7 +1292,7 @@ ${shared.responseFormat}`;
   };
 
   // Touch handlers for dividers
-  const handleDividerTouchStart = (e: React.TouchEvent, dividerType: string) => {
+  const handleDividerTouchStart = (e: React.TouchEvent) => {
     e.preventDefault();
     setIsDraggingDivider(true);
   };
@@ -1731,7 +1709,7 @@ ${shared.responseFormat}`;
           setDragStartHeight(listHeight);
         }}
         onTouchStart={(e) => {
-          handleDividerTouchStart(e, 'divider1');
+          handleDividerTouchStart(e);
           setHoveredUIElement('divider1');
           setDragStartY(e.touches[0].clientY);
           setDragStartHeight(listHeight);
