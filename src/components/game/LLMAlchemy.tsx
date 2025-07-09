@@ -1897,7 +1897,7 @@ ${shared.responseFormat}`;
                 )}
                 {showUnlock.reasoning && showUnlock.isNew && (
                   <div className="text-sm mt-2 text-gray-300 italic max-w-xs text-center">
-                    "{showUnlock.reasoning}"
+                    &quot;{showUnlock.reasoning}&quot;
                   </div>
                 )}
               </div>
@@ -1973,7 +1973,7 @@ ${shared.responseFormat}`;
                                 </div>
                                 {element.reasoning && (
                                   <div className="text-sm text-gray-400 italic">
-                                    "{element.reasoning}"
+                                    &quot;{element.reasoning}&quot;
                                   </div>
                                 )}
                               </div>
@@ -2078,7 +2078,7 @@ ${shared.responseFormat}`;
               {reasoningPopup.element.emoji} {reasoningPopup.element.name}
             </div>
             <div className="text-gray-300 italic text-center text-xs">
-              "{reasoningPopup.element.reasoning}"
+              &quot;{reasoningPopup.element.reasoning}&quot;
             </div>
             {/* Arrow pointing down */}
             <div className="absolute top-full left-1/2 transform -translate-x-1/2">
