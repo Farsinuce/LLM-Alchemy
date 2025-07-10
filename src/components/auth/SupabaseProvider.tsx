@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import { User } from '@supabase/supabase-js'
 import { User as DBUser, getOrCreateAnonymousUser, getDailyCount } from '@/lib/supabase-client'
@@ -23,15 +23,10 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [dailyCount, setDailyCount] = useState<number>(0)
   const [loading, setLoading] = useState(true)
   
-  // Debug environment variables
-  console.log('🔍 Environment Variables Check:')
-  console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-  console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-  
-  const supabase = createClient()
-  console.log('🔍 Supabase client created:', supabase)
+  // Memoize supabase client to prevent recreation on every render
+  const supabase = useMemo(() => createClient(), [])
 
-  const refreshDailyCount = async () => {
+  const refreshDailyCount = useCallback(async () => {
     if (user) {
       try {
         const count = await getDailyCount(supabase, user.id)
@@ -40,29 +35,24 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
         console.error('Error refreshing daily count:', error)
       }
     }
-  }
+  }, [user, supabase])
 
-  const signInAnonymously = async () => {
+  const signInAnonymously = useCallback(async () => {
     try {
-      console.log('🔍 Starting anonymous sign in...')
       setLoading(true)
       const dbUser = await getOrCreateAnonymousUser(supabase)
-      console.log('🔍 getOrCreateAnonymousUser result:', dbUser)
       if (dbUser) {
         setDbUser(dbUser)
-        await refreshDailyCount()
-        console.log('🔍 Anonymous sign in successful')
-      } else {
-        console.log('❌ getOrCreateAnonymousUser returned null')
+        // Don't call refreshDailyCount here to avoid circular dependency
       }
     } catch (error) {
       console.error('❌ Error signing in anonymously:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut()
       setUser(null)
@@ -71,65 +61,76 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error signing out:', error)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
-    console.log('🔍 SupabaseProvider useEffect starting...')
+    let mounted = true
     
     // Get initial session
     const getInitialSession = async () => {
       try {
-        console.log('🔍 Getting initial session...')
         const { data: { session } } = await supabase.auth.getSession()
-        console.log('🔍 Initial session:', session)
+        
+        if (!mounted) return
+        
         setUser(session?.user || null)
         
         if (session?.user) {
-          console.log('🔍 Existing session found, getting DB user...')
           // Get or create DB user record
           const dbUser = await getOrCreateAnonymousUser(supabase)
-          setDbUser(dbUser)
-          
-          // Get daily count
-          if (dbUser) {
-            const count = await getDailyCount(supabase, session.user.id)
-            setDailyCount(count)
+          if (mounted) {
+            setDbUser(dbUser)
+            // Get daily count
+            if (dbUser) {
+              const count = await getDailyCount(supabase, session.user.id)
+              if (mounted) setDailyCount(count)
+            }
           }
         } else {
-          console.log('🔍 No existing session, creating anonymous user...')
           // Auto-create anonymous user on first visit
           await signInAnonymously()
         }
       } catch (error) {
         console.error('❌ Error getting initial session:', error)
       } finally {
-        setLoading(false)
-        console.log('🔍 Initial session setup complete')
+        if (mounted) setLoading(false)
       }
     }
 
     getInitialSession()
 
-    // Listen for auth changes
+    // Listen for auth changes - only set user, don't create DB records here
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user || null)
+        if (!mounted) return
         
-        if (session?.user) {
+        if (event === 'SIGNED_IN' && session?.user) {
+          setUser(session.user)
+          
+          // Get DB user and daily count for newly signed in user
           const dbUser = await getOrCreateAnonymousUser(supabase)
-          setDbUser(dbUser)
-          await refreshDailyCount()
-        } else {
+          if (mounted) {
+            setDbUser(dbUser)
+            if (dbUser) {
+              const count = await getDailyCount(supabase, session.user.id)
+              if (mounted) setDailyCount(count)
+            }
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null)
           setDbUser(null)
           setDailyCount(0)
         }
         
-        setLoading(false)
+        if (mounted) setLoading(false)
       }
     )
 
-    return () => subscription.unsubscribe()
-  }, [])
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, [supabase, signInAnonymously])
 
   const value = {
     user,
