@@ -485,18 +485,24 @@ const LLMAlchemy = () => {
     setTimeout(() => setToast(''), 3000);
   };
 
-  // Function to increment daily counter
+  // Function to check if daily limit is reached (before API call)
+  const checkDailyLimit = () => {
+    const currentCount = getDailyCount();
+    setDailyCount(currentCount.count);
+    
+    if (currentCount.count >= 50) {
+      showToast(`Daily limit reached: ${currentCount.count}/50 - Upgrade for unlimited!`);
+      return false;
+    }
+    return true;
+  };
+
+  // Function to increment daily counter (after successful API call)
   const incrementDailyCounter = async () => {
     try {
-      // Update localStorage immediately for instant UI feedback
+      // Update localStorage
       const localCount = incrementLocalCounter();
       setDailyCount(localCount.count);
-      
-      // Check if limit reached
-      if (localCount.count >= 50) {
-        showToast(`Daily limit reached: ${localCount.count}/50`);
-        return false;
-      }
       
       // Still call API for future database integration
       try {
@@ -779,11 +785,16 @@ ${shared.responseFormat}`;
   };
 
   const generateCombination = async (elem1: Element, elem2: Element, elem3: Element | null = null) => {
+    // CHECK DAILY LIMIT FIRST - Before any API calls!
+    if (!checkDailyLimit()) {
+      return { result: null, error: true, limitReached: true };
+    }
+    
     // Enhanced session caching - check existing combinations first
     const sortedNames = [elem1.name, elem2.name, elem3?.name].filter(Boolean).sort().join('+');
     const mixKey = elem3 ? `${sortedNames}+Energy` : sortedNames;
     
-    // Return cached result if it exists
+    // Return cached result if it exists (don't count against daily limit)
     if (combinations[mixKey] !== undefined) {
       const cachedResult = combinations[mixKey];
       if (cachedResult) {
