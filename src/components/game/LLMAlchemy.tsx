@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Sparkles, X, GripHorizontal, User } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 
 // Type definitions
 interface Element {
@@ -449,6 +449,40 @@ const LLMAlchemy = () => {
   const showToast = (message: string) => {
     setToast(message);
     setTimeout(() => setToast(''), 3000);
+  };
+
+  // Function to increment daily counter
+  const incrementDailyCounter = async () => {
+    try {
+      const response = await fetch('/api/increment-daily', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          const data = await response.json();
+          showToast(`Daily limit reached: ${data.count}/${data.maxCount}`);
+          return false;
+        }
+        throw new Error(`Failed to increment counter: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Update the session by triggering a re-signin to refresh the token
+      // This is a workaround since we can't directly update JWT tokens
+      if (session?.user) {
+        await signIn('guest', { redirect: false });
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error incrementing daily counter:', error);
+      return true; // Don't block gameplay for counter errors
+    }
   };
 
   const showReasoningPopup = (element: Element, event: React.MouseEvent | React.TouchEvent) => {
@@ -1024,6 +1058,9 @@ ${shared.responseFormat}`;
     }
     
     if (result.result) {
+      // Increment daily counter for successful combinations
+      await incrementDailyCounter();
+      
       const existing = elements.find(e => e.name.toLowerCase() === result.result.toLowerCase()) ||
                       endElements.find(e => e.name.toLowerCase() === result.result.toLowerCase());
       
