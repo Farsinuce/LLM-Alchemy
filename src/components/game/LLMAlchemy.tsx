@@ -873,6 +873,9 @@ ${shared.responseFormat}`;
         return { result: null, error: true };
       }
       
+      // Increment daily counter for successful LLM API calls
+      await incrementDailyCounter();
+      
       // Ensure all required fields exist
       return {
         result: parsedResult.result || null,
@@ -1058,9 +1061,6 @@ ${shared.responseFormat}`;
     }
     
     if (result.result) {
-      // Increment daily counter for successful combinations
-      await incrementDailyCounter();
-      
       const existing = elements.find(e => e.name.toLowerCase() === result.result.toLowerCase()) ||
                       endElements.find(e => e.name.toLowerCase() === result.result.toLowerCase());
       
