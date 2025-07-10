@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Sparkles, X, GripHorizontal, User } from 'lucide-react';
+import { Sparkles, X, GripHorizontal, User, ArrowLeft } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
-import { createClient, incrementDailyCount } from '@/lib/supabase-client';
+import { createClient, incrementDailyCount, saveGameState, loadGameState } from '@/lib/supabase-client';
 
 // Type definitions
 interface Element {
@@ -134,7 +135,9 @@ const incrementLocalCounter = () => {
 
 const LLMAlchemy = () => {
   const { user, dbUser, dailyCount, loading, refreshDailyCount } = useSupabase();
-  const [gameMode, setGameMode] = useState<string>('science'); // 'science' or 'creative'
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [gameMode, setGameMode] = useState<'science' | 'creative'>('science');
   const [elements, setElements] = useState<Element[]>([
     { id: 'energy', name: 'Energy', emoji: '〰️', color: '#FFD700', unlockOrder: 0 },
     { id: 'earth', name: 'Earth', emoji: '🌍', color: '#8B4513', unlockOrder: 1 },
@@ -176,6 +179,81 @@ const LLMAlchemy = () => {
   const audioContext = useRef<AudioContext | null>(null);
   const floatingEmojiId = useRef<number>(0);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handle URL mode parameter and game state loading
+  useEffect(() => {
+    const mode = searchParams.get('mode');
+    if (mode && (mode === 'science' || mode === 'creative')) {
+      setGameMode(mode as 'science' | 'creative');
+    }
+  }, [searchParams]);
+
+  // Load game state when user and game mode are available
+  useEffect(() => {
+    const loadSavedState = async () => {
+      if (user && gameMode) {
+        try {
+          const supabase = createClient();
+          const savedState = await loadGameState(supabase, user.id, gameMode);
+          
+          if (savedState) {
+            // Restore discovered elements
+            if (Array.isArray(savedState.elements) && savedState.elements.length > 0) {
+              setElements(savedState.elements);
+            }
+            
+            // Restore end elements
+            if (Array.isArray(savedState.end_elements) && savedState.end_elements.length > 0) {
+              setEndElements(savedState.end_elements);
+            }
+            
+            // Restore combinations
+            if (savedState.combinations && typeof savedState.combinations === 'object') {
+              setCombinations(savedState.combinations);
+            }
+            
+            // Restore achievements
+            if (Array.isArray(savedState.achievements) && savedState.achievements.length > 0) {
+              setAchievements(savedState.achievements);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading game state:', error);
+        }
+      }
+    };
+
+    loadSavedState();
+  }, [user, gameMode]);
+
+  // Auto-save game state when elements, endElements, combinations, or achievements change
+  useEffect(() => {
+    const saveState = async () => {
+      if (user && gameMode && (elements.length > 5 || endElements.length > 0 || Object.keys(combinations).length > 0)) {
+        try {
+          const supabase = createClient();
+          await saveGameState(supabase, user.id, {
+            game_mode: gameMode,
+            elements: elements,
+            end_elements: endElements,
+            combinations: combinations,
+            achievements: achievements
+          });
+        } catch (error) {
+          console.error('Error saving game state:', error);
+        }
+      }
+    };
+
+    // Debounce saves to avoid too frequent database calls
+    const timeoutId = setTimeout(saveState, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [user, gameMode, elements, endElements, combinations, achievements]);
+
+  // Handle back to home
+  const handleBackToHome = () => {
+    router.push('/');
+  };
 
   // No need to initialize daily count - it comes from Supabase provider
 
@@ -1559,10 +1637,24 @@ ${shared.responseFormat}`;
       {/* Header */}
       <div className="relative z-10 bg-gray-800/80 backdrop-blur-sm p-4 shadow-lg">
         <div className="flex justify-between items-start mb-3">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Sparkles className="text-yellow-400 hidden sm:block" />
-            LLM Alchemy
-          </h1>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleBackToHome}
+              onMouseEnter={() => setHoveredUIElement('back-button')}
+              onMouseLeave={() => setHoveredUIElement(null)}
+              className="p-2 hover:bg-gray-700 rounded-full transition-colors text-gray-400 hover:text-white"
+              title="Back to Menu"
+              style={{
+                boxShadow: hoveredUIElement === 'back-button' ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
+              }}
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Sparkles className="text-yellow-400 hidden sm:block" />
+              LLM Alchemy
+            </h1>
+          </div>
           <div className="text-lg font-semibold flex flex-col items-end gap-1">
             <span>Elements: {regularElementCount}</span>
             {gameMode === 'science' && endElementCount > 0 && (

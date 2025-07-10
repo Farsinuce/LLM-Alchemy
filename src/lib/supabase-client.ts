@@ -190,3 +190,103 @@ export async function loadGameState(supabase: any, userId: string, gameMode: str
     return null
   }
 }
+
+export async function getGameProgress(supabase: any, userId: string): Promise<{
+  science: { elements: number, endElements: number, achievements: number, lastPlayed?: string } | null,
+  creative: { elements: number, endElements: number, achievements: number, lastPlayed?: string } | null,
+  lastMode: 'science' | 'creative'
+}> {
+  try {
+    const { data, error } = await supabase
+      .from('game_states')
+      .select('*')
+      .eq('user_id', userId)
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error getting game progress:', error)
+      return { science: null, creative: null, lastMode: 'science' }
+    }
+
+    if (!data || data.length === 0) {
+      return { science: null, creative: null, lastMode: 'science' }
+    }
+
+    const progress = {
+      science: null as any,
+      creative: null as any,
+      lastMode: 'science' as 'science' | 'creative'
+    }
+
+    // Find the most recently updated mode
+    let latestUpdate = 0
+    
+    data.forEach((gameState: GameState) => {
+      const updatedAt = new Date(gameState.updated_at).getTime()
+      if (updatedAt > latestUpdate) {
+        latestUpdate = updatedAt
+        progress.lastMode = gameState.game_mode
+      }
+
+      const modeProgress = {
+        elements: Array.isArray(gameState.elements) ? gameState.elements.length : 0,
+        endElements: Array.isArray(gameState.end_elements) ? gameState.end_elements.length : 0,
+        achievements: Array.isArray(gameState.achievements) ? gameState.achievements.length : 0,
+        lastPlayed: gameState.updated_at
+      }
+
+      if (gameState.game_mode === 'science') {
+        progress.science = modeProgress
+      } else if (gameState.game_mode === 'creative') {
+        progress.creative = modeProgress
+      }
+    })
+
+    return progress
+  } catch (error) {
+    console.error('Error in getGameProgress:', error)
+    return { science: null, creative: null, lastMode: 'science' }
+  }
+}
+
+export async function resetGameState(supabase: any, userId: string, gameMode: string, includeAchievements: boolean = false): Promise<boolean> {
+  try {
+    if (includeAchievements) {
+      // Delete the entire game state record
+      const { error } = await supabase
+        .from('game_states')
+        .delete()
+        .eq('user_id', userId)
+        .eq('game_mode', gameMode)
+
+      if (error) {
+        console.error('Error deleting game state:', error)
+        return false
+      }
+    } else {
+      // Reset but keep achievements
+      const { error } = await supabase
+        .from('game_states')
+        .upsert({
+          user_id: userId,
+          game_mode: gameMode,
+          elements: [],
+          end_elements: [],
+          combinations: {},
+          achievements: [], // Keep existing achievements if they exist
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,game_mode'
+        })
+
+      if (error) {
+        console.error('Error resetting game state:', error)
+        return false
+      }
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error in resetGameState:', error)
+    return false
+  }
+}
