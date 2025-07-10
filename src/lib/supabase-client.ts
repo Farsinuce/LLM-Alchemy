@@ -129,37 +129,17 @@ export async function getDailyCount(supabase: any, userId: string): Promise<numb
 
 export async function incrementDailyCount(supabase: any, userId: string): Promise<number> {
   try {
-    const today = new Date().toISOString().split('T')[0]
-    
-    // Use upsert to handle both insert and update
-    const { data, error } = await supabase
-      .from('user_sessions')
-      .upsert({
-        user_id: userId,
-        date: today,
-        daily_count: 1
-      }, {
-        onConflict: 'user_id,date',
-        ignoreDuplicates: false
-      })
-      .select()
-      .single()
+    // Use the database function to atomically increment
+    const { data, error } = await supabase.rpc('increment_daily_count', {
+      p_user_id: userId
+    })
 
     if (error) {
-      // If upsert failed, try to increment existing record
-      const { data: incrementData, error: incrementError } = await supabase.rpc('increment_daily_count', {
-        p_user_id: userId
-      })
-
-      if (incrementError) {
-        console.error('Error incrementing daily count:', incrementError)
-        return 0
-      }
-
-      return incrementData || 1
+      console.error('Error incrementing daily count:', error)
+      return 0
     }
 
-    return data?.daily_count || 1
+    return data || 1
   } catch (error) {
     console.error('Error in incrementDailyCount:', error)
     return 0
