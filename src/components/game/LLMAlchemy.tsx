@@ -103,6 +103,34 @@ const isTouchDevice =
   typeof window !== "undefined" &&
   (("ontouchstart" in window) || navigator.maxTouchPoints > 0);
 
+// localStorage helper functions for daily counter
+const getDailyCount = () => {
+  if (typeof window === "undefined") return { count: 0, date: new Date().toDateString() };
+  
+  const stored = localStorage.getItem('llm-alchemy-daily');
+  if (!stored) return { count: 0, date: new Date().toDateString() };
+  
+  try {
+    const { count, date } = JSON.parse(stored);
+    // Reset if new day
+    if (date !== new Date().toDateString()) {
+      return { count: 0, date: new Date().toDateString() };
+    }
+    return { count, date };
+  } catch {
+    return { count: 0, date: new Date().toDateString() };
+  }
+};
+
+const incrementLocalCounter = () => {
+  if (typeof window === "undefined") return { count: 0, date: new Date().toDateString() };
+  
+  const current = getDailyCount();
+  const updated = { count: current.count + 1, date: current.date };
+  localStorage.setItem('llm-alchemy-daily', JSON.stringify(updated));
+  return updated;
+};
+
 const LLMAlchemy = () => {
   const { data: session } = useSession();
   const [gameMode, setGameMode] = useState<string>('science'); // 'science' or 'creative'
@@ -141,12 +169,19 @@ const LLMAlchemy = () => {
   const [reasoningPopup, setReasoningPopup] = useState<ReasoningPopup | null>(null);
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [dailyCount, setDailyCount] = useState<number>(0);
   
   const draggedElement = useRef<MixingElement | null>(null);
   const dropZoneRef = useRef<HTMLDivElement | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const floatingEmojiId = useRef<number>(0);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize daily count from localStorage
+  useEffect(() => {
+    const currentCount = getDailyCount();
+    setDailyCount(currentCount.count);
+  }, []);
 
   // Cleanup effects for memory leaks
   useEffect(() => {
@@ -454,28 +489,22 @@ const LLMAlchemy = () => {
   // Function to increment daily counter
   const incrementDailyCounter = async () => {
     try {
-      const response = await fetch('/api/increment-daily', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          const data = await response.json();
-          showToast(`Daily limit reached: ${data.count}/${data.maxCount}`);
-          return false;
-        }
-        throw new Error(`Failed to increment counter: ${response.status}`);
-      }
-
-      const data = await response.json();
+      // Update localStorage immediately for instant UI feedback
+      const localCount = incrementLocalCounter();
+      setDailyCount(localCount.count);
       
-      // Update the session by triggering a re-signin to refresh the token
-      // This is a workaround since we can't directly update JWT tokens
-      if (session?.user) {
-        await signIn('guest', { redirect: false });
+      // Check if limit reached
+      if (localCount.count >= 50) {
+        showToast(`Daily limit reached: ${localCount.count}/50`);
+        return false;
+      }
+      
+      // Still call API for future database integration
+      try {
+        await fetch('/api/increment-daily', { method: 'POST' });
+      } catch (apiError) {
+        console.error('API increment failed:', apiError);
+        // Don't block gameplay for API failures
       }
       
       return true;
@@ -1540,14 +1569,12 @@ ${shared.responseFormat}`;
             {gameMode === 'science' && endElementCount > 0 && (
               <span className="text-gray-300 text-base">Ends: {endElementCount}</span>
             )}
-            {session && (
-              <div className="text-sm text-gray-400 flex items-center gap-1">
-                <User size={14} />
-                <span>
-                  {session.user.dailyLimit.count}/{session.user.dailyLimit.maxCount} today
-                </span>
-              </div>
-            )}
+            <div className="text-sm text-gray-400 flex items-center gap-1">
+              <User size={14} />
+              <span>
+                {dailyCount}/50 today
+              </span>
+            </div>
           </div>
         </div>
         
