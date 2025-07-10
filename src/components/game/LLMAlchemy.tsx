@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Sparkles, X, GripHorizontal, User } from 'lucide-react';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 
 // Type definitions
 interface Element {
@@ -132,7 +132,7 @@ const incrementLocalCounter = () => {
 };
 
 const LLMAlchemy = () => {
-  const { data: session } = useSession();
+  // const { data: session } = useSession(); // Not needed with localStorage implementation
   const [gameMode, setGameMode] = useState<string>('science'); // 'science' or 'creative'
   const [elements, setElements] = useState<Element[]>([
     { id: 'energy', name: 'Energy', emoji: '〰️', color: '#FFD700', unlockOrder: 0 },
