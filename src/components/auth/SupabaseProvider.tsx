@@ -23,7 +23,13 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [dailyCount, setDailyCount] = useState<number>(0)
   const [loading, setLoading] = useState(true)
   
+  // Debug environment variables
+  console.log('🔍 Environment Variables Check:')
+  console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
+  console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  
   const supabase = createClient()
+  console.log('🔍 Supabase client created:', supabase)
 
   const refreshDailyCount = async () => {
     if (user) {
@@ -38,14 +44,19 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
 
   const signInAnonymously = async () => {
     try {
+      console.log('🔍 Starting anonymous sign in...')
       setLoading(true)
       const dbUser = await getOrCreateAnonymousUser(supabase)
+      console.log('🔍 getOrCreateAnonymousUser result:', dbUser)
       if (dbUser) {
         setDbUser(dbUser)
         await refreshDailyCount()
+        console.log('🔍 Anonymous sign in successful')
+      } else {
+        console.log('❌ getOrCreateAnonymousUser returned null')
       }
     } catch (error) {
-      console.error('Error signing in anonymously:', error)
+      console.error('❌ Error signing in anonymously:', error)
     } finally {
       setLoading(false)
     }
@@ -63,13 +74,18 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
+    console.log('🔍 SupabaseProvider useEffect starting...')
+    
     // Get initial session
     const getInitialSession = async () => {
       try {
+        console.log('🔍 Getting initial session...')
         const { data: { session } } = await supabase.auth.getSession()
+        console.log('🔍 Initial session:', session)
         setUser(session?.user || null)
         
         if (session?.user) {
+          console.log('🔍 Existing session found, getting DB user...')
           // Get or create DB user record
           const dbUser = await getOrCreateAnonymousUser(supabase)
           setDbUser(dbUser)
@@ -80,13 +96,15 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
             setDailyCount(count)
           }
         } else {
+          console.log('🔍 No existing session, creating anonymous user...')
           // Auto-create anonymous user on first visit
           await signInAnonymously()
         }
       } catch (error) {
-        console.error('Error getting initial session:', error)
+        console.error('❌ Error getting initial session:', error)
       } finally {
         setLoading(false)
+        console.log('🔍 Initial session setup complete')
       }
     }
 
