@@ -1,9 +1,9 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase-client'
 import { User } from '@supabase/supabase-js'
-import { User as DBUser, getOrCreateAnonymousUser, getDailyCount } from '@/lib/supabase'
+import { User as DBUser, getOrCreateAnonymousUser, getDailyCount } from '@/lib/supabase-client'
 
 interface SupabaseContextType {
   user: User | null

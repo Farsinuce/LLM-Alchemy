@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Sparkles, X, GripHorizontal, User } from 'lucide-react';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
-import { createClient, incrementDailyCount } from '@/lib/supabase';
+import { createClient, incrementDailyCount } from '@/lib/supabase-client';
 
 // Type definitions
 interface Element {
