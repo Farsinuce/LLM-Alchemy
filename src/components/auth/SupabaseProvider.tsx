@@ -43,7 +43,13 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       const dbUser = await getOrCreateAnonymousUser(supabase)
       if (dbUser) {
         setDbUser(dbUser)
-        // Don't call refreshDailyCount here to avoid circular dependency
+        
+        // Get the session to get the user ID for daily count
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          const count = await getDailyCount(supabase, session.user.id)
+          setDailyCount(count)
+        }
       }
     } catch (error) {
       console.error('❌ Error signing in anonymously:', error)
@@ -65,10 +71,13 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true
+    let initializationComplete = false
     
     // Get initial session
     const getInitialSession = async () => {
       try {
+        if (initializationComplete) return
+        
         const { data: { session } } = await supabase.auth.getSession()
         
         if (!mounted) return
@@ -88,10 +97,26 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
           }
         } else {
           // Auto-create anonymous user on first visit
-          await signInAnonymously()
+          try {
+            const dbUser = await getOrCreateAnonymousUser(supabase)
+            if (mounted && dbUser) {
+              setDbUser(dbUser)
+              // Get session after anonymous sign in
+              const { data: { session: newSession } } = await supabase.auth.getSession()
+              if (newSession?.user && mounted) {
+                setUser(newSession.user)
+                const count = await getDailyCount(supabase, newSession.user.id)
+                if (mounted) setDailyCount(count)
+              }
+            }
+          } catch (authError) {
+            console.error('Error with anonymous authentication:', authError)
+          }
         }
+        
+        initializationComplete = true
       } catch (error) {
-        console.error('❌ Error getting initial session:', error)
+        console.error('Error getting initial session:', error)
       } finally {
         if (mounted) setLoading(false)
       }
@@ -102,7 +127,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes - only set user, don't create DB records here
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!mounted) return
+        if (!mounted || !initializationComplete) return
         
         if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user)
@@ -130,7 +155,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [supabase, signInAnonymously])
+  }, [supabase]) // Remove signInAnonymously from dependencies to prevent loops
 
   const value = {
     user,
