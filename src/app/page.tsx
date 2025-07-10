@@ -1,30 +1,26 @@
 'use client'
 
-import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
+import { useSupabase } from '@/components/auth/SupabaseProvider';
 
 export default function Home() {
-  const { data: session, status } = useSession();
+  const { user, loading } = useSupabase();
   const router = useRouter();
 
-  const handlePlayNow = async () => {
-    if (!session) {
-      // Create guest session
-      await signIn('guest', { redirect: false });
-    }
+  const handlePlayNow = () => {
     router.push('/game');
   };
 
-  // Auto-redirect to game if already has session
+  // Auto-redirect to game if already has user (anonymous users are created automatically)
   useEffect(() => {
-    if (session) {
+    if (user && !loading) {
       router.push('/game');
     }
-  }, [session, router]);
+  }, [user, loading, router]);
 
-  if (status === 'loading') {
+  if (loading) {
     return (
       <main className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
         <div className="text-xl">Loading...</div>
@@ -50,7 +46,7 @@ export default function Home() {
             onClick={handlePlayNow}
             className="block w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105"
           >
-            {session ? 'Continue Playing' : 'Play Now'}
+            {user ? 'Continue Playing' : 'Play Now'}
           </button>
           
           <div className="text-sm text-gray-400">
