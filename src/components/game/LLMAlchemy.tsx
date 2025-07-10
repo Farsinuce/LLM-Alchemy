@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Sparkles, X, GripHorizontal, User } from 'lucide-react';
+import { useSupabase } from '@/components/auth/SupabaseProvider';
+import { createClient, incrementDailyCount } from '@/lib/supabase';
 
 // Type definitions
 interface Element {
@@ -131,7 +133,7 @@ const incrementLocalCounter = () => {
 };
 
 const LLMAlchemy = () => {
-  // const { data: session } = useSession(); // Not needed with localStorage implementation
+  const { user, dbUser, dailyCount, loading, refreshDailyCount } = useSupabase();
   const [gameMode, setGameMode] = useState<string>('science'); // 'science' or 'creative'
   const [elements, setElements] = useState<Element[]>([
     { id: 'energy', name: 'Energy', emoji: '〰️', color: '#FFD700', unlockOrder: 0 },
@@ -168,7 +170,6 @@ const LLMAlchemy = () => {
   const [reasoningPopup, setReasoningPopup] = useState<ReasoningPopup | null>(null);
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [dailyCount, setDailyCount] = useState<number>(0);
   
   const draggedElement = useRef<MixingElement | null>(null);
   const dropZoneRef = useRef<HTMLDivElement | null>(null);
@@ -176,11 +177,7 @@ const LLMAlchemy = () => {
   const floatingEmojiId = useRef<number>(0);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize daily count from localStorage
-  useEffect(() => {
-    const currentCount = getDailyCount();
-    setDailyCount(currentCount.count);
-  }, []);
+  // No need to initialize daily count - it comes from Supabase provider
 
   // Cleanup effects for memory leaks
   useEffect(() => {
@@ -487,11 +484,8 @@ const LLMAlchemy = () => {
 
   // Function to check if daily limit is reached (before API call)
   const checkDailyLimit = () => {
-    const currentCount = getDailyCount();
-    setDailyCount(currentCount.count);
-    
-    if (currentCount.count >= 50) {
-      showToast(`Daily limit reached: ${currentCount.count}/50 - Upgrade for unlimited!`);
+    if (dailyCount >= 50) {
+      showToast(`Daily limit reached: ${dailyCount}/50 - Upgrade for unlimited!`);
       return false;
     }
     return true;
@@ -500,18 +494,13 @@ const LLMAlchemy = () => {
   // Function to increment daily counter (after successful API call)
   const incrementDailyCounter = async () => {
     try {
-      // Update localStorage
-      const localCount = incrementLocalCounter();
-      setDailyCount(localCount.count);
-      
-      // Still call API for future database integration
-      try {
-        await fetch('/api/increment-daily', { method: 'POST' });
-      } catch (apiError) {
-        console.error('API increment failed:', apiError);
-        // Don't block gameplay for API failures
+      if (user) {
+        // Use Supabase to increment daily count
+        const supabase = createClient();
+        await incrementDailyCount(supabase, user.id);
+        // Refresh the count in the provider
+        await refreshDailyCount();
       }
-      
       return true;
     } catch (error) {
       console.error('Error incrementing daily counter:', error);
