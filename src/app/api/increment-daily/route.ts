@@ -3,38 +3,6 @@ import { NextRequest, NextResponse } from "next/server"
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { nanoid } from 'nanoid'
 
-// TypeScript interfaces for NextAuth
-interface User {
-  id: string
-  name: string
-  email: string | null
-  isGuest: boolean
-}
-
-interface JWT {
-  sub?: string
-  isGuest?: boolean
-  dailyLimit?: {
-    date: string
-    count: number
-    maxCount: number
-  }
-}
-
-interface Session {
-  user: {
-    id: string
-    name: string
-    email: string | null
-    isGuest: boolean
-    dailyLimit: {
-      date: string
-      count: number
-      maxCount: number
-    }
-  }
-}
-
 // We need to recreate the NextAuth config here to get the session
 const authOptions = {
   providers: [

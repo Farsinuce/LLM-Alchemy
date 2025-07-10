@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Sparkles, X, GripHorizontal, User } from 'lucide-react';
-import { useSession } from 'next-auth/react';
 
 // Type definitions
 interface Element {
