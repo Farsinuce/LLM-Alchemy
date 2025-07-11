@@ -189,9 +189,19 @@ export async function loadGameState(supabase: any, userId: string, gameMode: str
       .eq('game_mode', gameMode)
       .single()
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error loading game state:', error)
-      return null
+    if (error) {
+      // Handle different error types gracefully
+      if (error.code === 'PGRST116') {
+        // No rows returned - no saved state for this mode
+        return null
+      } else if (error.code === 'PGRST301' || error.message?.includes('406')) {
+        // RLS policy issues - return null and continue silently
+        console.warn('Database access restricted for game state, continuing without persistence')
+        return null
+      } else {
+        console.error('Error loading game state:', error)
+        return null
+      }
     }
 
     return data
