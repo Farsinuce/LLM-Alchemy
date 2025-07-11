@@ -16,7 +16,7 @@ export default function Home() {
   const { user, dailyCount, loading } = useSupabase();
   const router = useRouter();
   const [progress, setProgress] = useState<GameProgress | null>(null);
-  const [showNewGameModal, setShowNewGameModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
   const [resetAchievements, setResetAchievements] = useState(false);
   const [selectedMode, setSelectedMode] = useState<'science' | 'creative'>('science');
 
@@ -36,7 +36,7 @@ export default function Home() {
   const hasAnyProgress = progress && (progress.science || progress.creative);
 
   const handleContinueGame = () => {
-    if (progress) {
+    if (hasAnyProgress && progress) {
       // Go to game with last played mode
       router.push(`/game?mode=${progress.lastMode}`);
     } else {
@@ -45,18 +45,20 @@ export default function Home() {
     }
   };
 
-  const handleNewGame = (gameMode: 'science' | 'creative') => {
+  const handleResetMode = (gameMode: 'science' | 'creative') => {
     setSelectedMode(gameMode);
-    setShowNewGameModal(true);
+    setShowResetModal(true);
   };
 
-  const confirmNewGame = async () => {
+  const confirmReset = async () => {
     if (user) {
       const supabase = createClient();
       await resetGameState(supabase, user.id, selectedMode, resetAchievements);
-      setShowNewGameModal(false);
+      setShowResetModal(false);
       setResetAchievements(false);
-      router.push(`/game?mode=${selectedMode}`);
+      // Refresh progress display
+      const gameProgress = await getGameProgress(supabase, user.id);
+      setProgress(gameProgress);
     }
   };
 
@@ -93,20 +95,44 @@ export default function Home() {
             <div className="space-y-3">
               {progress?.science && (
                 <div className="flex justify-between items-center py-2 px-3 bg-blue-600/20 rounded">
-                  <span className="font-medium">🧪 Science Mode</span>
-                  <span className="text-sm text-gray-300">
-                    {formatElementCount(progress.science.elements)}
-                    {progress.science.endElements > 0 && `, ${progress.science.endElements} end`}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">
+                      <span className="hidden sm:inline">🧪 </span>Science Mode
+                    </span>
+                    <span className="text-xs text-gray-400">|</span>
+                    <span className="text-sm text-gray-300">
+                      {progress.science.elements} elements
+                      {progress.science.endElements > 0 && `, ${progress.science.endElements} end`}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleResetMode('science')}
+                    className="text-red-400 hover:text-red-300 transition-colors text-lg"
+                    title="Reset Science Mode"
+                  >
+                    ❌
+                  </button>
                 </div>
               )}
               
               {progress?.creative && (
                 <div className="flex justify-between items-center py-2 px-3 bg-purple-600/20 rounded">
-                  <span className="font-medium">🎨 Creative Mode</span>
-                  <span className="text-sm text-gray-300">
-                    {formatElementCount(progress.creative.elements)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">
+                      <span className="hidden sm:inline">🎨 </span>Creative Mode
+                    </span>
+                    <span className="text-xs text-gray-400">|</span>
+                    <span className="text-sm text-gray-300">
+                      {progress.creative.elements} elements
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleResetMode('creative')}
+                    className="text-red-400 hover:text-red-300 transition-colors text-lg"
+                    title="Reset Creative Mode"
+                  >
+                    ❌
+                  </button>
                 </div>
               )}
             </div>
@@ -117,33 +143,15 @@ export default function Home() {
           </div>
         )}
         
-        {/* Action Buttons */}
+        {/* Single Action Button */}
         <div className="space-y-4">
-          {hasAnyProgress && (
-            <button 
-              onClick={handleContinueGame}
-              className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105"
-            >
-              Continue Game
-              <ArrowRight size={20} />
-            </button>
-          )}
-          
-          <div className="grid grid-cols-2 gap-3">
-            <button 
-              onClick={() => handleNewGame('science')}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-all"
-            >
-              New Science Game
-            </button>
-            
-            <button 
-              onClick={() => handleNewGame('creative')}
-              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-all"
-            >
-              New Creative Game
-            </button>
-          </div>
+          <button 
+            onClick={handleContinueGame}
+            className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105"
+          >
+            {hasAnyProgress ? 'Continue Game' : 'New Game'}
+            <ArrowRight size={20} />
+          </button>
           
           <div className="text-sm text-gray-400">
             Free to play • 50 combinations per day
@@ -151,11 +159,11 @@ export default function Home() {
         </div>
       </div>
 
-      {/* New Game Confirmation Modal */}
-      {showNewGameModal && (
+      {/* Reset Mode Confirmation Modal */}
+      {showResetModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-800 rounded-xl p-6 max-w-sm w-full">
-            <h3 className="text-xl font-bold mb-3">Start New Game?</h3>
+            <h3 className="text-xl font-bold mb-3">Reset Progress?</h3>
             <p className="text-gray-300 mb-4">
               Reset current progress in {selectedMode} mode and start fresh?
             </p>
@@ -175,7 +183,7 @@ export default function Home() {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => {
-                  setShowNewGameModal(false);
+                  setShowResetModal(false);
                   setResetAchievements(false);
                 }}
                 className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded transition-colors"
@@ -183,10 +191,10 @@ export default function Home() {
                 Cancel
               </button>
               <button
-                onClick={confirmNewGame}
+                onClick={confirmReset}
                 className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded transition-colors font-medium"
               >
-                Start New Game
+                Reset Progress
               </button>
             </div>
           </div>

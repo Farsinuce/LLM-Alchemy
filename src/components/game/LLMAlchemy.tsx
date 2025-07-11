@@ -164,7 +164,6 @@ const LLMAlchemy = () => {
   const [toast, setToast] = useState<string>('');
   const [shakeElement, setShakeElement] = useState<string | null>(null);
   const [popElement, setPopElement] = useState<string | null>(null);
-  const [showModeConfirm, setShowModeConfirm] = useState<boolean>(false);
   const [dragStartY, setDragStartY] = useState<number>(0);
   const [dragStartHeight, setDragStartHeight] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -1473,37 +1472,17 @@ ${shared.responseFormat}`;
 
   const handleGameModeToggle = () => {
     if (!isMixing) {
-      setShowModeConfirm(true);
+      const newMode = gameMode === 'science' ? 'creative' : 'science';
+      playSound('click');
+      
+      // Update URL to reflect mode change
+      const url = new URL(window.location.href);
+      url.searchParams.set('mode', newMode);
+      window.history.replaceState({}, '', url);
+      
+      setGameMode(newMode);
+      showToast(`Switched to ${newMode} mode!`);
     }
-  };
-
-  const confirmModeSwitch = () => {
-    const newMode = gameMode === 'science' ? 'creative' : 'science';
-    playSound('click');
-    setGameMode(newMode);
-    
-    // Reset game with appropriate starting elements
-    const startingElements = newMode === 'science' ? [
-      { id: 'energy', name: 'Energy', emoji: '〰️', color: '#FFD700', unlockOrder: 0 },
-      { id: 'earth', name: 'Earth', emoji: '🌍', color: '#8B4513', unlockOrder: 1 },
-      { id: 'air', name: 'Air', emoji: '💨', color: '#87CEEB', unlockOrder: 2 },
-      { id: 'fire', name: 'Fire', emoji: '🔥', color: '#FF4500', unlockOrder: 3 },
-      { id: 'water', name: 'Water', emoji: '💧', color: '#4682B4', unlockOrder: 4 },
-    ] : [
-      { id: 'life', name: 'Life', emoji: '🧬', color: '#32CD32', unlockOrder: 0 },
-      { id: 'earth', name: 'Earth', emoji: '🌍', color: '#8B4513', unlockOrder: 1 },
-      { id: 'air', name: 'Air', emoji: '💨', color: '#87CEEB', unlockOrder: 2 },
-      { id: 'fire', name: 'Fire', emoji: '🔥', color: '#FF4500', unlockOrder: 3 },
-      { id: 'water', name: 'Water', emoji: '💧', color: '#4682B4', unlockOrder: 4 },
-    ];
-    
-    setElements(startingElements);
-    setEndElements([]);
-    setMixingArea([]);
-    setCombinations({});
-    setAchievements([]);
-    setShowModeConfirm(false);
-    showToast(`Switched to ${newMode} mode!`);
   };
 
   // Optimized element sorting with search filtering
@@ -1636,35 +1615,36 @@ ${shared.responseFormat}`;
       
       {/* Header */}
       <div className="relative z-10 bg-gray-800/80 backdrop-blur-sm p-4 shadow-lg">
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleBackToHome}
-              onMouseEnter={() => setHoveredUIElement('back-button')}
-              onMouseLeave={() => setHoveredUIElement(null)}
-              className="p-2 hover:bg-gray-700 rounded-full transition-colors text-gray-400 hover:text-white"
-              title="Back to Menu"
-              style={{
-                boxShadow: hoveredUIElement === 'back-button' ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
-              }}
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Sparkles className="text-yellow-400 hidden sm:block" />
-              LLM Alchemy
-            </h1>
-          </div>
-          <div className="text-lg font-semibold flex flex-col items-end gap-1">
-            <span>Elements: {regularElementCount}</span>
+        <div className="flex justify-center items-center mb-3">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Sparkles className="text-yellow-400 hidden sm:block" />
+            LLM Alchemy
+          </h1>
+        </div>
+        
+        <div className="flex justify-between items-center mb-3">
+          <button
+            onClick={handleBackToHome}
+            onMouseEnter={() => setHoveredUIElement('back-button')}
+            onMouseLeave={() => setHoveredUIElement(null)}
+            className="flex items-center gap-2 px-3 py-1 hover:bg-gray-700 rounded transition-colors text-gray-400 hover:text-white"
+            title="Back to Menu"
+            style={{
+              boxShadow: hoveredUIElement === 'back-button' ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
+            }}
+          >
+            <ArrowLeft size={16} />
+            <span className="text-sm">Back</span>
+          </button>
+          
+          <div className="text-right">
+            <div className="text-lg font-semibold">Elements: {regularElementCount}</div>
             {gameMode === 'science' && endElementCount > 0 && (
-              <span className="text-gray-300 text-base">Ends: {endElementCount}</span>
+              <div className="text-gray-300 text-sm">Ends: {endElementCount}</div>
             )}
-            <div className="text-sm text-gray-400 flex items-center gap-1">
+            <div className="text-sm text-gray-400 flex items-center justify-end gap-1">
               <User size={14} />
-              <span>
-                {dailyCount}/50 today
-              </span>
+              <span>{dailyCount}/50 today</span>
             </div>
           </div>
         </div>
@@ -2063,12 +2043,16 @@ ${shared.responseFormat}`;
 
       {/* Achievements Modal */}
       {showAchievements && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowAchievements(false);
+            }
+          }}
+        >
           <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">
-                Achievements & End Elements
-              </h3>
+            <div className="flex justify-end items-center mb-4">
               <button
                 onClick={() => setShowAchievements(false)}
                 className="p-2 hover:bg-gray-700 rounded-full transition-colors"
@@ -2151,42 +2135,6 @@ ${shared.responseFormat}`;
         </div>
       )}
 
-      {/* Mode Switch Confirmation */}
-      {showModeConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-xl p-6 max-w-sm mx-4">
-            <h3 className="text-xl font-bold mb-3">Switch game mode?</h3>
-            <p className="text-gray-300 mb-4">
-              Switch to {gameMode === 'science' ? 'Creative' : 'Science'} mode? 
-              This will reset all your progress and achievement.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowModeConfirm(false)}
-                onMouseEnter={() => setHoveredUIElement('cancel-btn')}
-                onMouseLeave={() => setHoveredUIElement(null)}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded transition-colors"
-                style={{
-                  boxShadow: hoveredUIElement === 'cancel-btn' ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmModeSwitch}
-                onMouseEnter={() => setHoveredUIElement('switch-btn')}
-                onMouseLeave={() => setHoveredUIElement(null)}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded transition-colors font-medium"
-                style={{
-                  boxShadow: hoveredUIElement === 'switch-btn' ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
-                }}
-              >
-                Switch mode
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Touch drag overlay */}
       {touchDragging && (

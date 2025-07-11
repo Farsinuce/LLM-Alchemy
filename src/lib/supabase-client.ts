@@ -115,9 +115,19 @@ export async function getDailyCount(supabase: any, userId: string): Promise<numb
       .eq('date', today)
       .single()
     
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-      console.error('Error getting daily count:', error)
-      return 0
+    if (error) {
+      // Handle different error types gracefully
+      if (error.code === 'PGRST116') {
+        // No rows returned - user hasn't used any combinations today
+        return 0
+      } else if (error.code === 'PGRST301' || error.message?.includes('406')) {
+        // RLS policy issues - return 0 and continue silently
+        console.warn('Database access restricted, continuing with fallback')
+        return 0
+      } else {
+        console.error('Error getting daily count:', error)
+        return 0
+      }
     }
     
     return data?.daily_count || 0
@@ -263,6 +273,10 @@ export async function resetGameState(supabase: any, userId: string, gameMode: st
         return false
       }
     } else {
+      // Get existing achievements first
+      const existingState = await loadGameState(supabase, userId, gameMode)
+      const existingAchievements = existingState?.achievements || []
+      
       // Reset but keep achievements
       const { error } = await supabase
         .from('game_states')
@@ -272,7 +286,7 @@ export async function resetGameState(supabase: any, userId: string, gameMode: st
           elements: [],
           end_elements: [],
           combinations: {},
-          achievements: [], // Keep existing achievements if they exist
+          achievements: existingAchievements, // Preserve existing achievements
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id,game_mode'
