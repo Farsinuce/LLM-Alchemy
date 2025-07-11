@@ -450,21 +450,46 @@ const LLMAlchemy = () => {
   }, []);
 
   useEffect(() => {
-    // Set proper starting elements based on game mode
-    if (gameMode === 'creative' && elements.find(e => e.name === 'Energy')) {
-      setElements([
-        { id: 'life', name: 'Life', emoji: '🌱', color: '#32CD32', unlockOrder: 0 },
-        ...elements.filter(e => e.name !== 'Energy')
-      ]);
-      // Clear floating emojis to restart with new mode elements
+    // Set proper starting elements based on game mode - RESET TO BASE ELEMENTS
+    const isCurrentlyCreative = gameMode === 'creative';
+    const isCurrentlyScience = gameMode === 'science';
+    
+    // Only reset if we're actually switching modes (not on initial load with saved state)
+    const isModeSwitching = (isCurrentlyCreative && elements.find(e => e.name === 'Energy')) ||
+                           (isCurrentlyScience && elements.find(e => e.name === 'Life'));
+    
+    if (isModeSwitching) {
+      // Reset to base starting elements for the new mode
+      if (isCurrentlyCreative) {
+        setElements([
+          { id: 'life', name: 'Life', emoji: '🌱', color: '#32CD32', unlockOrder: 0 },
+          { id: 'earth', name: 'Earth', emoji: '🌍', color: '#8B4513', unlockOrder: 1 },
+          { id: 'air', name: 'Air', emoji: '💨', color: '#87CEEB', unlockOrder: 2 },
+          { id: 'fire', name: 'Fire', emoji: '🔥', color: '#FF4500', unlockOrder: 3 },
+          { id: 'water', name: 'Water', emoji: '💧', color: '#4682B4', unlockOrder: 4 },
+        ]);
+      } else {
+        setElements([
+          { id: 'energy', name: 'Energy', emoji: '〰️', color: '#FFD700', unlockOrder: 0 },
+          { id: 'earth', name: 'Earth', emoji: '🌍', color: '#8B4513', unlockOrder: 1 },
+          { id: 'air', name: 'Air', emoji: '💨', color: '#87CEEB', unlockOrder: 2 },
+          { id: 'fire', name: 'Fire', emoji: '🔥', color: '#FF4500', unlockOrder: 3 },
+          { id: 'water', name: 'Water', emoji: '💧', color: '#4682B4', unlockOrder: 4 },
+        ]);
+      }
+      
+      // Clear all other mode-specific state
+      setEndElements([]);
+      setCombinations({});
+      setAchievements([]);
+      setMixingArea([]);
       setFloatingEmojis([]);
-    } else if (gameMode === 'science' && elements.find(e => e.name === 'Life')) {
-      setElements([
-        { id: 'energy', name: 'Energy', emoji: '〰️', color: '#FFD700', unlockOrder: 0 },
-        ...elements.filter(e => e.name !== 'Life')
-      ]);
-      // Clear floating emojis to restart with new mode elements
-      setFloatingEmojis([]);
+      
+      // Clear any popup states
+      setShowUnlock(null);
+      setReasoningPopup(null);
+      setShakeElement(null);
+      setPopElement(null);
     }
   }, [gameMode]);
 
@@ -1474,6 +1499,9 @@ ${shared.responseFormat}`;
     if (!isMixing) {
       const newMode = gameMode === 'science' ? 'creative' : 'science';
       playSound('click');
+      
+      // Immediately clear mixing area when switching modes
+      setMixingArea([]);
       
       // Update URL to reflect mode change
       const url = new URL(window.location.href);
