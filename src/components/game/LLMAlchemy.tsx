@@ -66,6 +66,15 @@ interface MixingElements {
   indices: number[];
 }
 
+interface LastCombination {
+  elementCreated: Element;
+  combinationKey: string;
+  achievementsGained: Achievement[];
+  endElementsGained: Element[];
+  wasEndElement: boolean;
+  timestamp: number;
+}
+
 // Type for window.webkitAudioContext
 interface WindowWithWebkit extends Window {
   webkitAudioContext?: typeof AudioContext;
@@ -174,6 +183,8 @@ const LLMAlchemy = () => {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
+  const [lastCombination, setLastCombination] = useState<LastCombination | null>(null);
+  const [undoUsed, setUndoUsed] = useState<boolean>(false);
   
   // Load API key from localStorage on mount (optional - for convenience)
   useEffect(() => {
@@ -259,7 +270,7 @@ const LLMAlchemy = () => {
       }
     };
 
-    // Debounce saves to avoid too frequent database calls
+    // Use debounce for background saves but immediate save is handled in performMix
     const timeoutId = setTimeout(saveState, 2000);
     return () => clearTimeout(timeoutId);
   }, [user, gameMode, elements, endElements, combinations, achievements]);
@@ -1273,12 +1284,39 @@ ${shared.responseFormat}`;
         
         // Check for achievements with updated arrays (safe)
         let contextualAchievement = null;
+        let allAchievements: Achievement[] = [];
         try {
-          const allAchievements = checkAchievements(newElement, updatedElements, updatedEndElements);
+          allAchievements = checkAchievements(newElement, updatedElements, updatedEndElements);
           contextualAchievement = allAchievements.find(a => a.id.startsWith('first-'));
         } catch (achievementError) {
           console.error('Achievement check failed:', achievementError);
           // Continue without achievements - don't block the unlock flow
+        }
+
+        // Track this combination for undo functionality
+        setLastCombination({
+          elementCreated: newElement,
+          combinationKey: mixKey,
+          achievementsGained: allAchievements,
+          endElementsGained: result.isEndElement ? [newElement] : [],
+          wasEndElement: result.isEndElement,
+          timestamp: Date.now()
+        });
+
+        // Save immediately after discovery (fix for Bug 1)
+        if (user && gameMode) {
+          try {
+            const supabase = createClient();
+            await saveGameState(supabase, user.id, {
+              game_mode: gameMode,
+              elements: updatedElements,
+              end_elements: updatedEndElements,
+              combinations: { ...combinations, [mixKey]: result.result },
+              achievements: [...achievements, ...allAchievements]
+            });
+          } catch (error) {
+            console.error('Error saving game state immediately:', error);
+          }
         }
         
         setShowUnlock({ 
@@ -1977,6 +2015,37 @@ ${shared.responseFormat}`;
             {emoji.emoji}
           </div>
         ))}
+        {/* Undo Button - only show after first combination */}
+        {lastCombination && !isMixing && (
+          <button
+            onClick={() => {
+              // Check if user can undo
+              const canUndo = userApiKey || tokenBalance > 0 || !undoUsed;
+              
+              if (!canUndo) {
+                showToast('Free users get 1 undo per session. Get tokens for unlimited undos!');
+                return;
+              }
+              
+              // Implement undo functionality here
+              showToast('Undo feature coming soon!');
+            }}
+            onMouseEnter={() => setHoveredUIElement('undo-button')}
+            onMouseLeave={() => setHoveredUIElement(null)}
+            className={`absolute top-4 left-4 px-3 py-2 rounded-lg transition-all z-20 flex items-center gap-1 ${
+              (userApiKey || tokenBalance > 0 || !undoUsed) 
+                ? 'bg-blue-600/80 hover:bg-blue-500 text-white cursor-pointer' 
+                : 'bg-gray-600/50 text-gray-400 cursor-not-allowed'
+            }`}
+            style={{
+              boxShadow: hoveredUIElement === 'undo-button' && !isMixing ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
+            }}
+          >
+            <span>↩️</span>
+            <span className="hidden sm:inline text-sm">Undo</span>
+          </button>
+        )}
+
         {mixingArea.length > 0 && !isMixing && (
           <button
             onClick={clearMixingArea}

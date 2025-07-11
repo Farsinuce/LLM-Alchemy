@@ -23,6 +23,39 @@ export default function Home() {
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
   const [tempApiKey, setTempApiKey] = useState<string>('');
+  const [isValidatingKey, setIsValidatingKey] = useState<boolean>(false);
+
+  // API key validation function
+  const validateApiKey = async (apiKey: string): Promise<boolean> => {
+    if (!apiKey.trim()) return false;
+    
+    setIsValidatingKey(true);
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          prompt: 'Test validation. Respond with just: {"result": "test", "emoji": "✅", "color": "#00FF00", "rarity": "common", "reasoning": "validation test", "tags": []}',
+          gameMode: 'science',
+          apiKey: apiKey,
+          useProModel: false
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        return !result.error;
+      }
+      return false;
+    } catch (error) {
+      console.error('API key validation error:', error);
+      return false;
+    } finally {
+      setIsValidatingKey(false);
+    }
+  };
 
   // Load API key from localStorage on mount
   useEffect(() => {
@@ -185,17 +218,19 @@ export default function Home() {
             Free to play • 50 combinations per day
           </div>
           
-          {/* API Key Button */}
-          <button
-            onClick={() => {
-              setTempApiKey(userApiKey);
-              setShowApiKeyModal(true);
-            }}
-            className="flex items-center justify-center gap-2 w-full mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm"
-          >
-            <span>🔑</span>
-            <span>{userApiKey ? 'Update API Key' : 'Use Your Own API Key'}</span>
-          </button>
+          {/* API Key Button - More subtle */}
+          <div className="flex justify-center">
+            <button
+              onClick={() => {
+                setTempApiKey(userApiKey);
+                setShowApiKeyModal(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-gray-300 hover:text-white"
+            >
+              <span>🔑</span>
+              <span>{userApiKey ? 'Update API Key' : 'Use Your Own API Key'}</span>
+            </button>
+          </div>
           
           {userApiKey && (
             <div className="text-xs text-green-400 mt-2">
@@ -281,13 +316,31 @@ export default function Home() {
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    setUserApiKey(tempApiKey);
-                    setShowApiKeyModal(false);
+                  onClick={async () => {
+                    if (tempApiKey.trim()) {
+                      // Validate API key before saving
+                      const isValid = await validateApiKey(tempApiKey);
+                      if (isValid) {
+                        setUserApiKey(tempApiKey);
+                        setShowApiKeyModal(false);
+                      } else {
+                        alert('Invalid API key. Please check your OpenRouter API key and try again.');
+                        return;
+                      }
+                    } else {
+                      // Allow clearing the API key
+                      setUserApiKey('');
+                      setShowApiKeyModal(false);
+                    }
                   }}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg transition-colors"
+                  disabled={isValidatingKey}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    isValidatingKey 
+                      ? 'bg-gray-600 cursor-not-allowed' 
+                      : 'bg-purple-600 hover:bg-purple-500'
+                  }`}
                 >
-                  Save
+                  {isValidatingKey ? 'Validating...' : 'Save'}
                 </button>
               </div>
             </div>
