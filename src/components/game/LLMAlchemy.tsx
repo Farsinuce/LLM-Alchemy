@@ -1615,11 +1615,19 @@ ${shared.responseFormat}`;
       
       {/* Header */}
       <div className="relative z-10 bg-gray-800/80 backdrop-blur-sm p-4 shadow-lg">
-        <div className="flex justify-center items-center mb-3">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Sparkles className="text-yellow-400 hidden sm:block" />
-            LLM Alchemy
-          </h1>
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Sparkles className="text-yellow-400 hidden sm:block" />
+              LLM Alchemy
+            </h1>
+          </div>
+          <div className="text-lg font-semibold flex flex-col items-end gap-1">
+            <span>Elements: {regularElementCount}</span>
+            {gameMode === 'science' && endElementCount > 0 && (
+              <span className="text-gray-300 text-base">Ends: {endElementCount}</span>
+            )}
+          </div>
         </div>
         
         <div className="flex justify-between items-center mb-3">
@@ -1637,15 +1645,9 @@ ${shared.responseFormat}`;
             <span className="text-sm">Back</span>
           </button>
           
-          <div className="text-right">
-            <div className="text-lg font-semibold">Elements: {regularElementCount}</div>
-            {gameMode === 'science' && endElementCount > 0 && (
-              <div className="text-gray-300 text-sm">Ends: {endElementCount}</div>
-            )}
-            <div className="text-sm text-gray-400 flex items-center justify-end gap-1">
-              <User size={14} />
-              <span>{dailyCount}/50 today</span>
-            </div>
+          <div className="text-sm text-gray-400 flex items-center gap-1">
+            <User size={14} />
+            <span>{dailyCount}/50 today</span>
           </div>
         </div>
         
