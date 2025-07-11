@@ -22,13 +22,23 @@ export async function POST(req: NextRequest) {
     // - If custom API key: user can choose between Flash and Pro
     // - If no custom key: Flash for freemium, Pro for paying (with tokens)
     let model;
+    let userType;
+    let reason;
+    
     if (apiKey) {
       // User has their own API key, use their preference
       model = useProModel ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash';
+      userType = 'API Key User';
+      reason = `User preference (${useProModel ? 'Pro' : 'Flash'} selected)`;
     } else {
       // Server's API key: Flash for freemium, Pro for paying users
       model = useProModel ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash';
+      userType = useProModel ? 'Token User' : 'Freemium User';
+      reason = useProModel ? 'Has tokens (Pro model)' : 'Daily limit user (Flash model)';
     }
+    
+    // Log model selection for debugging
+    console.log(`[LLM-Alchemy API] User Type: ${userType} | Model: ${model} | Reason: ${reason}`);
 
     const response = await fetch(OPENROUTER_URL, {
       method: 'POST',

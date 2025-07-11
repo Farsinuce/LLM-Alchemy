@@ -92,6 +92,7 @@ const CONSTANTS = {
   COLLISION_SPACING: 8,
   MAX_COLLISION_DISTANCE: 300,
   COLLISION_POSITIONS: 16,
+  DAILY_LIMIT: 5, // Easy to change for testing/production
   SOUND_VOLUMES: {
     press: 0.1,
     plop: 0.3,
@@ -623,8 +624,8 @@ const LLMAlchemy = () => {
     }
     
     // Otherwise check daily limit
-    if (dailyCount >= 50) {
-      showToast(`Daily limit reached: ${dailyCount}/50 - Click "Get more" for tokens!`);
+    if (dailyCount >= CONSTANTS.DAILY_LIMIT) {
+      showToast(`Daily limit reached: ${dailyCount}/${CONSTANTS.DAILY_LIMIT} - Click "Get more" for tokens!`);
       return false;
     }
     return true;
@@ -926,6 +927,23 @@ ${shared.responseFormat}`;
     
     // Determine if we should use the pro model
     const useProModel = userApiKey ? (selectedModel === 'pro') : (tokenBalance > 0);
+    
+    // Log model selection for debugging
+    let userType: string;
+    let reason: string;
+    let model: string;
+    
+    if (userApiKey) {
+      userType = 'API Key User';
+      model = useProModel ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash';
+      reason = `User preference (${useProModel ? 'Pro' : 'Flash'} selected)`;
+    } else {
+      userType = useProModel ? 'Token User' : 'Freemium User';
+      model = useProModel ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash';
+      reason = useProModel ? `Has tokens (${tokenBalance} remaining)` : `Daily limit user (${dailyCount}/${CONSTANTS.DAILY_LIMIT} used)`;
+    }
+    
+    console.log(`[LLM-Alchemy Frontend] User Type: ${userType} | Model: ${model} | Reason: ${reason}`);
     
     // Enhanced session caching - check existing combinations first
     const sortedNames = [elem1.name, elem2.name, elem3?.name].filter(Boolean).sort().join('+');
@@ -1758,7 +1776,7 @@ ${shared.responseFormat}`;
               <>
                 <span className="text-yellow-400">Tokens: {tokenBalance}</span>
               </>
-            ) : dailyCount >= 50 ? (
+            ) : dailyCount >= CONSTANTS.DAILY_LIMIT ? (
               <button
                 onClick={async () => {
                   if (user) {
@@ -1775,7 +1793,7 @@ ${shared.responseFormat}`;
             ) : (
               <>
                 <User size={14} />
-                <span>{dailyCount}/50 today</span>
+                <span>{dailyCount}/{CONSTANTS.DAILY_LIMIT} today</span>
               </>
             )}
           </div>
@@ -2034,7 +2052,7 @@ ${shared.responseFormat}`;
             onMouseLeave={() => setHoveredUIElement(null)}
             className={`absolute top-4 left-4 px-3 py-2 rounded-lg transition-all z-20 flex items-center gap-1 ${
               (userApiKey || tokenBalance > 0 || !undoUsed) 
-                ? 'bg-blue-600/80 hover:bg-blue-500 text-white cursor-pointer' 
+                ? 'bg-gray-700 hover:bg-gray-600 text-white cursor-pointer' 
                 : 'bg-gray-600/50 text-gray-400 cursor-not-allowed'
             }`}
             style={{
