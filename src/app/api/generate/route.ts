@@ -24,10 +24,10 @@ export async function POST(req: NextRequest) {
     let model;
     if (apiKey) {
       // User has their own API key, use their preference
-      model = useProModel ? 'google/gemini-2.0-pro-exp' : 'google/gemini-2.0-flash';
+      model = useProModel ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash';
     } else {
       // Server's API key: Flash for freemium, Pro for paying users
-      model = useProModel ? 'google/gemini-2.0-pro-exp' : 'google/gemini-2.0-flash';
+      model = useProModel ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash';
     }
 
     const response = await fetch(OPENROUTER_URL, {

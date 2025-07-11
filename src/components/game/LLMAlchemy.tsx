@@ -174,8 +174,6 @@ const LLMAlchemy = () => {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
-  const [showApiKeyModal, setShowApiKeyModal] = useState<boolean>(false);
-  const [tempApiKey, setTempApiKey] = useState<string>('');
   
   // Load API key from localStorage on mount (optional - for convenience)
   useEffect(() => {
@@ -189,17 +187,6 @@ const LLMAlchemy = () => {
       setSelectedModel(savedModel);
     }
   }, []);
-  
-  // Save API key to localStorage when it changes
-  useEffect(() => {
-    if (userApiKey) {
-      localStorage.setItem('llm-alchemy-api-key', userApiKey);
-      localStorage.setItem('llm-alchemy-model', selectedModel);
-    } else {
-      localStorage.removeItem('llm-alchemy-api-key');
-      localStorage.removeItem('llm-alchemy-model');
-    }
-  }, [userApiKey, selectedModel]);
   
   const draggedElement = useRef<MixingElement | null>(null);
   const dropZoneRef = useRef<HTMLDivElement | null>(null);
@@ -1809,21 +1796,6 @@ ${shared.responseFormat}`;
                 <span>🏆</span>
                 <span className="hidden sm:inline text-sm">Achievements</span>
               </button>
-              <button
-                onClick={() => {
-                  setTempApiKey(userApiKey);
-                  setShowApiKeyModal(true);
-                }}
-                onMouseEnter={() => setHoveredUIElement('api-key-btn')}
-                onMouseLeave={() => setHoveredUIElement(null)}
-                className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-all flex items-center gap-1"
-                style={{
-                  boxShadow: hoveredUIElement === 'api-key-btn' && !isMixing ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
-                }}
-              >
-                <span>🔑</span>
-                <span className="hidden sm:inline text-sm">API Key</span>
-              </button>
             </div>
           </div>
           
@@ -2250,100 +2222,6 @@ ${shared.responseFormat}`;
         </div>
       )}
 
-      {/* API Key Modal */}
-      {showApiKeyModal && (
-        <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowApiKeyModal(false);
-            }
-          }}
-        >
-          <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">API Key Settings</h3>
-              <button
-                onClick={() => setShowApiKeyModal(false)}
-                className="p-2 hover:bg-gray-700 rounded-full transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  OpenRouter API Key
-                </label>
-                <input
-                  type="password"
-                  value={tempApiKey}
-                  onChange={(e) => setTempApiKey(e.target.value)}
-                  placeholder="sk-or-..."
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Use your own API key to play without limits
-                </p>
-              </div>
-              
-              {tempApiKey && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Model Selection
-                  </label>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        value="flash"
-                        checked={selectedModel === 'flash'}
-                        onChange={(e) => setSelectedModel(e.target.value as 'flash' | 'pro')}
-                        className="text-purple-500"
-                      />
-                      <span>Gemini Flash 2.0 (Faster, Cheaper)</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        value="pro"
-                        checked={selectedModel === 'pro'}
-                        onChange={(e) => setSelectedModel(e.target.value as 'flash' | 'pro')}
-                        className="text-purple-500"
-                      />
-                      <span>Gemini Pro 2.0 (Better Quality)</span>
-                    </label>
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex gap-2 justify-end mt-6">
-                <button
-                  onClick={() => setShowApiKeyModal(false)}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setUserApiKey(tempApiKey);
-                    setShowApiKeyModal(false);
-                    if (tempApiKey) {
-                      showToast('API key saved! You can now play without limits.');
-                    } else {
-                      showToast('API key removed. Using daily limit.');
-                    }
-                  }}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg transition-colors"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Toast */}
       {toast && (

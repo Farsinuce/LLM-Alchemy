@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight, X } from 'lucide-react';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
 import { createClient, getGameProgress, resetGameState } from '@/lib/supabase-client';
 
@@ -19,6 +19,34 @@ export default function Home() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetAchievements, setResetAchievements] = useState(false);
   const [selectedMode, setSelectedMode] = useState<'science' | 'creative'>('science');
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [userApiKey, setUserApiKey] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
+  const [tempApiKey, setTempApiKey] = useState<string>('');
+
+  // Load API key from localStorage on mount
+  useEffect(() => {
+    const savedApiKey = localStorage.getItem('llm-alchemy-api-key');
+    const savedModel = localStorage.getItem('llm-alchemy-model') as 'flash' | 'pro';
+    
+    if (savedApiKey) {
+      setUserApiKey(savedApiKey);
+    }
+    if (savedModel && (savedModel === 'flash' || savedModel === 'pro')) {
+      setSelectedModel(savedModel);
+    }
+  }, []);
+
+  // Save API key to localStorage when it changes
+  useEffect(() => {
+    if (userApiKey) {
+      localStorage.setItem('llm-alchemy-api-key', userApiKey);
+      localStorage.setItem('llm-alchemy-model', selectedModel);
+    } else {
+      localStorage.removeItem('llm-alchemy-api-key');
+      localStorage.removeItem('llm-alchemy-model');
+    }
+  }, [userApiKey, selectedModel]);
 
   // Load game progress when user is available
   useEffect(() => {
@@ -156,8 +184,116 @@ export default function Home() {
           <div className="text-sm text-gray-400">
             Free to play • 50 combinations per day
           </div>
+          
+          {/* API Key Button */}
+          <button
+            onClick={() => {
+              setTempApiKey(userApiKey);
+              setShowApiKeyModal(true);
+            }}
+            className="flex items-center justify-center gap-2 w-full mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm"
+          >
+            <span>🔑</span>
+            <span>{userApiKey ? 'Update API Key' : 'Use Your Own API Key'}</span>
+          </button>
+          
+          {userApiKey && (
+            <div className="text-xs text-green-400 mt-2">
+              ✓ Using your OpenRouter API key • Unlimited combinations
+            </div>
+          )}
         </div>
       </div>
+
+      {/* API Key Modal */}
+      {showApiKeyModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowApiKeyModal(false);
+            }
+          }}
+        >
+          <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">API Key Settings</h3>
+              <button
+                onClick={() => setShowApiKeyModal(false)}
+                className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  OpenRouter API Key
+                </label>
+                <input
+                  type="password"
+                  value={tempApiKey}
+                  onChange={(e) => setTempApiKey(e.target.value)}
+                  placeholder="sk-or-..."
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Use your own API key to play without daily limits
+                </p>
+              </div>
+              
+              {tempApiKey && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Model Selection
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="flash"
+                        checked={selectedModel === 'flash'}
+                        onChange={(e) => setSelectedModel(e.target.value as 'flash' | 'pro')}
+                        className="text-purple-500"
+                      />
+                      <span>Gemini Flash 2.5 (Faster, Cheaper)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="pro"
+                        checked={selectedModel === 'pro'}
+                        onChange={(e) => setSelectedModel(e.target.value as 'flash' | 'pro')}
+                        className="text-purple-500"
+                      />
+                      <span>Gemini Pro 2.5 (Better Quality)</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex gap-2 justify-end mt-6">
+                <button
+                  onClick={() => setShowApiKeyModal(false)}
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setUserApiKey(tempApiKey);
+                    setShowApiKeyModal(false);
+                  }}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Reset Mode Confirmation Modal */}
       {showResetModal && (
