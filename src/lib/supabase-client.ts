@@ -8,6 +8,7 @@ export interface User {
   is_anonymous: boolean
   subscription_status: 'free' | 'premium'
   subscription_ends_at?: string | null
+  token_balance?: number
 }
 
 export interface UserSession {
@@ -312,5 +313,61 @@ export async function resetGameState(supabase: any, userId: string, gameMode: st
   } catch (error) {
     console.error('Error in resetGameState:', error)
     return false
+  }
+}
+
+// Token-related functions
+export async function getTokenBalance(supabase: any, userId: string): Promise<number> {
+  try {
+    const { data, error } = await supabase.rpc('get_token_balance', {
+      p_user_id: userId
+    })
+
+    if (error) {
+      console.error('Error getting token balance:', error)
+      return 0
+    }
+
+    return data || 0
+  } catch (error) {
+    console.error('Error in getTokenBalance:', error)
+    return 0
+  }
+}
+
+export async function consumeToken(supabase: any, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('consume_token', {
+      p_user_id: userId
+    })
+
+    if (error) {
+      console.error('Error consuming token:', error)
+      return false
+    }
+
+    return data || false
+  } catch (error) {
+    console.error('Error in consumeToken:', error)
+    return false
+  }
+}
+
+export async function addTokens(supabase: any, userId: string, tokens: number): Promise<number> {
+  try {
+    const { data, error } = await supabase.rpc('add_tokens', {
+      p_user_id: userId,
+      p_tokens: tokens
+    })
+
+    if (error) {
+      console.error('Error adding tokens:', error)
+      return 0
+    }
+
+    return data || 0
+  } catch (error) {
+    console.error('Error in addTokens:', error)
+    return 0
   }
 }

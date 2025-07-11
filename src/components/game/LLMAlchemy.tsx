@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Sparkles, X, GripHorizontal, User, ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
-import { createClient, incrementDailyCount, saveGameState, loadGameState } from '@/lib/supabase-client';
+import { createClient, incrementDailyCount, saveGameState, loadGameState, consumeToken, addTokens } from '@/lib/supabase-client';
 
 // Type definitions
 interface Element {
@@ -134,7 +134,7 @@ const incrementLocalCounter = () => {
 };
 
 const LLMAlchemy = () => {
-  const { user, dbUser, dailyCount, loading, refreshDailyCount } = useSupabase();
+  const { user, dbUser, dailyCount, tokenBalance, loading, refreshDailyCount, refreshTokenBalance } = useSupabase();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [gameMode, setGameMode] = useState<'science' | 'creative'>('science');
@@ -172,6 +172,34 @@ const LLMAlchemy = () => {
   const [reasoningPopup, setReasoningPopup] = useState<ReasoningPopup | null>(null);
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [userApiKey, setUserApiKey] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
+  const [showApiKeyModal, setShowApiKeyModal] = useState<boolean>(false);
+  const [tempApiKey, setTempApiKey] = useState<string>('');
+  
+  // Load API key from localStorage on mount (optional - for convenience)
+  useEffect(() => {
+    const savedApiKey = localStorage.getItem('llm-alchemy-api-key');
+    const savedModel = localStorage.getItem('llm-alchemy-model') as 'flash' | 'pro';
+    
+    if (savedApiKey) {
+      setUserApiKey(savedApiKey);
+    }
+    if (savedModel && (savedModel === 'flash' || savedModel === 'pro')) {
+      setSelectedModel(savedModel);
+    }
+  }, []);
+  
+  // Save API key to localStorage when it changes
+  useEffect(() => {
+    if (userApiKey) {
+      localStorage.setItem('llm-alchemy-api-key', userApiKey);
+      localStorage.setItem('llm-alchemy-model', selectedModel);
+    } else {
+      localStorage.removeItem('llm-alchemy-api-key');
+      localStorage.removeItem('llm-alchemy-model');
+    }
+  }, [userApiKey, selectedModel]);
   
   const draggedElement = useRef<MixingElement | null>(null);
   const dropZoneRef = useRef<HTMLDivElement | null>(null);
@@ -586,8 +614,19 @@ const LLMAlchemy = () => {
 
   // Function to check if daily limit is reached (before API call)
   const checkDailyLimit = () => {
+    // If user has their own API key, no limits
+    if (userApiKey) {
+      return true;
+    }
+    
+    // If user has tokens, they can use them
+    if (tokenBalance > 0) {
+      return true;
+    }
+    
+    // Otherwise check daily limit
     if (dailyCount >= 50) {
-      showToast(`Daily limit reached: ${dailyCount}/50 - Upgrade for unlimited!`);
+      showToast(`Daily limit reached: ${dailyCount}/50 - Click "Get more" for tokens!`);
       return false;
     }
     return true;
@@ -596,16 +635,22 @@ const LLMAlchemy = () => {
   // Function to increment daily counter (after successful API call)
   const incrementDailyCounter = async () => {
     try {
-      if (user) {
-        // Use Supabase to increment daily count
+      if (user && !userApiKey) {
         const supabase = createClient();
-        await incrementDailyCount(supabase, user.id);
-        // Refresh the count in the provider
-        await refreshDailyCount();
+        
+        // If user has tokens, consume one
+        if (tokenBalance > 0) {
+          await consumeToken(supabase, user.id);
+          await refreshTokenBalance();
+        } else {
+          // Otherwise increment daily count
+          await incrementDailyCount(supabase, user.id);
+          await refreshDailyCount();
+        }
       }
       return true;
     } catch (error) {
-      console.error('Error incrementing daily counter:', error);
+      console.error('Error updating usage counter:', error);
       return true; // Don't block gameplay for counter errors
     }
   };
@@ -881,6 +926,9 @@ ${shared.responseFormat}`;
       return { result: null, error: true, limitReached: true };
     }
     
+    // Determine if we should use the pro model
+    const useProModel = userApiKey ? (selectedModel === 'pro') : (tokenBalance > 0);
+    
     // Enhanced session caching - check existing combinations first
     const sortedNames = [elem1.name, elem2.name, elem3?.name].filter(Boolean).sort().join('+');
     const mixKey = elem3 ? `${sortedNames}+Energy` : sortedNames;
@@ -987,7 +1035,12 @@ ${shared.responseFormat}`;
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt, gameMode })
+        body: JSON.stringify({ 
+          prompt, 
+          gameMode,
+          apiKey: userApiKey,
+          useProModel
+        })
       });
 
       if (!response.ok) {
@@ -1674,8 +1727,32 @@ ${shared.responseFormat}`;
           </button>
           
           <div className="text-sm text-gray-400 flex items-center gap-1">
-            <User size={14} />
-            <span>{dailyCount}/50 today</span>
+            {userApiKey ? (
+              <span className="text-green-400">Using your API key</span>
+            ) : tokenBalance > 0 ? (
+              <>
+                <span className="text-yellow-400">Tokens: {tokenBalance}</span>
+              </>
+            ) : dailyCount >= 50 ? (
+              <button
+                onClick={async () => {
+                  if (user) {
+                    const supabase = createClient();
+                    await addTokens(supabase, user.id, 10);
+                    await refreshTokenBalance();
+                    showToast('+10 tokens added!');
+                  }
+                }}
+                className="px-3 py-1 bg-purple-600 hover:bg-purple-500 rounded text-white font-medium transition-colors"
+              >
+                Get more
+              </button>
+            ) : (
+              <>
+                <User size={14} />
+                <span>{dailyCount}/50 today</span>
+              </>
+            )}
           </div>
         </div>
         
@@ -1731,6 +1808,21 @@ ${shared.responseFormat}`;
               >
                 <span>🏆</span>
                 <span className="hidden sm:inline text-sm">Achievements</span>
+              </button>
+              <button
+                onClick={() => {
+                  setTempApiKey(userApiKey);
+                  setShowApiKeyModal(true);
+                }}
+                onMouseEnter={() => setHoveredUIElement('api-key-btn')}
+                onMouseLeave={() => setHoveredUIElement(null)}
+                className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-all flex items-center gap-1"
+                style={{
+                  boxShadow: hoveredUIElement === 'api-key-btn' && !isMixing ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
+                }}
+              >
+                <span>🔑</span>
+                <span className="hidden sm:inline text-sm">API Key</span>
               </button>
             </div>
           </div>
@@ -2153,6 +2245,101 @@ ${shared.responseFormat}`;
                   )}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* API Key Modal */}
+      {showApiKeyModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowApiKeyModal(false);
+            }
+          }}
+        >
+          <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">API Key Settings</h3>
+              <button
+                onClick={() => setShowApiKeyModal(false)}
+                className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  OpenRouter API Key
+                </label>
+                <input
+                  type="password"
+                  value={tempApiKey}
+                  onChange={(e) => setTempApiKey(e.target.value)}
+                  placeholder="sk-or-..."
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Use your own API key to play without limits
+                </p>
+              </div>
+              
+              {tempApiKey && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Model Selection
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="flash"
+                        checked={selectedModel === 'flash'}
+                        onChange={(e) => setSelectedModel(e.target.value as 'flash' | 'pro')}
+                        className="text-purple-500"
+                      />
+                      <span>Gemini Flash 2.0 (Faster, Cheaper)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="pro"
+                        checked={selectedModel === 'pro'}
+                        onChange={(e) => setSelectedModel(e.target.value as 'flash' | 'pro')}
+                        className="text-purple-500"
+                      />
+                      <span>Gemini Pro 2.0 (Better Quality)</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex gap-2 justify-end mt-6">
+                <button
+                  onClick={() => setShowApiKeyModal(false)}
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setUserApiKey(tempApiKey);
+                    setShowApiKeyModal(false);
+                    if (tempApiKey) {
+                      showToast('API key saved! You can now play without limits.');
+                    } else {
+                      showToast('API key removed. Using daily limit.');
+                    }
+                  }}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg transition-colors"
+                >
+                  Save
+                </button>
+              </div>
             </div>
           </div>
         </div>

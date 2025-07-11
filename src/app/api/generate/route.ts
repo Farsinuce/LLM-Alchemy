@@ -5,23 +5,35 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, gameMode } = await req.json();
+    const { prompt, gameMode, apiKey, useProModel } = await req.json();
 
-    if (!OPENROUTER_API_KEY) {
-      console.error('OpenRouter API key not configured');
+    // Use custom API key if provided, otherwise use server's key
+    const activeApiKey = apiKey || OPENROUTER_API_KEY;
+
+    if (!activeApiKey) {
+      console.error('No API key available');
       return NextResponse.json(
-        { error: 'OpenRouter API key not configured' },
+        { error: 'No API key configured' },
         { status: 500 }
       );
     }
 
-    // Use Gemini Flash for cost-effective generation
-    const model = gameMode === 'creative' ? 'google/gemini-2.5-flash' : 'google/gemini-2.5-flash';
+    // Model selection logic:
+    // - If custom API key: user can choose between Flash and Pro
+    // - If no custom key: Flash for freemium, Pro for paying (with tokens)
+    let model;
+    if (apiKey) {
+      // User has their own API key, use their preference
+      model = useProModel ? 'google/gemini-2.0-pro-exp' : 'google/gemini-2.0-flash';
+    } else {
+      // Server's API key: Flash for freemium, Pro for paying users
+      model = useProModel ? 'google/gemini-2.0-pro-exp' : 'google/gemini-2.0-flash';
+    }
 
     const response = await fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Authorization': `Bearer ${activeApiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
         'X-Title': 'LLM Alchemy Game',

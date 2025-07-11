@@ -3,16 +3,18 @@
 import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import { User } from '@supabase/supabase-js'
-import { User as DBUser, getOrCreateAnonymousUser, getDailyCount } from '@/lib/supabase-client'
+import { User as DBUser, getOrCreateAnonymousUser, getDailyCount, getTokenBalance } from '@/lib/supabase-client'
 
 interface SupabaseContextType {
   user: User | null
   dbUser: DBUser | null
   dailyCount: number
+  tokenBalance: number
   loading: boolean
   signInAnonymously: () => Promise<void>
   signOut: () => Promise<void>
   refreshDailyCount: () => Promise<void>
+  refreshTokenBalance: () => Promise<void>
 }
 
 const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined)
@@ -21,6 +23,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [dbUser, setDbUser] = useState<DBUser | null>(null)
   const [dailyCount, setDailyCount] = useState<number>(0)
+  const [tokenBalance, setTokenBalance] = useState<number>(0)
   const [loading, setLoading] = useState(true)
   
   // Memoize supabase client to prevent recreation on every render
@@ -33,6 +36,17 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
         setDailyCount(count)
       } catch (error) {
         console.error('Error refreshing daily count:', error)
+      }
+    }
+  }, [user, supabase])
+
+  const refreshTokenBalance = useCallback(async () => {
+    if (user) {
+      try {
+        const balance = await getTokenBalance(supabase, user.id)
+        setTokenBalance(balance)
+      } catch (error) {
+        console.error('Error refreshing token balance:', error)
       }
     }
   }, [user, supabase])
@@ -64,6 +78,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       setUser(null)
       setDbUser(null)
       setDailyCount(0)
+      setTokenBalance(0)
     } catch (error) {
       console.error('Error signing out:', error)
     }
@@ -92,7 +107,11 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
           if (mounted && dbUser) {
             setDbUser(dbUser)
             const count = await getDailyCount(supabase, session.user.id)
-            if (mounted) setDailyCount(count)
+            const balance = await getTokenBalance(supabase, session.user.id)
+            if (mounted) {
+              setDailyCount(count)
+              setTokenBalance(balance)
+            }
           }
         } else {
           // No session, create anonymous user
@@ -104,7 +123,11 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
             if (newSession?.user && mounted) {
               setUser(newSession.user)
               const count = await getDailyCount(supabase, newSession.user.id)
-              if (mounted) setDailyCount(count)
+              const balance = await getTokenBalance(supabase, newSession.user.id)
+              if (mounted) {
+                setDailyCount(count)
+                setTokenBalance(balance)
+              }
             }
           }
         }
@@ -131,6 +154,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
             setUser(null)
             setDbUser(null)
             setDailyCount(0)
+            setTokenBalance(0)
           } else if (event === 'SIGNED_IN' && session?.user) {
             setUser(session.user)
             
@@ -139,7 +163,11 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
             if (mounted && dbUser) {
               setDbUser(dbUser)
               const count = await getDailyCount(supabase, session.user.id)
-              if (mounted) setDailyCount(count)
+              const balance = await getTokenBalance(supabase, session.user.id)
+              if (mounted) {
+                setDailyCount(count)
+                setTokenBalance(balance)
+              }
             }
           }
         } catch (error) {
@@ -160,10 +188,12 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     user,
     dbUser,
     dailyCount,
+    tokenBalance,
     loading,
     signInAnonymously,
     signOut,
     refreshDailyCount,
+    refreshTokenBalance,
   }
 
   return (

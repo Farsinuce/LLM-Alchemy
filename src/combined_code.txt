@@ -1,4 +1,4 @@
-===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\consolidate-files.bat ===== 
+===== START: C:\AI\LLM-Alchemy\src\consolidate-files.bat ===== 
 @echo off
 setlocal enabledelayedexpansion
 
@@ -82,10 +82,10 @@ if !skippedCount! GTR 0 echo Files skipped (media/binary): !skippedCount!
 echo ========================================
 echo.
 pause 
-===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\consolidate-files.bat ===== 
+===== END: C:\AI\LLM-Alchemy\src\consolidate-files.bat ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\app\globals.css ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\globals.css ===== 
 @import "tailwindcss";
 
 :root {
@@ -113,10 +113,10 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
  
-===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\app\globals.css ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\globals.css ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\app\layout.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\layout.tsx ===== 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -155,31 +155,77 @@ export default function RootLayout({
   );
 }
  
-===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\app\layout.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\layout.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\app\page.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\page.tsx ===== 
 'use client'
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Sparkles, ArrowRight } from 'lucide-react';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
+import { createClient, getGameProgress, resetGameState } from '@/lib/supabase-client';
+
+interface GameProgress {
+  science: { elements: number, endElements: number, achievements: number, lastPlayed?: string } | null;
+  creative: { elements: number, endElements: number, achievements: number, lastPlayed?: string } | null;
+  lastMode: 'science' | 'creative';
+}
 
 export default function Home() {
-  const { user, loading } = useSupabase();
+  const { user, dailyCount, loading } = useSupabase();
   const router = useRouter();
+  const [progress, setProgress] = useState<GameProgress | null>(null);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetAchievements, setResetAchievements] = useState(false);
+  const [selectedMode, setSelectedMode] = useState<'science' | 'creative'>('science');
 
-  const handlePlayNow = () => {
-    router.push('/game');
+  // Load game progress when user is available
+  useEffect(() => {
+    const loadProgress = async () => {
+      if (user) {
+        const supabase = createClient();
+        const gameProgress = await getGameProgress(supabase, user.id);
+        setProgress(gameProgress);
+      }
+    };
+
+    loadProgress();
+  }, [user]);
+
+  const hasAnyProgress = progress && (progress.science || progress.creative);
+
+  const handleContinueGame = () => {
+    if (hasAnyProgress && progress) {
+      // Go to game with last played mode
+      router.push(`/game?mode=${progress.lastMode}`);
+    } else {
+      // No progress, start new game in science mode
+      router.push('/game?mode=science');
+    }
   };
 
-  // Auto-redirect to game if already has user (anonymous users are created automatically)
-  useEffect(() => {
-    if (user && !loading) {
-      router.push('/game');
+  const handleResetMode = (gameMode: 'science' | 'creative') => {
+    setSelectedMode(gameMode);
+    setShowResetModal(true);
+  };
+
+  const confirmReset = async () => {
+    if (user) {
+      const supabase = createClient();
+      await resetGameState(supabase, user.id, selectedMode, resetAchievements);
+      setShowResetModal(false);
+      setResetAchievements(false);
+      // Refresh progress display
+      const gameProgress = await getGameProgress(supabase, user.id);
+      setProgress(gameProgress);
     }
-  }, [user, loading, router]);
+  };
+
+  const formatElementCount = (count: number) => {
+    return count === 0 ? 'None' : `${count} element${count === 1 ? '' : 's'}`;
+  };
 
   if (loading) {
     return (
@@ -191,23 +237,81 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4">
-      <div className="max-w-md w-full text-center">
+      <div className="max-w-lg w-full text-center">
         <div className="flex items-center justify-center gap-3 mb-8">
           <Sparkles className="text-yellow-400" size={48} />
           <h1 className="text-5xl font-bold">LLM Alchemy</h1>
         </div>
         
         <p className="text-lg text-gray-300 mb-8">
-          Combine elements to discover new ones using the power of AI.
-          Choose between Science mode for realistic combinations or Creative mode for imaginative results!
+          Combine elements to discover new ones using AI.
+          Science mode for realistic combinations, Creative mode for imaginative results!
         </p>
+
+        {/* Progress Display */}
+        {hasAnyProgress && (
+          <div className="bg-gray-800/50 rounded-lg p-6 mb-6 text-left">
+            <h3 className="text-lg font-semibold mb-4 text-center">Your Progress</h3>
+            
+            <div className="space-y-3">
+              {progress?.science && (
+                <div className="flex justify-between items-center py-2 px-3 bg-blue-600/20 rounded">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">
+                      <span className="hidden sm:inline">🧪 </span>Science Mode
+                    </span>
+                    <span className="text-xs text-gray-400">|</span>
+                    <span className="text-sm text-gray-300">
+                      {progress.science.elements} elements
+                      {progress.science.endElements > 0 && `, ${progress.science.endElements} end`}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleResetMode('science')}
+                    className="text-red-400 hover:text-red-300 transition-colors text-lg"
+                    title="Reset Science Mode"
+                  >
+                    ❌
+                  </button>
+                </div>
+              )}
+              
+              {progress?.creative && (
+                <div className="flex justify-between items-center py-2 px-3 bg-purple-600/20 rounded">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">
+                      <span className="hidden sm:inline">🎨 </span>Creative Mode
+                    </span>
+                    <span className="text-xs text-gray-400">|</span>
+                    <span className="text-sm text-gray-300">
+                      {progress.creative.elements} elements
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleResetMode('creative')}
+                    className="text-red-400 hover:text-red-300 transition-colors text-lg"
+                    title="Reset Creative Mode"
+                  >
+                    ❌
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="text-center mt-4 text-sm text-gray-400">
+              Today: {dailyCount}/50 combinations used
+            </div>
+          </div>
+        )}
         
+        {/* Single Action Button */}
         <div className="space-y-4">
           <button 
-            onClick={handlePlayNow}
-            className="block w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105"
+            onClick={handleContinueGame}
+            className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105"
           >
-            {user ? 'Continue Playing' : 'Play Now'}
+            {hasAnyProgress ? 'Continue Game' : 'New Game'}
+            <ArrowRight size={20} />
           </button>
           
           <div className="text-sm text-gray-400">
@@ -215,14 +319,56 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Reset Mode Confirmation Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-xl p-6 max-w-sm w-full">
+            <h3 className="text-xl font-bold mb-3">Reset Progress?</h3>
+            <p className="text-gray-300 mb-4">
+              Reset current progress in {selectedMode} mode and start fresh?
+            </p>
+            
+            <div className="mb-6">
+              <label className="flex items-center gap-2 text-sm">
+                <input 
+                  type="checkbox"
+                  checked={resetAchievements}
+                  onChange={(e) => setResetAchievements(e.target.checked)}
+                  className="rounded"
+                />
+                Also reset achievements
+              </label>
+            </div>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowResetModal(false);
+                  setResetAchievements(false);
+                }}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmReset}
+                className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded transition-colors font-medium"
+              >
+                Reset Progress
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
  
-===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\app\page.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\page.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\app\api\generate\route.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\api\generate\route.ts ===== 
 import { NextRequest, NextResponse } from 'next/server';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
@@ -343,10 +489,10 @@ export async function POST(req: NextRequest) {
   }
 }
  
-===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\app\api\generate\route.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\api\generate\route.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\app\game\page.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\game\page.tsx ===== 
 'use client';
 
 import { useSupabase } from '@/components/auth/SupabaseProvider';
@@ -376,10 +522,10 @@ export default function GamePage() {
   return <LLMAlchemy />;
 }
  
-===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\app\game\page.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\game\page.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\components\auth\SupabaseProvider.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\auth\SupabaseProvider.tsx ===== 
 'use client'
 
 import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
@@ -453,64 +599,82 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true
+    let isInitializing = false
     
-    // Get initial session
-    const getInitialSession = async () => {
+    const initializeAuth = async () => {
+      if (isInitializing) return
+      isInitializing = true
+      
       try {
+        // Get current session
         const { data: { session } } = await supabase.auth.getSession()
         
         if (!mounted) return
         
-        setUser(session?.user || null)
-        
         if (session?.user) {
-          // Get or create DB user record
+          // User already exists
+          setUser(session.user)
+          
+          // Get DB user record
           const dbUser = await getOrCreateAnonymousUser(supabase)
-          if (mounted) {
+          if (mounted && dbUser) {
             setDbUser(dbUser)
-            // Get daily count
-            if (dbUser) {
-              const count = await getDailyCount(supabase, session.user.id)
+            const count = await getDailyCount(supabase, session.user.id)
+            if (mounted) setDailyCount(count)
+          }
+        } else {
+          // No session, create anonymous user
+          const dbUser = await getOrCreateAnonymousUser(supabase)
+          if (mounted && dbUser) {
+            setDbUser(dbUser)
+            // Get the new session
+            const { data: { session: newSession } } = await supabase.auth.getSession()
+            if (newSession?.user && mounted) {
+              setUser(newSession.user)
+              const count = await getDailyCount(supabase, newSession.user.id)
               if (mounted) setDailyCount(count)
             }
           }
-        } else {
-          // Auto-create anonymous user on first visit
-          await signInAnonymously()
         }
       } catch (error) {
-        console.error('❌ Error getting initial session:', error)
+        console.error('Auth initialization error:', error)
       } finally {
-        if (mounted) setLoading(false)
+        if (mounted) {
+          setLoading(false)
+          isInitializing = false
+        }
       }
     }
 
-    getInitialSession()
+    // Initialize auth
+    initializeAuth()
 
-    // Listen for auth changes - only set user, don't create DB records here
+    // Listen for auth state changes (but don't trigger during initialization)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!mounted) return
+        if (!mounted || isInitializing) return
         
-        if (event === 'SIGNED_IN' && session?.user) {
-          setUser(session.user)
-          
-          // Get DB user and daily count for newly signed in user
-          const dbUser = await getOrCreateAnonymousUser(supabase)
-          if (mounted) {
-            setDbUser(dbUser)
-            if (dbUser) {
+        try {
+          if (event === 'SIGNED_OUT') {
+            setUser(null)
+            setDbUser(null)
+            setDailyCount(0)
+          } else if (event === 'SIGNED_IN' && session?.user) {
+            setUser(session.user)
+            
+            // Get or create DB user
+            const dbUser = await getOrCreateAnonymousUser(supabase)
+            if (mounted && dbUser) {
+              setDbUser(dbUser)
               const count = await getDailyCount(supabase, session.user.id)
               if (mounted) setDailyCount(count)
             }
           }
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null)
-          setDbUser(null)
-          setDailyCount(0)
+        } catch (error) {
+          console.error('Auth state change error:', error)
+        } finally {
+          if (mounted) setLoading(false)
         }
-        
-        if (mounted) setLoading(false)
       }
     )
 
@@ -518,7 +682,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [supabase, signInAnonymously])
+  }, [supabase])
 
   const value = {
     user,
@@ -545,11 +709,11 @@ export function useSupabase() {
   return context
 }
  
-===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\components\auth\SupabaseProvider.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\auth\SupabaseProvider.tsx ===== 
  
  
  
-===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\lib\supabase-client.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\supabase-client.ts ===== 
 import { createBrowserClient } from '@supabase/ssr'
 
 // Types for our database schema
@@ -590,10 +754,15 @@ export interface DiscoveredElement {
 
 // Browser client for client-side operations
 export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  // Clean implementation without debug logs
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase environment variables')
+  }
+  
+  return createBrowserClient(supabaseUrl, supabaseKey)
 }
 
 // Helper functions for common database operations
@@ -662,9 +831,19 @@ export async function getDailyCount(supabase: any, userId: string): Promise<numb
       .eq('date', today)
       .single()
     
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-      console.error('Error getting daily count:', error)
-      return 0
+    if (error) {
+      // Handle different error types gracefully
+      if (error.code === 'PGRST116') {
+        // No rows returned - user hasn't used any combinations today
+        return 0
+      } else if (error.code === 'PGRST301' || error.message?.includes('406')) {
+        // RLS policy issues - return 0 and continue silently
+        console.warn('Database access restricted, continuing with fallback')
+        return 0
+      } else {
+        console.error('Error getting daily count:', error)
+        return 0
+      }
     }
     
     return data?.daily_count || 0
@@ -676,37 +855,17 @@ export async function getDailyCount(supabase: any, userId: string): Promise<numb
 
 export async function incrementDailyCount(supabase: any, userId: string): Promise<number> {
   try {
-    const today = new Date().toISOString().split('T')[0]
-    
-    // Use upsert to handle both insert and update
-    const { data, error } = await supabase
-      .from('user_sessions')
-      .upsert({
-        user_id: userId,
-        date: today,
-        daily_count: 1
-      }, {
-        onConflict: 'user_id,date',
-        ignoreDuplicates: false
-      })
-      .select()
-      .single()
+    // Use the database function to atomically increment
+    const { data, error } = await supabase.rpc('increment_daily_count', {
+      p_user_id: userId
+    })
 
     if (error) {
-      // If upsert failed, try to increment existing record
-      const { data: incrementData, error: incrementError } = await supabase.rpc('increment_daily_count', {
-        p_user_id: userId
-      })
-
-      if (incrementError) {
-        console.error('Error incrementing daily count:', incrementError)
-        return 0
-      }
-
-      return incrementData || 1
+      console.error('Error incrementing daily count:', error)
+      return 0
     }
 
-    return data?.daily_count || 1
+    return data || 1
   } catch (error) {
     console.error('Error in incrementDailyCount:', error)
     return 0
@@ -746,9 +905,19 @@ export async function loadGameState(supabase: any, userId: string, gameMode: str
       .eq('game_mode', gameMode)
       .single()
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error loading game state:', error)
-      return null
+    if (error) {
+      // Handle different error types gracefully
+      if (error.code === 'PGRST116') {
+        // No rows returned - no saved state for this mode
+        return null
+      } else if (error.code === 'PGRST301' || error.message?.includes('406')) {
+        // RLS policy issues - return null and continue silently
+        console.warn('Database access restricted for game state, continuing without persistence')
+        return null
+      } else {
+        console.error('Error loading game state:', error)
+        return null
+      }
     }
 
     return data
@@ -757,11 +926,115 @@ export async function loadGameState(supabase: any, userId: string, gameMode: str
     return null
   }
 }
+
+export async function getGameProgress(supabase: any, userId: string): Promise<{
+  science: { elements: number, endElements: number, achievements: number, lastPlayed?: string } | null,
+  creative: { elements: number, endElements: number, achievements: number, lastPlayed?: string } | null,
+  lastMode: 'science' | 'creative'
+}> {
+  try {
+    const { data, error } = await supabase
+      .from('game_states')
+      .select('*')
+      .eq('user_id', userId)
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error getting game progress:', error)
+      return { science: null, creative: null, lastMode: 'science' }
+    }
+
+    if (!data || data.length === 0) {
+      return { science: null, creative: null, lastMode: 'science' }
+    }
+
+    const progress = {
+      science: null as any,
+      creative: null as any,
+      lastMode: 'science' as 'science' | 'creative'
+    }
+
+    // Find the most recently updated mode
+    let latestUpdate = 0
+    
+    data.forEach((gameState: GameState) => {
+      const updatedAt = new Date(gameState.updated_at).getTime()
+      if (updatedAt > latestUpdate) {
+        latestUpdate = updatedAt
+        progress.lastMode = gameState.game_mode
+      }
+
+      const modeProgress = {
+        elements: Array.isArray(gameState.elements) ? gameState.elements.length : 0,
+        endElements: Array.isArray(gameState.end_elements) ? gameState.end_elements.length : 0,
+        achievements: Array.isArray(gameState.achievements) ? gameState.achievements.length : 0,
+        lastPlayed: gameState.updated_at
+      }
+
+      if (gameState.game_mode === 'science') {
+        progress.science = modeProgress
+      } else if (gameState.game_mode === 'creative') {
+        progress.creative = modeProgress
+      }
+    })
+
+    return progress
+  } catch (error) {
+    console.error('Error in getGameProgress:', error)
+    return { science: null, creative: null, lastMode: 'science' }
+  }
+}
+
+export async function resetGameState(supabase: any, userId: string, gameMode: string, includeAchievements: boolean = false): Promise<boolean> {
+  try {
+    if (includeAchievements) {
+      // Delete the entire game state record
+      const { error } = await supabase
+        .from('game_states')
+        .delete()
+        .eq('user_id', userId)
+        .eq('game_mode', gameMode)
+
+      if (error) {
+        console.error('Error deleting game state:', error)
+        return false
+      }
+    } else {
+      // Get existing achievements first
+      const existingState = await loadGameState(supabase, userId, gameMode)
+      const existingAchievements = existingState?.achievements || []
+      
+      // Reset but keep achievements
+      const { error } = await supabase
+        .from('game_states')
+        .upsert({
+          user_id: userId,
+          game_mode: gameMode,
+          elements: [],
+          end_elements: [],
+          combinations: {},
+          achievements: existingAchievements, // Preserve existing achievements
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,game_mode'
+        })
+
+      if (error) {
+        console.error('Error resetting game state:', error)
+        return false
+      }
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error in resetGameState:', error)
+    return false
+  }
+}
  
-===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\lib\supabase-client.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\supabase-client.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\lib\supabase.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\supabase.ts ===== 
 import { createBrowserClient } from '@supabase/ssr'
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
@@ -1033,6 +1306,6 @@ export async function loadGameState(supabase: any, userId: string, gameMode: str
   }
 }
  
-===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\lib\supabase.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\supabase.ts ===== 
  
  
