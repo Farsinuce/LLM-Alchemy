@@ -43,6 +43,9 @@ export async function POST(req: NextRequest) {
     // Use standard text format for both models
     const messageContent = prompt;
 
+    // Adjust max_tokens based on model - Pro needs more tokens due to reasoning mode
+    const maxTokens = model.includes('gemini-2.5-pro') ? 1500 : 500;
+    
     const response = await fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
@@ -60,7 +63,7 @@ export async function POST(req: NextRequest) {
           }
         ],
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: maxTokens,
         top_p: 0.9,
       }),
     });

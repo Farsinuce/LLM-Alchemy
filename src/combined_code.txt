@@ -1,0 +1,1654 @@
+===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\consolidate-files.bat ===== 
+@echo off
+setlocal enabledelayedexpansion
+
+:: Prompt user for search pattern
+echo File Consolidator - Combines multiple files into one text file
+echo.
+set /p "pattern=Enter file pattern (e.g., *.txt, *.java, main.*, *.*): "
+
+:: Ask whether to exclude media files (only for wildcard patterns)
+set "excludeMedia=false"
+echo.
+if "%pattern%"=="*.*" (
+    set /p "choice=Do you want to exclude common media files (jpg, png, mp3, etc)? [Y/N]: "
+    if /I "!choice!"=="Y" set "excludeMedia=true"
+) else (
+    :: Check if pattern ends with .* (but not *.*)
+    set "checkPattern=%pattern%"
+    if "!checkPattern:~-2!"==".*" (
+        set /p "choice=Do you want to exclude common media files? [Y/N]: "
+        if /I "!choice!"=="Y" set "excludeMedia=true"
+    )
+)
+
+:: Define media extensions to exclude
+set "mediaExt=.png .jpg .jpeg .gif .ico .bmp .tiff .tif .svg .webp"
+set "mediaExt=!mediaExt! .mp4 .mp3 .wav .avi .mkv .mov .flac .ogg .m4a .wma"
+set "mediaExt=!mediaExt! .zip .rar .7z .tar .gz .exe .dll .bin .iso"
+set "mediaExt=!mediaExt! .pdf .doc .docx .xls .xlsx .ppt .pptx"
+
+:: Output filename
+set "outputFile=combined_output.txt"
+
+:: Remove existing output file
+if exist "%outputFile%" del "%outputFile%"
+
+:: Count files
+set "fileCount=0"
+set "skippedCount=0"
+
+echo.
+echo Processing files matching pattern: %pattern%
+echo.
+
+:: Process matching files
+for /R %%F in (%pattern%) do (
+    set "ext=%%~xF"
+    set "includeFile=true"
+    
+    :: Skip if it's the output file itself
+    if /I "%%~nxF"=="%outputFile%" set "includeFile=false"
+    
+    :: Check if we should exclude this file type
+    if /I "!excludeMedia!"=="true" if "!includeFile!"=="true" (
+        for %%M in (%mediaExt%) do (
+            if /I "%%~xF"=="%%M" (
+                set "includeFile=false"
+                set /a skippedCount+=1
+            )
+        )
+    )
+    
+    :: Add file to output
+    if "!includeFile!"=="true" (
+        echo Processing: %%~nxF
+        echo ===== START: %%F ===== >> "%outputFile%"
+        type "%%F" >> "%outputFile%" 2>nul
+        echo. >> "%outputFile%"
+        echo ===== END: %%F ===== >> "%outputFile%"
+        echo. >> "%outputFile%"
+        echo. >> "%outputFile%"
+        set /a fileCount+=1
+    )
+)
+
+:: Summary
+echo.
+echo ========================================
+echo Done! Results saved to: %outputFile%
+echo Files processed: !fileCount!
+if !skippedCount! GTR 0 echo Files skipped (media/binary): !skippedCount!
+echo ========================================
+echo.
+pause 
+===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\consolidate-files.bat ===== 
+ 
+ 
+===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\app\globals.css ===== 
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+ 
+===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\app\globals.css ===== 
+ 
+ 
+===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\app\layout.tsx ===== 
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { SupabaseProvider } from "@/components/auth/SupabaseProvider";
+
+const geist = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "LLM Alchemy - AI Element Combination Game",
+  description: "Discover new elements by combining existing ones using the power of AI. Choose between Science mode for realistic combinations or Creative mode for imaginative results!",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body
+        className={`${geist.variable} ${geistMono.variable} antialiased`}
+      >
+        <SupabaseProvider>
+          {children}
+        </SupabaseProvider>
+      </body>
+    </html>
+  );
+}
+ 
+===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\app\layout.tsx ===== 
+ 
+ 
+===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\app\page.tsx ===== 
+'use client'
+
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { Sparkles, ArrowRight, X } from 'lucide-react';
+import { useSupabase } from '@/components/auth/SupabaseProvider';
+import { createClient, getGameProgress, resetGameState } from '@/lib/supabase-client';
+
+interface GameProgress {
+  science: { elements: number, endElements: number, achievements: number, lastPlayed?: string } | null;
+  creative: { elements: number, endElements: number, achievements: number, lastPlayed?: string } | null;
+  lastMode: 'science' | 'creative';
+}
+
+export default function Home() {
+  const { user, dailyCount, loading } = useSupabase();
+  const router = useRouter();
+  const [progress, setProgress] = useState<GameProgress | null>(null);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetAchievements, setResetAchievements] = useState(false);
+  const [selectedMode, setSelectedMode] = useState<'science' | 'creative'>('science');
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [userApiKey, setUserApiKey] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
+  const [tempApiKey, setTempApiKey] = useState<string>('');
+  const [isValidatingKey, setIsValidatingKey] = useState<boolean>(false);
+
+  // API key validation function
+  const validateApiKey = async (apiKey: string): Promise<boolean> => {
+    if (!apiKey.trim()) return false;
+    
+    setIsValidatingKey(true);
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          prompt: 'Test validation. Respond with just: {"result": "test", "emoji": "✅", "color": "#00FF00", "rarity": "common", "reasoning": "validation test", "tags": []}',
+          gameMode: 'science',
+          apiKey: apiKey,
+          useProModel: false
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        return !result.error;
+      }
+      return false;
+    } catch (error) {
+      console.error('API key validation error:', error);
+      return false;
+    } finally {
+      setIsValidatingKey(false);
+    }
+  };
+
+  // Load API key from localStorage on mount
+  useEffect(() => {
+    const savedApiKey = localStorage.getItem('llm-alchemy-api-key');
+    const savedModel = localStorage.getItem('llm-alchemy-model') as 'flash' | 'pro';
+    
+    if (savedApiKey) {
+      setUserApiKey(savedApiKey);
+    }
+    if (savedModel && (savedModel === 'flash' || savedModel === 'pro')) {
+      setSelectedModel(savedModel);
+    }
+  }, []);
+
+  // Save API key to localStorage when it changes
+  useEffect(() => {
+    if (userApiKey) {
+      localStorage.setItem('llm-alchemy-api-key', userApiKey);
+      localStorage.setItem('llm-alchemy-model', selectedModel);
+    } else {
+      localStorage.removeItem('llm-alchemy-api-key');
+      localStorage.removeItem('llm-alchemy-model');
+    }
+  }, [userApiKey, selectedModel]);
+
+  // Load game progress when user is available
+  useEffect(() => {
+    const loadProgress = async () => {
+      if (user) {
+        const supabase = createClient();
+        const gameProgress = await getGameProgress(supabase, user.id);
+        setProgress(gameProgress);
+      }
+    };
+
+    loadProgress();
+  }, [user]);
+
+  // Refresh progress when page becomes visible (returning from game)
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (!document.hidden && user) {
+        const supabase = createClient();
+        const gameProgress = await getGameProgress(supabase, user.id);
+        setProgress(gameProgress);
+      }
+    };
+
+    const handleFocus = async () => {
+      if (user) {
+        const supabase = createClient();
+        const gameProgress = await getGameProgress(supabase, user.id);
+        setProgress(gameProgress);
+      }
+    };
+
+    // Listen for page visibility changes and window focus
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user]);
+
+  const hasAnyProgress = progress && (progress.science || progress.creative);
+
+  const handleContinueGame = () => {
+    if (hasAnyProgress && progress) {
+      // Go to game with last played mode
+      router.push(`/game?mode=${progress.lastMode}`);
+    } else {
+      // No progress, start new game in science mode
+      router.push('/game?mode=science');
+    }
+  };
+
+  const handleResetMode = (gameMode: 'science' | 'creative') => {
+    setSelectedMode(gameMode);
+    setShowResetModal(true);
+  };
+
+  const confirmReset = async () => {
+    if (user) {
+      const supabase = createClient();
+      await resetGameState(supabase, user.id, selectedMode, resetAchievements);
+      setShowResetModal(false);
+      setResetAchievements(false);
+      // Refresh progress display
+      const gameProgress = await getGameProgress(supabase, user.id);
+      setProgress(gameProgress);
+    }
+  };
+
+  const formatElementCount = (count: number) => {
+    return count === 0 ? 'None' : `${count} element${count === 1 ? '' : 's'}`;
+  };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-xl">Loading...</div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4">
+      <div className="max-w-lg w-full text-center">
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <Sparkles className="text-yellow-400" size={48} />
+          <h1 className="text-5xl font-bold">LLM Alchemy</h1>
+        </div>
+        
+        <p className="text-lg text-gray-300 mb-8">
+          Combine elements to discover new ones using AI.
+          Science mode for realistic combinations, Creative mode for imaginative results!
+        </p>
+
+        {/* Progress Display */}
+        {hasAnyProgress && (
+          <div className="bg-gray-800/50 rounded-lg p-6 mb-6 text-left">
+            <h3 className="text-lg font-semibold mb-4 text-center">Your Progress</h3>
+            
+            <div className="space-y-3">
+              {progress?.science && (
+                <div className="flex justify-between items-center py-2 px-3 bg-blue-600/20 rounded">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">
+                      <span className="hidden sm:inline">🧪 </span>Science Mode
+                    </span>
+                    <span className="text-xs text-gray-400">|</span>
+                    <span className="text-sm text-gray-300">
+                      {progress.science.elements} elements
+                      {progress.science.endElements > 0 && `, ${progress.science.endElements} end`}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleResetMode('science')}
+                    className="text-red-400 hover:text-red-300 transition-colors text-lg"
+                    title="Reset Science Mode"
+                  >
+                    ❌
+                  </button>
+                </div>
+              )}
+              
+              {progress?.creative && (
+                <div className="flex justify-between items-center py-2 px-3 bg-purple-600/20 rounded">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">
+                      <span className="hidden sm:inline">🎨 </span>Creative Mode
+                    </span>
+                    <span className="text-xs text-gray-400">|</span>
+                    <span className="text-sm text-gray-300">
+                      {progress.creative.elements} elements
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleResetMode('creative')}
+                    className="text-red-400 hover:text-red-300 transition-colors text-lg"
+                    title="Reset Creative Mode"
+                  >
+                    ❌
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="text-center mt-4 text-sm text-gray-400">
+              Today: {dailyCount}/50 combinations used
+            </div>
+          </div>
+        )}
+        
+        {/* Single Action Button */}
+        <div className="space-y-4">
+          <button 
+            onClick={handleContinueGame}
+            className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105"
+          >
+            {hasAnyProgress ? 'Continue Game' : 'New Game'}
+            <ArrowRight size={20} />
+          </button>
+          
+          <div className="text-sm text-gray-400">
+            Free to play • 50 combinations per day
+          </div>
+          
+          {/* API Key Button - More subtle */}
+          <div className="flex justify-center">
+            <button
+              onClick={() => {
+                setTempApiKey(userApiKey);
+                setShowApiKeyModal(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-gray-300 hover:text-white"
+            >
+              <span>🔑</span>
+              <span>{userApiKey ? 'Update API Key' : 'Use Your Own API Key'}</span>
+            </button>
+          </div>
+          
+          {userApiKey && (
+            <div className="text-xs text-green-400 mt-2">
+              ✓ Using your OpenRouter API key • Unlimited combinations
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* API Key Modal */}
+      {showApiKeyModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowApiKeyModal(false);
+            }
+          }}
+        >
+          <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">API Key Settings</h3>
+              <button
+                onClick={() => setShowApiKeyModal(false)}
+                className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  OpenRouter API Key
+                </label>
+                <input
+                  type="password"
+                  value={tempApiKey}
+                  onChange={(e) => setTempApiKey(e.target.value)}
+                  placeholder="sk-or-..."
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Use your own API key to play without daily limits
+                </p>
+              </div>
+              
+              {tempApiKey && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Model Selection
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="flash"
+                        checked={selectedModel === 'flash'}
+                        onChange={(e) => setSelectedModel(e.target.value as 'flash' | 'pro')}
+                        className="text-purple-500"
+                      />
+                      <span>Gemini Flash 2.5 (Faster, Cheaper)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="pro"
+                        checked={selectedModel === 'pro'}
+                        onChange={(e) => setSelectedModel(e.target.value as 'flash' | 'pro')}
+                        className="text-purple-500"
+                      />
+                      <span>Gemini Pro 2.5 (Better Quality)</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex gap-2 justify-end mt-6">
+                <button
+                  onClick={() => setShowApiKeyModal(false)}
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (tempApiKey.trim()) {
+                      // Validate API key before saving
+                      const isValid = await validateApiKey(tempApiKey);
+                      if (isValid) {
+                        setUserApiKey(tempApiKey);
+                        setShowApiKeyModal(false);
+                      } else {
+                        alert('Invalid API key. Please check your OpenRouter API key and try again.');
+                        return;
+                      }
+                    } else {
+                      // Allow clearing the API key
+                      setUserApiKey('');
+                      setShowApiKeyModal(false);
+                    }
+                  }}
+                  disabled={isValidatingKey}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    isValidatingKey 
+                      ? 'bg-gray-600 cursor-not-allowed' 
+                      : 'bg-purple-600 hover:bg-purple-500'
+                  }`}
+                >
+                  {isValidatingKey ? 'Validating...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Mode Confirmation Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-xl p-6 max-w-sm w-full">
+            <h3 className="text-xl font-bold mb-3">Reset Progress?</h3>
+            <p className="text-gray-300 mb-4">
+              Reset current progress in {selectedMode} mode and start fresh?
+            </p>
+            
+            <div className="mb-6">
+              <label className="flex items-center gap-2 text-sm">
+                <input 
+                  type="checkbox"
+                  checked={resetAchievements}
+                  onChange={(e) => setResetAchievements(e.target.checked)}
+                  className="rounded"
+                />
+                Also reset achievements
+              </label>
+            </div>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowResetModal(false);
+                  setResetAchievements(false);
+                }}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmReset}
+                className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded transition-colors font-medium"
+              >
+                Reset Progress
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}
+ 
+===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\app\page.tsx ===== 
+ 
+ 
+===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\app\api\generate\route.ts ===== 
+import { NextRequest, NextResponse } from 'next/server';
+
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+export async function POST(req: NextRequest) {
+  try {
+    const { prompt, gameMode, apiKey, useProModel } = await req.json();
+
+    // Use custom API key if provided, otherwise use server's key
+    const activeApiKey = apiKey || OPENROUTER_API_KEY;
+
+    if (!activeApiKey) {
+      console.error('No API key available');
+      return NextResponse.json(
+        { error: 'No API key configured' },
+        { status: 500 }
+      );
+    }
+
+    // Model selection logic:
+    // - If custom API key: user can choose between Flash and Pro
+    // - If no custom key: Flash for freemium, Pro for paying (with tokens)
+    let model;
+    let userType;
+    let reason;
+    
+    if (apiKey) {
+      // User has their own API key, use their preference
+      model = useProModel ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash';
+      userType = 'API Key User';
+      reason = `User preference (${useProModel ? 'Pro' : 'Flash'} selected)`;
+    } else {
+      // Server's API key: Flash for freemium, Pro for paying users
+      model = useProModel ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash';
+      userType = useProModel ? 'Token User' : 'Freemium User';
+      reason = useProModel ? 'Has tokens (Pro model)' : 'Daily limit user (Flash model)';
+    }
+    
+    // Log model selection for debugging
+    console.log(`[LLM-Alchemy API] User Type: ${userType} | Model: ${model} | Reason: ${reason}`);
+
+    // Use standard text format for both models
+    const messageContent = prompt;
+
+    const response = await fetch(OPENROUTER_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${activeApiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+        'X-Title': 'LLM Alchemy Game',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'user',
+            content: messageContent
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500,
+        top_p: 0.9,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenRouter API error:', response.status, errorText);
+      return NextResponse.json(
+        { error: `OpenRouter API error: ${response.status}` },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    
+    // Enhanced debugging for model comparison
+    console.log(`[LLM-Alchemy API] Model used: ${model}`);
+    console.log(`[LLM-Alchemy API] OpenRouter response:`, {
+      model: data.model,
+      usage: data.usage,
+      hasChoices: !!data.choices,
+      choicesLength: data.choices?.length
+    });
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Invalid response structure:', data);
+      return NextResponse.json(
+        { error: 'Invalid response from OpenRouter' },
+        { status: 500 }
+      );
+    }
+
+    const content = data.choices[0].message.content;
+    
+    // Log the raw content for debugging differences between models
+    console.log(`[LLM-Alchemy API] Raw response content for ${model}:`, content);
+    
+    // Parse the JSON response from the LLM
+    let parsedResult;
+    try {
+      // Extract JSON from the response if it's wrapped in code blocks or other text
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        console.log(`[LLM-Alchemy API] Extracted JSON for ${model}:`, jsonMatch[0]);
+        parsedResult = JSON.parse(jsonMatch[0]);
+      } else {
+        console.log(`[LLM-Alchemy API] Parsing content directly for ${model}`);
+        parsedResult = JSON.parse(content);
+      }
+    } catch (parseError) {
+      console.error(`[LLM-Alchemy API] Failed to parse ${model} response:`, content);
+      console.error('Parse error:', parseError);
+      
+      // Fallback to null result
+      return NextResponse.json({
+        result: null,
+        emoji: '❌',
+        color: '#808080',
+        rarity: 'common',
+        reasoning: 'Failed to parse response',
+        tags: [],
+        isEndElement: false
+      });
+    }
+
+    // Validate the parsed result
+    const validatedResult = {
+      result: parsedResult.result || null,
+      emoji: parsedResult.emoji || '✨',
+      color: parsedResult.color || '#808080',
+      rarity: parsedResult.rarity || 'common',
+      reasoning: parsedResult.reasoning || '',
+      tags: Array.isArray(parsedResult.tags) ? parsedResult.tags : [],
+      isEndElement: parsedResult.isEndElement || false
+    };
+
+    return NextResponse.json(validatedResult);
+
+  } catch (error) {
+    console.error('Generation error:', error);
+    
+    // Check if it's a network error
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      return NextResponse.json(
+        { error: 'Network error: Unable to connect to OpenRouter' },
+        { status: 503 }
+      );
+    }
+    
+    return NextResponse.json(
+      { error: 'Failed to generate combination' },
+      { status: 500 }
+    );
+  }
+}
+ 
+===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\app\api\generate\route.ts ===== 
+ 
+ 
+===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\app\game\page.tsx ===== 
+'use client';
+
+import { useSupabase } from '@/components/auth/SupabaseProvider';
+import dynamic from 'next/dynamic';
+
+// Dynamic import to avoid SSR issues with browser-only APIs
+const LLMAlchemy = dynamic(() => import('@/components/game/LLMAlchemy'), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="text-white text-xl">Loading game...</div>
+    </div>
+  )
+});
+
+export default function GamePage() {
+  const { user, loading } = useSupabase();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading game...</div>
+      </div>
+    );
+  }
+
+  return <LLMAlchemy />;
+}
+ 
+===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\app\game\page.tsx ===== 
+ 
+ 
+===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\components\auth\SupabaseProvider.tsx ===== 
+'use client'
+
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
+import { createClient } from '@/lib/supabase-client'
+import { User } from '@supabase/supabase-js'
+import { User as DBUser, getOrCreateAnonymousUser, getDailyCount, getTokenBalance } from '@/lib/supabase-client'
+
+interface SupabaseContextType {
+  user: User | null
+  dbUser: DBUser | null
+  dailyCount: number
+  tokenBalance: number
+  loading: boolean
+  signInAnonymously: () => Promise<void>
+  signOut: () => Promise<void>
+  refreshDailyCount: () => Promise<void>
+  refreshTokenBalance: () => Promise<void>
+}
+
+const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined)
+
+export function SupabaseProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [dbUser, setDbUser] = useState<DBUser | null>(null)
+  const [dailyCount, setDailyCount] = useState<number>(0)
+  const [tokenBalance, setTokenBalance] = useState<number>(0)
+  const [loading, setLoading] = useState(true)
+  
+  // Memoize supabase client to prevent recreation on every render
+  const supabase = useMemo(() => createClient(), [])
+
+  const refreshDailyCount = useCallback(async () => {
+    if (user) {
+      try {
+        const count = await getDailyCount(supabase, user.id)
+        setDailyCount(count)
+      } catch (error) {
+        console.error('Error refreshing daily count:', error)
+      }
+    }
+  }, [user, supabase])
+
+  const refreshTokenBalance = useCallback(async () => {
+    if (user) {
+      try {
+        const balance = await getTokenBalance(supabase, user.id)
+        setTokenBalance(balance)
+      } catch (error) {
+        console.error('Error refreshing token balance:', error)
+      }
+    }
+  }, [user, supabase])
+
+  const signInAnonymously = useCallback(async () => {
+    try {
+      setLoading(true)
+      const dbUser = await getOrCreateAnonymousUser(supabase)
+      if (dbUser) {
+        setDbUser(dbUser)
+        
+        // Get the session to get the user ID for daily count
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          const count = await getDailyCount(supabase, session.user.id)
+          setDailyCount(count)
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error signing in anonymously:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [supabase])
+
+  const signOut = useCallback(async () => {
+    try {
+      await supabase.auth.signOut()
+      setUser(null)
+      setDbUser(null)
+      setDailyCount(0)
+      setTokenBalance(0)
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
+  }, [supabase])
+
+  useEffect(() => {
+    let mounted = true
+    let isInitializing = false
+    
+    const initializeAuth = async () => {
+      if (isInitializing) return
+      isInitializing = true
+      
+      try {
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (!mounted) return
+        
+        if (session?.user) {
+          // User already exists
+          setUser(session.user)
+          
+          // Get DB user record
+          const dbUser = await getOrCreateAnonymousUser(supabase)
+          if (mounted && dbUser) {
+            setDbUser(dbUser)
+            const count = await getDailyCount(supabase, session.user.id)
+            const balance = await getTokenBalance(supabase, session.user.id)
+            if (mounted) {
+              setDailyCount(count)
+              setTokenBalance(balance)
+            }
+          }
+        } else {
+          // No session, create anonymous user
+          const dbUser = await getOrCreateAnonymousUser(supabase)
+          if (mounted && dbUser) {
+            setDbUser(dbUser)
+            // Get the new session
+            const { data: { session: newSession } } = await supabase.auth.getSession()
+            if (newSession?.user && mounted) {
+              setUser(newSession.user)
+              const count = await getDailyCount(supabase, newSession.user.id)
+              const balance = await getTokenBalance(supabase, newSession.user.id)
+              if (mounted) {
+                setDailyCount(count)
+                setTokenBalance(balance)
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error)
+      } finally {
+        if (mounted) {
+          setLoading(false)
+          isInitializing = false
+        }
+      }
+    }
+
+    // Initialize auth
+    initializeAuth()
+
+    // Listen for auth state changes (but don't trigger during initialization)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted || isInitializing) return
+        
+        try {
+          if (event === 'SIGNED_OUT') {
+            setUser(null)
+            setDbUser(null)
+            setDailyCount(0)
+            setTokenBalance(0)
+          } else if (event === 'SIGNED_IN' && session?.user) {
+            setUser(session.user)
+            
+            // Get or create DB user
+            const dbUser = await getOrCreateAnonymousUser(supabase)
+            if (mounted && dbUser) {
+              setDbUser(dbUser)
+              const count = await getDailyCount(supabase, session.user.id)
+              const balance = await getTokenBalance(supabase, session.user.id)
+              if (mounted) {
+                setDailyCount(count)
+                setTokenBalance(balance)
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Auth state change error:', error)
+        } finally {
+          if (mounted) setLoading(false)
+        }
+      }
+    )
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, [supabase])
+
+  const value = {
+    user,
+    dbUser,
+    dailyCount,
+    tokenBalance,
+    loading,
+    signInAnonymously,
+    signOut,
+    refreshDailyCount,
+    refreshTokenBalance,
+  }
+
+  return (
+    <SupabaseContext.Provider value={value}>
+      {children}
+    </SupabaseContext.Provider>
+  )
+}
+
+export function useSupabase() {
+  const context = useContext(SupabaseContext)
+  if (context === undefined) {
+    throw new Error('useSupabase must be used within a SupabaseProvider')
+  }
+  return context
+}
+ 
+===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\components\auth\SupabaseProvider.tsx ===== 
+ 
+ 
+ 
+===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\lib\supabase-client.ts ===== 
+import { createBrowserClient } from '@supabase/ssr'
+
+// Types for our database schema
+export interface User {
+  id: string
+  email?: string | null
+  created_at: string
+  is_anonymous: boolean
+  subscription_status: 'free' | 'premium'
+  subscription_ends_at?: string | null
+  token_balance?: number
+}
+
+export interface UserSession {
+  id: string
+  user_id: string
+  date: string
+  daily_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface GameState {
+  id: string
+  user_id: string
+  game_mode: 'science' | 'creative'
+  elements: any[]
+  end_elements: any[]
+  combinations: Record<string, string | null>
+  achievements: any[]
+  updated_at: string
+}
+
+export interface DiscoveredElement {
+  user_id: string
+  element_name: string
+  discovered_at: string
+}
+
+// Browser client for client-side operations
+export function createClient() {
+  // Clean implementation without debug logs
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase environment variables')
+  }
+  
+  return createBrowserClient(supabaseUrl, supabaseKey)
+}
+
+// Helper functions for common database operations
+export async function getOrCreateAnonymousUser(supabase: any): Promise<User | null> {
+  try {
+    // First try to get current user
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (user) {
+      // Get user record from our database
+      const { data: dbUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      
+      if (dbUser) {
+        return dbUser
+      }
+    }
+
+    // Create anonymous user
+    const { data, error } = await supabase.auth.signInAnonymously()
+    
+    if (error) {
+      console.error('Error creating anonymous user:', error)
+      return null
+    }
+
+    // Create user record in our database
+    const newUser = {
+      id: data.user.id,
+      email: null,
+      is_anonymous: true,
+      subscription_status: 'free' as const,
+      subscription_ends_at: null
+    }
+
+    const { data: dbUser, error: dbError } = await supabase
+      .from('users')
+      .insert([newUser])
+      .select()
+      .single()
+
+    if (dbError) {
+      console.error('Error creating user record:', dbError)
+      return null
+    }
+
+    return dbUser
+
+  } catch (error) {
+    console.error('Error in getOrCreateAnonymousUser:', error)
+    return null
+  }
+}
+
+export async function getDailyCount(supabase: any, userId: string): Promise<number> {
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    
+    const { data, error } = await supabase
+      .from('user_sessions')
+      .select('daily_count')
+      .eq('user_id', userId)
+      .eq('date', today)
+      .single()
+    
+    if (error) {
+      // Handle different error types gracefully
+      if (error.code === 'PGRST116') {
+        // No rows returned - user hasn't used any combinations today
+        return 0
+      } else if (error.code === 'PGRST301' || error.message?.includes('406')) {
+        // RLS policy issues - return 0 and continue silently
+        console.warn('Database access restricted, continuing with fallback')
+        return 0
+      } else {
+        console.error('Error getting daily count:', error)
+        return 0
+      }
+    }
+    
+    return data?.daily_count || 0
+  } catch (error) {
+    console.error('Error in getDailyCount:', error)
+    return 0
+  }
+}
+
+export async function incrementDailyCount(supabase: any, userId: string): Promise<number> {
+  try {
+    // Use the database function to atomically increment
+    const { data, error } = await supabase.rpc('increment_daily_count', {
+      p_user_id: userId
+    })
+
+    if (error) {
+      console.error('Error incrementing daily count:', error)
+      return 0
+    }
+
+    return data || 1
+  } catch (error) {
+    console.error('Error in incrementDailyCount:', error)
+    return 0
+  }
+}
+
+export async function saveGameState(supabase: any, userId: string, gameState: Partial<GameState>): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('game_states')
+      .upsert({
+        user_id: userId,
+        ...gameState,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,game_mode'
+      })
+
+    if (error) {
+      console.error('Error saving game state:', error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error in saveGameState:', error)
+    return false
+  }
+}
+
+export async function loadGameState(supabase: any, userId: string, gameMode: string): Promise<GameState | null> {
+  try {
+    const { data, error } = await supabase
+      .from('game_states')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('game_mode', gameMode)
+      .single()
+
+    if (error) {
+      // Handle different error types gracefully
+      if (error.code === 'PGRST116') {
+        // No rows returned - no saved state for this mode
+        return null
+      } else if (error.code === 'PGRST301' || error.message?.includes('406')) {
+        // RLS policy issues - return null and continue silently
+        console.warn('Database access restricted for game state, continuing without persistence')
+        return null
+      } else {
+        console.error('Error loading game state:', error)
+        return null
+      }
+    }
+
+    return data
+  } catch (error) {
+    console.error('Error in loadGameState:', error)
+    return null
+  }
+}
+
+export async function getGameProgress(supabase: any, userId: string): Promise<{
+  science: { elements: number, endElements: number, achievements: number, lastPlayed?: string } | null,
+  creative: { elements: number, endElements: number, achievements: number, lastPlayed?: string } | null,
+  lastMode: 'science' | 'creative'
+}> {
+  try {
+    const { data, error } = await supabase
+      .from('game_states')
+      .select('*')
+      .eq('user_id', userId)
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error getting game progress:', error)
+      return { science: null, creative: null, lastMode: 'science' }
+    }
+
+    if (!data || data.length === 0) {
+      return { science: null, creative: null, lastMode: 'science' }
+    }
+
+    const progress = {
+      science: null as any,
+      creative: null as any,
+      lastMode: 'science' as 'science' | 'creative'
+    }
+
+    // Find the most recently updated mode
+    let latestUpdate = 0
+    
+    data.forEach((gameState: GameState) => {
+      const updatedAt = new Date(gameState.updated_at).getTime()
+      if (updatedAt > latestUpdate) {
+        latestUpdate = updatedAt
+        progress.lastMode = gameState.game_mode
+      }
+
+      const modeProgress = {
+        elements: Array.isArray(gameState.elements) ? gameState.elements.length : 0,
+        endElements: Array.isArray(gameState.end_elements) ? gameState.end_elements.length : 0,
+        achievements: Array.isArray(gameState.achievements) ? gameState.achievements.length : 0,
+        lastPlayed: gameState.updated_at
+      }
+
+      if (gameState.game_mode === 'science') {
+        progress.science = modeProgress
+      } else if (gameState.game_mode === 'creative') {
+        progress.creative = modeProgress
+      }
+    })
+
+    return progress
+  } catch (error) {
+    console.error('Error in getGameProgress:', error)
+    return { science: null, creative: null, lastMode: 'science' }
+  }
+}
+
+export async function resetGameState(supabase: any, userId: string, gameMode: string, includeAchievements: boolean = false): Promise<boolean> {
+  try {
+    if (includeAchievements) {
+      // Delete the entire game state record
+      const { error } = await supabase
+        .from('game_states')
+        .delete()
+        .eq('user_id', userId)
+        .eq('game_mode', gameMode)
+
+      if (error) {
+        console.error('Error deleting game state:', error)
+        return false
+      }
+    } else {
+      // Get existing achievements first
+      const existingState = await loadGameState(supabase, userId, gameMode)
+      const existingAchievements = existingState?.achievements || []
+      
+      // Reset but keep achievements
+      const { error } = await supabase
+        .from('game_states')
+        .upsert({
+          user_id: userId,
+          game_mode: gameMode,
+          elements: [],
+          end_elements: [],
+          combinations: {},
+          achievements: existingAchievements, // Preserve existing achievements
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,game_mode'
+        })
+
+      if (error) {
+        console.error('Error resetting game state:', error)
+        return false
+      }
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error in resetGameState:', error)
+    return false
+  }
+}
+
+// Token-related functions
+export async function getTokenBalance(supabase: any, userId: string): Promise<number> {
+  try {
+    const { data, error } = await supabase.rpc('get_token_balance', {
+      p_user_id: userId
+    })
+
+    if (error) {
+      console.error('Error getting token balance:', error)
+      return 0
+    }
+
+    return data || 0
+  } catch (error) {
+    console.error('Error in getTokenBalance:', error)
+    return 0
+  }
+}
+
+export async function consumeToken(supabase: any, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('consume_token', {
+      p_user_id: userId
+    })
+
+    if (error) {
+      console.error('Error consuming token:', error)
+      return false
+    }
+
+    return data || false
+  } catch (error) {
+    console.error('Error in consumeToken:', error)
+    return false
+  }
+}
+
+export async function addTokens(supabase: any, userId: string, tokens: number): Promise<number> {
+  try {
+    const { data, error } = await supabase.rpc('add_tokens', {
+      p_user_id: userId,
+      p_tokens: tokens
+    })
+
+    if (error) {
+      console.error('Error adding tokens:', error)
+      return 0
+    }
+
+    return data || 0
+  } catch (error) {
+    console.error('Error in addTokens:', error)
+    return 0
+  }
+}
+ 
+===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\lib\supabase-client.ts ===== 
+ 
+ 
+===== START: C:\ai\LLM-Alchemy\llm-alchemy\src\lib\supabase.ts ===== 
+import { createBrowserClient } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
+import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+
+// Types for our database schema
+export interface User {
+  id: string
+  email?: string | null
+  created_at: string
+  is_anonymous: boolean
+  subscription_status: 'free' | 'premium'
+  subscription_ends_at?: string | null
+}
+
+export interface UserSession {
+  id: string
+  user_id: string
+  date: string
+  daily_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface GameState {
+  id: string
+  user_id: string
+  game_mode: 'science' | 'creative'
+  elements: any[]
+  end_elements: any[]
+  combinations: Record<string, string | null>
+  achievements: any[]
+  updated_at: string
+}
+
+export interface DiscoveredElement {
+  user_id: string
+  element_name: string
+  discovered_at: string
+}
+
+// Browser client for client-side operations
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
+
+// Server client for API routes
+export async function createServerSupabaseClient() {
+  const cookieStore = await cookies()
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          cookieStore.set({ name, value, ...options })
+        },
+        remove(name: string, options: any) {
+          cookieStore.delete({ name, ...options })
+        },
+      },
+    }
+  )
+}
+
+// Middleware client for request handling
+export function createMiddlewareClient(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+        },
+        remove(name: string, options: any) {
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
+        },
+      },
+    }
+  )
+
+  return { supabase, response }
+}
+
+// Helper functions for common database operations
+export async function getOrCreateAnonymousUser(supabase: any): Promise<User | null> {
+  try {
+    // First try to get current user
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (user) {
+      // Get user record from our database
+      const { data: dbUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      
+      if (dbUser) {
+        return dbUser
+      }
+    }
+
+    // Create anonymous user
+    const { data, error } = await supabase.auth.signInAnonymously()
+    
+    if (error) {
+      console.error('Error creating anonymous user:', error)
+      return null
+    }
+
+    // Create user record in our database
+    const newUser = {
+      id: data.user.id,
+      email: null,
+      is_anonymous: true,
+      subscription_status: 'free' as const,
+      subscription_ends_at: null
+    }
+
+    const { data: dbUser, error: dbError } = await supabase
+      .from('users')
+      .insert([newUser])
+      .select()
+      .single()
+
+    if (dbError) {
+      console.error('Error creating user record:', dbError)
+      return null
+    }
+
+    return dbUser
+
+  } catch (error) {
+    console.error('Error in getOrCreateAnonymousUser:', error)
+    return null
+  }
+}
+
+export async function getDailyCount(supabase: any, userId: string): Promise<number> {
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    
+    const { data, error } = await supabase
+      .from('user_sessions')
+      .select('daily_count')
+      .eq('user_id', userId)
+      .eq('date', today)
+      .single()
+    
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.error('Error getting daily count:', error)
+      return 0
+    }
+    
+    return data?.daily_count || 0
+  } catch (error) {
+    console.error('Error in getDailyCount:', error)
+    return 0
+  }
+}
+
+export async function incrementDailyCount(supabase: any, userId: string): Promise<number> {
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    
+    // Use upsert to handle both insert and update
+    const { data, error } = await supabase
+      .from('user_sessions')
+      .upsert({
+        user_id: userId,
+        date: today,
+        daily_count: 1
+      }, {
+        onConflict: 'user_id,date',
+        ignoreDuplicates: false
+      })
+      .select()
+      .single()
+
+    if (error) {
+      // If upsert failed, try to increment existing record
+      const { data: incrementData, error: incrementError } = await supabase.rpc('increment_daily_count', {
+        p_user_id: userId
+      })
+
+      if (incrementError) {
+        console.error('Error incrementing daily count:', incrementError)
+        return 0
+      }
+
+      return incrementData || 1
+    }
+
+    return data?.daily_count || 1
+  } catch (error) {
+    console.error('Error in incrementDailyCount:', error)
+    return 0
+  }
+}
+
+export async function saveGameState(supabase: any, userId: string, gameState: Partial<GameState>): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('game_states')
+      .upsert({
+        user_id: userId,
+        ...gameState,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,game_mode'
+      })
+
+    if (error) {
+      console.error('Error saving game state:', error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error in saveGameState:', error)
+    return false
+  }
+}
+
+export async function loadGameState(supabase: any, userId: string, gameMode: string): Promise<GameState | null> {
+  try {
+    const { data, error } = await supabase
+      .from('game_states')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('game_mode', gameMode)
+      .single()
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error loading game state:', error)
+      return null
+    }
+
+    return data
+  } catch (error) {
+    console.error('Error in loadGameState:', error)
+    return null
+  }
+}
+ 
+===== END: C:\ai\LLM-Alchemy\llm-alchemy\src\lib\supabase.ts ===== 
+ 
+ 
