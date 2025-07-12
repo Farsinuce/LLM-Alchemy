@@ -1045,38 +1045,67 @@ ${shared.responseFormat}`;
       ? buildSciencePrompt(elements, mixingElements, sharedSections, recentText)
       : buildCreativePrompt(elements, mixingElements, sharedSections, recentText);
 
+    // Debug logging for request
+    console.log(`[LLM-Alchemy Debug] Making API request:`, {
+      model: useProModel ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash',
+      userType: userApiKey ? 'API Key User' : (useProModel ? 'Token User' : 'Freemium User'),
+      combination: `${elem1.name} + ${elem2.name}${elem3 ? ' + Energy' : ''}`,
+      hasUserApiKey: !!userApiKey,
+      useProModel,
+      tokenBalance
+    });
+
     try {
+      const requestBody = { 
+        prompt, 
+        gameMode,
+        apiKey: userApiKey,
+        useProModel
+      };
+      
+      console.log(`[LLM-Alchemy Debug] Request body:`, requestBody);
+      
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          prompt, 
-          gameMode,
-          apiKey: userApiKey,
-          useProModel
-        })
+        body: JSON.stringify(requestBody)
       });
 
+      console.log(`[LLM-Alchemy Debug] Response status:`, response.status, response.statusText);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[LLM-Alchemy Debug] API request failed:`, {
+          status: response.status,
+          statusText: response.statusText,
+          errorText
+        });
         throw new Error(`API request failed: ${response.status}`);
       }
 
-      const parsedResult = await response.json();
+      const rawResponse = await response.text();
+      console.log(`[LLM-Alchemy Debug] Raw response:`, rawResponse);
+      
+      let parsedResult;
+      try {
+        parsedResult = JSON.parse(rawResponse);
+        console.log(`[LLM-Alchemy Debug] Parsed result:`, parsedResult);
+      } catch (parseError) {
+        console.error(`[LLM-Alchemy Debug] Failed to parse response as JSON:`, parseError);
+        throw parseError;
+      }
       
       // Check if we got an error response
       if (parsedResult.error) {
-        console.error('API Error:', parsedResult.error);
+        console.error(`[LLM-Alchemy Debug] API returned error:`, parsedResult.error);
         showToast('API Error: ' + parsedResult.error);
         return { result: null, error: true };
       }
       
-      // Increment daily counter for successful LLM API calls
-      await incrementDailyCounter();
-      
-      // Ensure all required fields exist
-      return {
+      // Log the final result we're returning
+      const finalResult = {
         result: parsedResult.result || null,
         emoji: parsedResult.emoji || '✨',
         color: parsedResult.color || '#808080',
@@ -1085,6 +1114,13 @@ ${shared.responseFormat}`;
         tags: parsedResult.tags || [],
         isEndElement: parsedResult.isEndElement || false
       };
+      
+      console.log(`[LLM-Alchemy Debug] Final result to return:`, finalResult);
+      
+      // Increment daily counter for successful LLM API calls
+      await incrementDailyCounter();
+      
+      return finalResult;
       
     } catch (error) {
       console.error('Error generating combination:', error);
@@ -1253,15 +1289,15 @@ ${shared.responseFormat}`;
 
     const result = await generateCombination(elementsToMix[0], elementsToMix[1], hasEnergy ? { name: 'Energy' } as Element : null);
     
-    if (result.error) {
+    if ('error' in result && result.error) {
       setMixingElements(null);
       setIsMixing(false);
       return;
     }
     
     if (result.result) {
-      const existing = elements.find(e => e.name.toLowerCase() === result.result.toLowerCase()) ||
-                      endElements.find(e => e.name.toLowerCase() === result.result.toLowerCase());
+      const existing = elements.find(e => e.name.toLowerCase() === result.result!.toLowerCase()) ||
+                      endElements.find(e => e.name.toLowerCase() === result.result!.toLowerCase());
       
       if (existing) {
         setShowUnlock({ ...existing, isNew: false });
@@ -1275,23 +1311,24 @@ ${shared.responseFormat}`;
           setTimeout(() => setShowUnlock(null), 1500);
         }
       } else {
+        const isEndElement = 'isEndElement' in result ? result.isEndElement || false : false;
         const newElement = {
           id: result.result.toLowerCase().replace(/\s+/g, '-'),
           name: result.result,
-          emoji: result.emoji || '✨',
-          color: result.color || '#808080',
+          emoji: ('emoji' in result ? result.emoji : null) || '✨',
+          color: ('color' in result ? result.color : null) || '#808080',
           unlockOrder: elements.length + endElements.length,
-          rarity: result.rarity,
-          reasoning: result.reasoning || '',
-          tags: result.tags || [],
-          isEndElement: result.isEndElement || false
+          rarity: 'rarity' in result ? result.rarity : 'common',
+          reasoning: ('reasoning' in result ? result.reasoning : null) || '',
+          tags: ('tags' in result ? result.tags : null) || [],
+          isEndElement
         };
         
         // Update arrays first
-        const updatedElements = result.isEndElement ? elements : [...elements, newElement];
-        const updatedEndElements = result.isEndElement ? [...endElements, newElement] : endElements;
+        const updatedElements = isEndElement ? elements : [...elements, newElement];
+        const updatedEndElements = isEndElement ? [...endElements, newElement] : endElements;
         
-        if (result.isEndElement) {
+        if (isEndElement) {
           playSound('end-element');
           setEndElements(updatedEndElements);
         } else {
@@ -1316,8 +1353,8 @@ ${shared.responseFormat}`;
           elementCreated: newElement,
           combinationKey: mixKey,
           achievementsGained: allAchievements,
-          endElementsGained: result.isEndElement ? [newElement] : [],
-          wasEndElement: result.isEndElement,
+          endElementsGained: isEndElement ? [newElement] : [],
+          wasEndElement: isEndElement,
           timestamp: Date.now()
         });
 
@@ -1344,7 +1381,7 @@ ${shared.responseFormat}`;
         });
         setUnlockAnimationStartTime(Date.now());
         
-        if (!result.isEndElement) {
+        if (!isEndElement) {
           // Add new element to mixing area center with collision detection IMMEDIATELY
           const rect = dropZoneRef.current!.getBoundingClientRect();
           const offset = window.innerWidth < 640 ? 24 : window.innerWidth < 768 ? 28 : 32;
