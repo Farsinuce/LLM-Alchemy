@@ -2101,18 +2101,10 @@ ${shared.responseFormat}`;
                   // Start pop animation on main element
                   setPopElement(elementToRemove.id);
                   
-                  // Find mixing area elements to animate with staggered timing
-                  const mixingElementsToRemove = mixingArea.filter(el => el.name === elementToRemove.name);
+                  // Immediately remove ALL instances from mixing area (no animation)
+                  setMixingArea(prev => prev.filter(el => el.name !== elementToRemove.name));
                   
-                  // Trigger staggered pop animations on mixing area elements
-                  mixingElementsToRemove.forEach((el, index) => {
-                    const delay = Math.random() * 100; // 0-100ms random delay for organic feel
-                    setTimeout(() => {
-                      setPopElement(`mixing-${el.id}-${el.index}`);
-                    }, delay);
-                  });
-                  
-                  // Wait for animations to complete, then remove elements
+                  // Wait for main element animation to complete, then remove from elements list
                   setTimeout(() => {
                     // Remove from elements/endElements arrays
                     if (elementToRemove.isEndElement) {
@@ -2121,12 +2113,9 @@ ${shared.responseFormat}`;
                       setElements(prev => prev.filter(e => e.id !== elementToRemove.id));
                     }
                     
-                    // Remove ALL instances from mixing area
-                    setMixingArea(prev => prev.filter(el => el.name !== elementToRemove.name));
-                    
-                    // Clear pop animations
+                    // Clear pop animation
                     setPopElement(null);
-                  }, 400); // Wait for longest animation + some buffer
+                  }, 300); // Just wait for main element animation
                   
                   // Remove the combination from cache
                   setCombinations(prev => {
