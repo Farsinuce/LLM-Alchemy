@@ -40,13 +40,8 @@ export async function POST(req: NextRequest) {
     // Log model selection for debugging
     console.log(`[LLM-Alchemy API] User Type: ${userType} | Model: ${model} | Reason: ${reason}`);
 
-    // Use structured content format for better compatibility with Gemini Pro
-    const messageContent = model.includes('gemini-2.5-pro') ? [
-      {
-        type: "text", 
-        text: prompt
-      }
-    ] : prompt;
+    // Use standard text format for both models
+    const messageContent = prompt;
 
     const response = await fetch(OPENROUTER_URL, {
       method: 'POST',
