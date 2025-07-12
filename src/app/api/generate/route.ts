@@ -46,6 +46,27 @@ export async function POST(req: NextRequest) {
     // Adjust max_tokens based on model - Pro needs more tokens due to reasoning mode
     const maxTokens = model.includes('gemini-2.5-pro') ? 1500 : 500;
     
+    // Build request body with reasoning control for Pro model
+    const requestBody: any = {
+      model,
+      messages: [
+        {
+          role: 'user',
+          content: messageContent
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: maxTokens,
+      top_p: 0.9,
+    };
+
+    // Add reasoning control for Pro model to reduce costs
+    if (model.includes('gemini-2.5-pro')) {
+      requestBody.reasoning = {
+        effort: 'low' // Uses ~20% of max_tokens for reasoning instead of default 80%
+      };
+    }
+
     const response = await fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
@@ -54,18 +75,7 @@ export async function POST(req: NextRequest) {
         'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
         'X-Title': 'LLM Alchemy Game',
       },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: 'user',
-            content: messageContent
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: maxTokens,
-        top_p: 0.9,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -97,9 +107,14 @@ export async function POST(req: NextRequest) {
     }
 
     const content = data.choices[0].message.content;
+    const reasoning = data.choices[0].message.reasoning;
     
-    // Log the raw content for debugging differences between models
+    // Log the raw content and reasoning for debugging differences between models
     console.log(`[LLM-Alchemy API] Raw response content for ${model}:`, content);
+    if (reasoning) {
+      console.log(`[LLM-Alchemy API] Reasoning tokens for ${model}:`, reasoning.substring(0, 200) + '...');
+      console.log(`[LLM-Alchemy API] Reasoning length: ${reasoning.length} characters`);
+    }
     
     // Parse the JSON response from the LLM
     let parsedResult;
