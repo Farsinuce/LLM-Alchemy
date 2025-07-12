@@ -2098,11 +2098,18 @@ ${shared.responseFormat}`;
                   // Remove the element that was created
                   const elementToRemove = lastCombination.elementCreated;
                   
+                  // Play pop animation before removing
+                  setPopElement(elementToRemove.id);
+                  
+                  // Remove from elements/endElements arrays
                   if (elementToRemove.isEndElement) {
                     setEndElements(prev => prev.filter(e => e.id !== elementToRemove.id));
                   } else {
                     setElements(prev => prev.filter(e => e.id !== elementToRemove.id));
                   }
+                  
+                  // Remove ALL instances from mixing area
+                  setMixingArea(prev => prev.filter(el => el.name !== elementToRemove.name));
                   
                   // Remove the combination from cache
                   setCombinations(prev => {
