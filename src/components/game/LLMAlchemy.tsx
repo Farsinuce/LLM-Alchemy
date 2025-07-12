@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Sparkles, X, GripHorizontal, User, ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
-import { createClient, incrementDailyCount, saveGameState, loadGameState, consumeToken, addTokens } from '@/lib/supabase-client';
+import { createClient, incrementDailyCount, decrementDailyCount, saveGameState, loadGameState, consumeToken, addTokens } from '@/lib/supabase-client';
 
 // Type definitions
 interface Element {
@@ -805,7 +805,7 @@ const LLMAlchemy = () => {
     responseFormat: `Respond with ONLY a valid JSON object, no other text:
 {
   "result": "Element Name" or null,
-  "emoji": "appropriate emoji", 
+  "emoji": "appropriate Unicode emoji (no Asian characters)", 
   "color": "hex color code",
   "rarity": "common" or "uncommon" or "rare",${currentGameMode === 'science' ? '\n  "isEndElement": true or false,' : ''}
   "reasoning": "brief explanation",
@@ -2129,7 +2129,8 @@ ${shared.responseFormat}`;
                       await addTokens(supabase, user.id, 1);
                       await refreshTokenBalance();
                     } else {
-                      // Decrement daily count (API endpoint needed for this)
+                      // Decrement daily count using the proper function
+                      await decrementDailyCount(supabase, user.id);
                       await refreshDailyCount();
                     }
                   }

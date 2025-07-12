@@ -157,6 +157,25 @@ export async function incrementDailyCount(supabase: any, userId: string): Promis
   }
 }
 
+export async function decrementDailyCount(supabase: any, userId: string): Promise<number> {
+  try {
+    // Use the database function to atomically decrement
+    const { data, error } = await supabase.rpc('decrement_daily_count', {
+      p_user_id: userId
+    })
+
+    if (error) {
+      console.error('Error decrementing daily count:', error)
+      return 0
+    }
+
+    return data || 0
+  } catch (error) {
+    console.error('Error in decrementDailyCount:', error)
+    return 0
+  }
+}
+
 export async function saveGameState(supabase: any, userId: string, gameState: Partial<GameState>): Promise<boolean> {
   try {
     const { error } = await supabase
