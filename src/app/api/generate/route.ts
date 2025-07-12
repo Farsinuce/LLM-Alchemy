@@ -40,6 +40,14 @@ export async function POST(req: NextRequest) {
     // Log model selection for debugging
     console.log(`[LLM-Alchemy API] User Type: ${userType} | Model: ${model} | Reason: ${reason}`);
 
+    // Use structured content format for better compatibility with Gemini Pro
+    const messageContent = model.includes('gemini-2.5-pro') ? [
+      {
+        type: "text", 
+        text: prompt
+      }
+    ] : prompt;
+
     const response = await fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
@@ -53,7 +61,7 @@ export async function POST(req: NextRequest) {
         messages: [
           {
             role: 'user',
-            content: prompt
+            content: messageContent
           }
         ],
         temperature: 0.7,
@@ -73,6 +81,15 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json();
     
+    // Enhanced debugging for model comparison
+    console.log(`[LLM-Alchemy API] Model used: ${model}`);
+    console.log(`[LLM-Alchemy API] OpenRouter response:`, {
+      model: data.model,
+      usage: data.usage,
+      hasChoices: !!data.choices,
+      choicesLength: data.choices?.length
+    });
+    
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       console.error('Invalid response structure:', data);
       return NextResponse.json(
@@ -83,18 +100,23 @@ export async function POST(req: NextRequest) {
 
     const content = data.choices[0].message.content;
     
+    // Log the raw content for debugging differences between models
+    console.log(`[LLM-Alchemy API] Raw response content for ${model}:`, content);
+    
     // Parse the JSON response from the LLM
     let parsedResult;
     try {
       // Extract JSON from the response if it's wrapped in code blocks or other text
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
+        console.log(`[LLM-Alchemy API] Extracted JSON for ${model}:`, jsonMatch[0]);
         parsedResult = JSON.parse(jsonMatch[0]);
       } else {
+        console.log(`[LLM-Alchemy API] Parsing content directly for ${model}`);
         parsedResult = JSON.parse(content);
       }
     } catch (parseError) {
-      console.error('Failed to parse LLM response:', content);
+      console.error(`[LLM-Alchemy API] Failed to parse ${model} response:`, content);
       console.error('Parse error:', parseError);
       
       // Fallback to null result

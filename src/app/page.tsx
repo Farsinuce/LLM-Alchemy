@@ -94,6 +94,34 @@ export default function Home() {
     loadProgress();
   }, [user]);
 
+  // Refresh progress when page becomes visible (returning from game)
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (!document.hidden && user) {
+        const supabase = createClient();
+        const gameProgress = await getGameProgress(supabase, user.id);
+        setProgress(gameProgress);
+      }
+    };
+
+    const handleFocus = async () => {
+      if (user) {
+        const supabase = createClient();
+        const gameProgress = await getGameProgress(supabase, user.id);
+        setProgress(gameProgress);
+      }
+    };
+
+    // Listen for page visibility changes and window focus
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user]);
+
   const hasAnyProgress = progress && (progress.science || progress.creative);
 
   const handleContinueGame = () => {
