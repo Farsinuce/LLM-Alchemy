@@ -2098,18 +2098,35 @@ ${shared.responseFormat}`;
                   // Remove the element that was created
                   const elementToRemove = lastCombination.elementCreated;
                   
-                  // Play pop animation before removing
+                  // Start pop animation on main element
                   setPopElement(elementToRemove.id);
                   
-                  // Remove from elements/endElements arrays
-                  if (elementToRemove.isEndElement) {
-                    setEndElements(prev => prev.filter(e => e.id !== elementToRemove.id));
-                  } else {
-                    setElements(prev => prev.filter(e => e.id !== elementToRemove.id));
-                  }
+                  // Find mixing area elements to animate with staggered timing
+                  const mixingElementsToRemove = mixingArea.filter(el => el.name === elementToRemove.name);
                   
-                  // Remove ALL instances from mixing area
-                  setMixingArea(prev => prev.filter(el => el.name !== elementToRemove.name));
+                  // Trigger staggered pop animations on mixing area elements
+                  mixingElementsToRemove.forEach((el, index) => {
+                    const delay = Math.random() * 100; // 0-100ms random delay for organic feel
+                    setTimeout(() => {
+                      setPopElement(`mixing-${el.id}-${el.index}`);
+                    }, delay);
+                  });
+                  
+                  // Wait for animations to complete, then remove elements
+                  setTimeout(() => {
+                    // Remove from elements/endElements arrays
+                    if (elementToRemove.isEndElement) {
+                      setEndElements(prev => prev.filter(e => e.id !== elementToRemove.id));
+                    } else {
+                      setElements(prev => prev.filter(e => e.id !== elementToRemove.id));
+                    }
+                    
+                    // Remove ALL instances from mixing area
+                    setMixingArea(prev => prev.filter(el => el.name !== elementToRemove.name));
+                    
+                    // Clear pop animations
+                    setPopElement(null);
+                  }, 400); // Wait for longest animation + some buffer
                   
                   // Remove the combination from cache
                   setCombinations(prev => {
