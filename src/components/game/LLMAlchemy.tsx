@@ -186,6 +186,8 @@ const LLMAlchemy = () => {
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
   const [lastCombination, setLastCombination] = useState<LastCombination | null>(null);
   const [undoUsed, setUndoUsed] = useState<boolean>(false);
+  const [undoAvailable, setUndoAvailable] = useState<boolean>(false);
+  const [totalCombinationsMade, setTotalCombinationsMade] = useState<number>(0);
   
   // Load API key from localStorage on mount (optional - for convenience)
   useEffect(() => {
@@ -1348,7 +1350,7 @@ ${shared.responseFormat}`;
           // Continue without achievements - don't block the unlock flow
         }
 
-        // Track this combination for undo functionality
+        // Track this combination for undo functionality and enable undo
         setLastCombination({
           elementCreated: newElement,
           combinationKey: mixKey,
@@ -1357,6 +1359,8 @@ ${shared.responseFormat}`;
           wasEndElement: isEndElement,
           timestamp: Date.now()
         });
+        setUndoAvailable(true);
+        setTotalCombinationsMade(prev => prev + 1);
 
         // Save immediately after discovery (fix for Bug 1)
         if (user && gameMode) {
@@ -2070,25 +2074,88 @@ ${shared.responseFormat}`;
             {emoji.emoji}
           </div>
         ))}
-        {/* Undo Button - only show after first combination */}
-        {lastCombination && !isMixing && (
+        {/* Undo Button - show after first combination made */}
+        {totalCombinationsMade > 0 && !isMixing && (
           <button
-            onClick={() => {
-              // Check if user can undo
-              const canUndo = userApiKey || tokenBalance > 0 || !undoUsed;
-              
-              if (!canUndo) {
-                showToast('Free users get 1 undo per session. Get tokens for unlimited undos!');
+            onClick={async () => {
+              // Check if undo is available (can't undo twice in a row)
+              if (!undoAvailable) {
+                showToast('No action to undo');
                 return;
               }
               
-              // Implement undo functionality here
-              showToast('Undo feature coming soon!');
+              // Check if user can undo based on tier
+              const canUndo = userApiKey || tokenBalance > 0 || !undoUsed;
+              
+              if (!canUndo) {
+                showToast('Upgrade to get more undos');
+                return;
+              }
+              
+              // Perform undo
+              if (lastCombination) {
+                try {
+                  // Remove the element that was created
+                  const elementToRemove = lastCombination.elementCreated;
+                  
+                  if (elementToRemove.isEndElement) {
+                    setEndElements(prev => prev.filter(e => e.id !== elementToRemove.id));
+                  } else {
+                    setElements(prev => prev.filter(e => e.id !== elementToRemove.id));
+                  }
+                  
+                  // Remove the combination from cache
+                  setCombinations(prev => {
+                    const newCombinations = { ...prev };
+                    delete newCombinations[lastCombination.combinationKey];
+                    return newCombinations;
+                  });
+                  
+                  // Remove any achievements that were gained
+                  if (lastCombination.achievementsGained.length > 0) {
+                    setAchievements(prev => 
+                      prev.filter(achievement => 
+                        !lastCombination.achievementsGained.some(gained => gained.id === achievement.id)
+                      )
+                    );
+                  }
+                  
+                  // Refund token or daily count
+                  if (user && !userApiKey) {
+                    const supabase = createClient();
+                    
+                    if (tokenBalance > 0) {
+                      // Add back one token
+                      await addTokens(supabase, user.id, 1);
+                      await refreshTokenBalance();
+                    } else {
+                      // Decrement daily count (API endpoint needed for this)
+                      await refreshDailyCount();
+                    }
+                  }
+                  
+                  // Update undo state
+                  setUndoAvailable(false); // Can't undo again until next combination
+                  if (!userApiKey && tokenBalance === 0) {
+                    setUndoUsed(true); // Freemium users can only undo once per session
+                  }
+                  
+                  // Clear last combination
+                  setLastCombination(null);
+                  
+                  showToast('Action undone!');
+                  playSound('click');
+                  
+                } catch (error) {
+                  console.error('Error during undo:', error);
+                  showToast('Undo failed');
+                }
+              }
             }}
             onMouseEnter={() => setHoveredUIElement('undo-button')}
             onMouseLeave={() => setHoveredUIElement(null)}
             className={`absolute top-4 left-4 px-3 py-2 rounded-lg transition-all z-20 flex items-center gap-1 ${
-              (userApiKey || tokenBalance > 0 || !undoUsed) 
+              undoAvailable && (userApiKey || tokenBalance > 0 || !undoUsed)
                 ? 'bg-gray-700 hover:bg-gray-600 text-white cursor-pointer' 
                 : 'bg-gray-600/50 text-gray-400 cursor-not-allowed'
             }`}
