@@ -189,6 +189,9 @@ const LLMAlchemy = () => {
   const [undoAvailable, setUndoAvailable] = useState<boolean>(false);
   const [totalCombinationsMade, setTotalCombinationsMade] = useState<number>(0);
   
+  // New animation state for mixing area elements
+  const [animatingElements, setAnimatingElements] = useState<Set<string>>(new Set());
+  
   // Load API key from localStorage on mount (optional - for convenience)
   useEffect(() => {
     const savedApiKey = localStorage.getItem('llm-alchemy-api-key');
@@ -671,6 +674,28 @@ const LLMAlchemy = () => {
   const hideReasoningPopup = () => {
     setReasoningPopup(null);
   };
+
+  // Helper function to animate element removal with staggered timing
+  const animateRemoval = useCallback((elements: MixingElement[], onComplete: () => void) => {
+    if (elements.length === 0) {
+      onComplete();
+      return;
+    }
+    
+    // Start animations with stagger
+    elements.forEach((el, index) => {
+      setTimeout(() => {
+        setAnimatingElements(prev => new Set(prev).add(`${el.id}-${el.index}`));
+      }, index * 50); // 50ms stagger for smooth cascading effect
+    });
+    
+    // Clean up after longest animation
+    const totalDuration = elements.length * 50 + 300; // stagger + animation duration
+    setTimeout(() => {
+      onComplete();
+      setAnimatingElements(new Set());
+    }, totalDuration);
+  }, []);
 
   const handleElementClick = (element: Element, event: React.MouseEvent) => {
     // Always allow clicks to show reasoning if element has it
@@ -1614,9 +1639,9 @@ ${shared.responseFormat}`;
   };
 
   const clearMixingArea = () => {
-    if (!isMixing) {
+    if (!isMixing && mixingArea.length > 0) {
       playSound('click');
-      setMixingArea([]);
+      animateRemoval(mixingArea, () => setMixingArea([]));
     }
   };
 
@@ -2101,10 +2126,18 @@ ${shared.responseFormat}`;
                   // Start pop animation on main element
                   setPopElement(elementToRemove.id);
                   
-                  // Immediately remove ALL instances from mixing area (no animation)
-                  setMixingArea(prev => prev.filter(el => el.name !== elementToRemove.name));
+                  // Find mixing area elements to animate
+                  const mixingElementsToRemove = mixingArea.filter(el => el.name === elementToRemove.name);
                   
-                  // Wait for main element animation to complete, then remove from elements list
+                  // Animate mixing area elements with the new system
+                  if (mixingElementsToRemove.length > 0) {
+                    animateRemoval(mixingElementsToRemove, () => {
+                      // Remove from mixing area after animation
+                      setMixingArea(prev => prev.filter(el => el.name !== elementToRemove.name));
+                    });
+                  }
+                  
+                  // Wait for main element animation to complete, then remove from main arrays
                   setTimeout(() => {
                     // Remove from elements/endElements arrays
                     if (elementToRemove.isEndElement) {
@@ -2113,9 +2146,9 @@ ${shared.responseFormat}`;
                       setElements(prev => prev.filter(e => e.id !== elementToRemove.id));
                     }
                     
-                    // Clear pop animation
+                    // Clear main element pop animation
                     setPopElement(null);
-                  }, 300); // Just wait for main element animation
+                  }, 300); // Main element animation duration
                   
                   // Remove the combination from cache
                   setCombinations(prev => {
@@ -2227,6 +2260,8 @@ ${shared.responseFormat}`;
               hoveredElement === element.index && !element.energized ? 'animate-continuous-pulse' : ''
             } ${
               touchDragging?.mixIndex === element.index && touchDragging?.fromMixingArea ? 'opacity-30' : ''
+            } ${
+              animatingElements.has(`${element.id}-${element.index}`) ? 'animate-element-pop' : ''
             }`}
             style={{ 
               left: element.x, 
