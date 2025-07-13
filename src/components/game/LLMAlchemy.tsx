@@ -192,6 +192,9 @@ const LLMAlchemy = () => {
   // New animation state for mixing area elements
   const [animatingElements, setAnimatingElements] = useState<Set<string>>(new Set());
   
+  // Undo protection state to prevent token abuse
+  const [isUndoing, setIsUndoing] = useState<boolean>(false);
+  
   // Load API key from localStorage on mount (optional - for convenience)
   useEffect(() => {
     const savedApiKey = localStorage.getItem('llm-alchemy-api-key');
@@ -1250,7 +1253,7 @@ ${shared.responseFormat}`;
   };
 
   const mixElements = async (elem1: MixingElement, elem2: MixingElement) => {
-    if (isMixing) return;
+    if (isMixing || isUndoing) return;
     
     playSound('pop');
     
@@ -2120,6 +2123,9 @@ ${shared.responseFormat}`;
               // Perform undo
               if (lastCombination) {
                 try {
+                  // Set undo protection state
+                  setIsUndoing(true);
+                  
                   // Remove the element that was created
                   const elementToRemove = lastCombination.elementCreated;
                   
@@ -2146,8 +2152,9 @@ ${shared.responseFormat}`;
                       setElements(prev => prev.filter(e => e.id !== elementToRemove.id));
                     }
                     
-                    // Clear main element pop animation
+                    // Clear main element pop animation and undo protection
                     setPopElement(null);
+                    setIsUndoing(false);
                   }, 300); // Main element animation duration
                   
                   // Remove the combination from cache
@@ -2261,7 +2268,7 @@ ${shared.responseFormat}`;
             } ${
               touchDragging?.mixIndex === element.index && touchDragging?.fromMixingArea ? 'opacity-30' : ''
             } ${
-              animatingElements.has(`${element.id}-${element.index}`) ? 'animate-element-pop' : ''
+              animatingElements.has(`${element.id}-${element.index}`) ? 'animate-element-pop-out' : ''
             }`}
             style={{ 
               left: element.x, 
@@ -2591,6 +2598,18 @@ ${shared.responseFormat}`;
           100% { transform: scale(0); opacity: 0; }
         }
         
+        @keyframes element-pop-in {
+          0% { transform: scale(0); opacity: 0; }
+          70% { transform: scale(1.2); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes element-pop-out {
+          0% { transform: scale(1); opacity: 1; }
+          30% { transform: scale(1.2); opacity: 1; }
+          100% { transform: scale(0); opacity: 0; }
+        }
+        
         @keyframes element-pop {
           0% { transform: scale(0); }
           50% { transform: scale(1.2); }
@@ -2630,6 +2649,14 @@ ${shared.responseFormat}`;
         
         .animate-element-pop {
           animation: element-pop 0.3s ease-out;
+        }
+        
+        .animate-element-pop-in {
+          animation: element-pop-in 0.3s ease-out;
+        }
+        
+        .animate-element-pop-out {
+          animation: element-pop-out 0.3s ease-out;
         }
         
         .animate-element-shake {
