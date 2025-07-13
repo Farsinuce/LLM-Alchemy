@@ -1981,9 +1981,9 @@ ${shared.responseFormat}`;
                 }}
                 onClick={(e) => handleElementClick(energyElement, e)}
                 onContextMenu={(e) => e.preventDefault()}
-                className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex flex-col items-center justify-center rounded-lg cursor-move hover:scale-110 transition-transform ${
-                  popElement === energyElement.id ? 'animate-element-pop' : ''
-                } ${
+              className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex flex-col items-center justify-center rounded-lg cursor-move hover:scale-110 transition-transform ${
+                popElement === energyElement.id ? (isUndoing ? 'animate-element-pop-out' : 'animate-element-pop-in') : ''
+              } ${
                   shakeElement === energyElement.id ? 'animate-element-shake' : ''
                 } ${
                   touchDragging?.id === energyElement.id && !touchDragging?.fromMixingArea ? 'opacity-30' : ''
@@ -2022,7 +2022,7 @@ ${shared.responseFormat}`;
               onClick={(e) => handleElementClick(element, e)}
               onContextMenu={(e) => e.preventDefault()}
               className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex flex-col items-center justify-center rounded-lg cursor-move hover:scale-110 transition-transform ${
-                popElement === element.id ? 'animate-element-pop' : ''
+                popElement === element.id ? (isUndoing ? 'animate-element-pop-out' : 'animate-element-pop-in') : ''
               } ${
                 shakeElement === element.id ? 'animate-element-shake' : ''
               } ${
@@ -2125,6 +2125,10 @@ ${shared.responseFormat}`;
                 try {
                   // Set undo protection state
                   setIsUndoing(true);
+                  
+                  // Immediately clear any reward animations to prevent conflicts (Bug 1 fix)
+                  setShowUnlock(null);
+                  setUnlockAnimationStartTime(null);
                   
                   // Remove the element that was created
                   const elementToRemove = lastCombination.elementCreated;
@@ -2656,7 +2660,7 @@ ${shared.responseFormat}`;
         }
         
         .animate-element-pop-out {
-          animation: element-pop-out 0.3s ease-out;
+          animation: element-pop-out 0.3s ease-out forwards;
         }
         
         .animate-element-shake {
