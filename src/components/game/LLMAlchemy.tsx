@@ -1265,20 +1265,33 @@ ${shared.responseFormat}`;
     const targetEl = elem2.energized ? elem2 : (elem2.name === 'Energy' ? elem1 : elem2);
     
     if (elem1.name === 'Energy' && !elem2.energized) {
+      // Dropping Energy onto a non-energized element to energize it
       setMixingArea(mixingArea.map(el => 
         el.index === targetEl.index 
           ? { ...el, energized: true }
           : el
       ).filter(el => el.index !== elem1.index && el.index !== (elem1.fromMixingArea ? elem1.mixIndex : -1)));
-    } else if (elem2.energized) {
-      const energizedBase = { ...elem2, name: elem2.name, energized: undefined } as Element;
-      await performMix([energizedBase, elem1], true, elem1.index, elem2.index);
+    } else if (elem1.energized || elem2.energized) {
+      // At least one element is energized - mix with energy
+      // Get base elements (strip energized state)
+      const baseElem1 = elem1.energized ? { ...elem1, name: elem1.name, energized: undefined } as Element : elem1;
+      const baseElem2 = elem2.energized ? { ...elem2, name: elem2.name, energized: undefined } as Element : elem2;
+      
+      await performMix([baseElem1, baseElem2], true, elem1.index, elem2.index);
     } else {
+      // Normal mixing without energy
       await performMix([elem1, elem2], false, elem1.index, elem2.index);
     }
   };
 
   const performMix = async (elementsToMix: Element[], hasEnergy = false, ...indicesToRemove: number[]) => {
+    console.log('[MIX DEBUG] 1. Starting performMix', {
+      elements: elementsToMix.map(e => e.name),
+      hasEnergy,
+      indicesToRemove,
+      timestamp: new Date().toISOString()
+    });
+    
     setIsMixing(true);
     setMixingElements({ elements: elementsToMix, indices: indicesToRemove });
     
@@ -1286,13 +1299,18 @@ ${shared.responseFormat}`;
     setTouchDragging(null);
     setTouchOffset({ x: 0, y: 0 });
     
+    console.log('[MIX DEBUG] 2. State cleared, removing from mixing area');
+    
     // Immediately remove elements from mixing area
     setMixingArea(mixingArea.filter(el => !indicesToRemove.includes(el.index)));
     
     const sortedNames = elementsToMix.map(e => e.name).sort().join('+');
     const mixKey = hasEnergy ? `${sortedNames}+Energy` : sortedNames;
     
+    console.log('[MIX DEBUG] 3. Checking cache for key:', mixKey);
+    
     if (combinations[mixKey]) {
+      console.log('[MIX DEBUG] 4. Found cached result, processing...');
       const existingResult = combinations[mixKey];
       if (existingResult) {
         const existingElement = elements.find(e => e.name === existingResult) || 
@@ -1314,22 +1332,37 @@ ${shared.responseFormat}`;
       }
       setMixingElements(null);
       setIsMixing(false);
+      console.log('[MIX DEBUG] 5. Cached result processed, mixing complete');
       return;
     }
 
+    console.log('[MIX DEBUG] 6. No cache found, calling generateCombination...');
+    
     const result = await generateCombination(elementsToMix[0], elementsToMix[1], hasEnergy ? { name: 'Energy' } as Element : null);
     
+    console.log('[MIX DEBUG] 7. generateCombination returned:', {
+      hasResult: !!result.result,
+      hasError: 'error' in result && result.error,
+      result: result.result
+    });
+    
     if ('error' in result && result.error) {
+      console.log('[MIX DEBUG] 8. Error in result, cleaning up...');
       setMixingElements(null);
       setIsMixing(false);
       return;
     }
     
+    console.log('[MIX DEBUG] 9. Processing result...');
+    
     if (result.result) {
+      console.log('[MIX DEBUG] 10. Result exists, checking for existing element...');
+      
       const existing = elements.find(e => e.name.toLowerCase() === result.result!.toLowerCase()) ||
                       endElements.find(e => e.name.toLowerCase() === result.result!.toLowerCase());
       
       if (existing) {
+        console.log('[MIX DEBUG] 11. Found existing element, showing existing unlock');
         setShowUnlock({ ...existing, isNew: false });
         if (!existing.isEndElement) {
           setShakeElement(existing.id);
@@ -1341,6 +1374,8 @@ ${shared.responseFormat}`;
           setTimeout(() => setShowUnlock(null), 1500);
         }
       } else {
+        console.log('[MIX DEBUG] 12. New element! Creating element object...');
+        
         const isEndElement = 'isEndElement' in result ? result.isEndElement || false : false;
         const newElement = {
           id: result.result.toLowerCase().replace(/\s+/g, '-'),
@@ -1353,6 +1388,8 @@ ${shared.responseFormat}`;
           tags: ('tags' in result ? result.tags : null) || [],
           isEndElement
         };
+        
+        console.log('[MIX DEBUG] 13. Updating arrays and playing sound...');
         
         // Update arrays first
         const updatedElements = isEndElement ? elements : [...elements, newElement];
@@ -1367,6 +1404,8 @@ ${shared.responseFormat}`;
           setPopElement(newElement.id);
         }
         
+        console.log('[MIX DEBUG] 14. Checking achievements...');
+        
         // Check for achievements with updated arrays (safe)
         let contextualAchievement = null;
         let allAchievements: Achievement[] = [];
@@ -1374,9 +1413,11 @@ ${shared.responseFormat}`;
           allAchievements = checkAchievements(newElement, updatedElements, updatedEndElements);
           contextualAchievement = allAchievements.find(a => a.id.startsWith('first-'));
         } catch (achievementError) {
-          console.error('Achievement check failed:', achievementError);
+          console.error('[MIX DEBUG] Achievement check failed:', achievementError);
           // Continue without achievements - don't block the unlock flow
         }
+
+        console.log('[MIX DEBUG] 15. Setting up undo and tracking...');
 
         // Track this combination for undo functionality and enable undo
         setLastCombination({
@@ -1390,10 +1431,14 @@ ${shared.responseFormat}`;
         setUndoAvailable(true);
         setTotalCombinationsMade(prev => prev + 1);
 
+        console.log('[MIX DEBUG] 16. Starting database save...');
+
         // Save immediately after discovery (fix for Bug 1)
         if (user && gameMode) {
           try {
             const supabase = createClient();
+            console.log('[MIX DEBUG] 17. Calling saveGameState...');
+            
             await saveGameState(supabase, user.id, {
               game_mode: gameMode,
               elements: updatedElements,
@@ -1401,10 +1446,16 @@ ${shared.responseFormat}`;
               combinations: { ...combinations, [mixKey]: result.result },
               achievements: [...achievements, ...allAchievements]
             });
+            
+            console.log('[MIX DEBUG] 18. Database save completed successfully');
           } catch (error) {
-            console.error('Error saving game state immediately:', error);
+            console.error('[MIX DEBUG] 19. Database save failed:', error);
           }
+        } else {
+          console.log('[MIX DEBUG] 17. Skipping database save (no user or gameMode)');
         }
+        
+        console.log('[MIX DEBUG] 20. Setting up unlock animation...');
         
         setShowUnlock({ 
           ...newElement, 
@@ -1414,6 +1465,8 @@ ${shared.responseFormat}`;
         setUnlockAnimationStartTime(Date.now());
         
         if (!isEndElement) {
+          console.log('[MIX DEBUG] 21. Adding element to mixing area...');
+          
           // Add new element to mixing area center with collision detection IMMEDIATELY
           const rect = dropZoneRef.current!.getBoundingClientRect();
           const offset = window.innerWidth < 640 ? 24 : window.innerWidth < 768 ? 28 : 32;
@@ -1444,14 +1497,18 @@ ${shared.responseFormat}`;
         }
       }
       
+      console.log('[MIX DEBUG] 22. Updating combinations cache...');
       setCombinations({ ...combinations, [mixKey]: result.result });
     } else {
+      console.log('[MIX DEBUG] 10. No result, showing "No reaction"');
       showToast('No reaction');
       setCombinations({ ...combinations, [mixKey]: null });
     }
     
+    console.log('[MIX DEBUG] 23. Cleaning up - setting mixing to false');
     setMixingElements(null);
     setIsMixing(false);
+    console.log('[MIX DEBUG] 24. performMix completed successfully');
   };
 
   const handleTouchStart = (e: React.TouchEvent, element: Element, fromMixingArea = false, index: number | null = null) => {
@@ -2397,7 +2454,8 @@ ${shared.responseFormat}`;
           }}
         >
           <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex justify-end items-center mb-4">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-xl font-bold text-white">🏆 Achievements</h3>
               <button
                 onClick={() => setShowAchievements(false)}
                 className="p-2 hover:bg-gray-700 rounded-full transition-colors"

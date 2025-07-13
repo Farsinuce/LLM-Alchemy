@@ -24,6 +24,13 @@ export default function Home() {
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
   const [tempApiKey, setTempApiKey] = useState<string>('');
   const [isValidatingKey, setIsValidatingKey] = useState<boolean>(false);
+  const [toast, setToast] = useState<string>('');
+
+  // Show toast function
+  const showToast = (message: string) => {
+    setToast(message);
+    setTimeout(() => setToast(''), 3000);
+  };
 
   // API key validation function
   const validateApiKey = async (apiKey: string): Promise<boolean> => {
@@ -246,6 +253,17 @@ export default function Home() {
             Free to play • 50 combinations per day
           </div>
           
+          {/* Register / Sign in Button */}
+          <div className="flex justify-center">
+            <button
+              onClick={() => showToast('Coming soon')}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-gray-300 hover:text-white"
+            >
+              <span>👤</span>
+              <span>Register / Sign in</span>
+            </button>
+          </div>
+          
           {/* API Key Button - More subtle */}
           <div className="flex justify-center">
             <button
@@ -415,6 +433,13 @@ export default function Home() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 px-4 py-2 rounded-lg z-50">
+          {toast}
         </div>
       )}
     </main>
