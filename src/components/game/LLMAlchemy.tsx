@@ -713,25 +713,34 @@ const LLMAlchemy = () => {
     // Don't animate if only base elements (5 or fewer) or already playing
     if (elementsToAnimate.length <= 5 || isPlayingLoadAnimation) return;
     
-    console.log('[LOAD ANIMATION] Starting element load animation for', elementsToAnimate.length, 'elements');
+    console.log('[LOAD ANIMATION] Starting SEQUENTIAL element load animation for', elementsToAnimate.length, 'elements');
     setIsPlayingLoadAnimation(true);
     
     // Sort by unlock order for proper sequence
     const sortedElements = [...elementsToAnimate].sort((a, b) => a.unlockOrder - b.unlockOrder);
     
-    // Animate each element with 50ms stagger - NO individual cleanup timers
+    // Animate each element SEQUENTIALLY - no overlap, one finishes before next starts
     sortedElements.forEach((element, index) => {
+      const startTime = index * 350; // 300ms animation + 50ms pause between
+      
+      // Start animation
       setTimeout(() => {
+        console.log('[LOAD ANIMATION] Starting animation for element', index + 1, ':', element.name);
         setPopElement(element.id);
-      }, index * 50); // 50ms stagger
+      }, startTime);
+      
+      // Clear animation after it completes
+      setTimeout(() => {
+        console.log('[LOAD ANIMATION] Completed animation for element', index + 1, ':', element.name);
+        setPopElement(null);
+      }, startTime + 300); // Clear after 300ms animation
     });
     
-    // Single cleanup after all animations have completed naturally
-    const totalDuration = sortedElements.length * 50 + 300;
+    // Mark entire sequence complete
+    const totalDuration = sortedElements.length * 350;
     setTimeout(() => {
       setIsPlayingLoadAnimation(false);
-      setPopElement(null); // Clear all animations at once
-      console.log('[LOAD ANIMATION] Element load animation completed');
+      console.log('[LOAD ANIMATION] ALL animations completed - total duration:', totalDuration + 'ms');
     }, totalDuration);
   }, [isPlayingLoadAnimation]);
 
