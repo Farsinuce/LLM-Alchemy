@@ -195,6 +195,9 @@ const LLMAlchemy = () => {
   // Undo protection state to prevent token abuse
   const [isUndoing, setIsUndoing] = useState<boolean>(false);
   
+  // Element load animation state
+  const [isPlayingLoadAnimation, setIsPlayingLoadAnimation] = useState<boolean>(false);
+  
   // Load API key from localStorage on mount (optional - for convenience)
   useEffect(() => {
     const savedApiKey = localStorage.getItem('llm-alchemy-api-key');
@@ -234,6 +237,11 @@ const LLMAlchemy = () => {
             // Restore discovered elements
             if (Array.isArray(savedState.elements) && savedState.elements.length > 0) {
               setElements(savedState.elements);
+              
+              // Trigger load animation for discovered elements (after a brief delay to ensure rendering)
+              setTimeout(() => {
+                playElementLoadAnimation(savedState.elements);
+              }, 150);
             }
             
             // Restore end elements
@@ -699,6 +707,38 @@ const LLMAlchemy = () => {
       setAnimatingElements(new Set());
     }, totalDuration);
   }, []);
+
+  // Helper function to play pop-in animation for all elements when loading game
+  const playElementLoadAnimation = useCallback((elementsToAnimate: Element[]) => {
+    // Don't animate if only base elements (5 or fewer) or already playing
+    if (elementsToAnimate.length <= 5 || isPlayingLoadAnimation) return;
+    
+    console.log('[LOAD ANIMATION] Starting element load animation for', elementsToAnimate.length, 'elements');
+    setIsPlayingLoadAnimation(true);
+    
+    // Sort by unlock order for proper sequence
+    const sortedElements = [...elementsToAnimate].sort((a, b) => a.unlockOrder - b.unlockOrder);
+    
+    // Animate each element with 50ms stagger
+    sortedElements.forEach((element, index) => {
+      setTimeout(() => {
+        setPopElement(element.id);
+        
+        // Clear individual animation after it completes
+        setTimeout(() => {
+          setPopElement(prev => prev === element.id ? null : prev);
+        }, 300); // Animation duration
+        
+      }, index * 50); // 50ms stagger
+    });
+    
+    // Mark animation complete
+    const totalDuration = sortedElements.length * 50 + 300;
+    setTimeout(() => {
+      setIsPlayingLoadAnimation(false);
+      console.log('[LOAD ANIMATION] Element load animation completed');
+    }, totalDuration);
+  }, [isPlayingLoadAnimation]);
 
   const handleElementClick = (element: Element, event: React.MouseEvent) => {
     // Always allow clicks to show reasoning if element has it
