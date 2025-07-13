@@ -719,23 +719,18 @@ const LLMAlchemy = () => {
     // Sort by unlock order for proper sequence
     const sortedElements = [...elementsToAnimate].sort((a, b) => a.unlockOrder - b.unlockOrder);
     
-    // Animate each element with 50ms stagger
+    // Animate each element with 50ms stagger - NO individual cleanup timers
     sortedElements.forEach((element, index) => {
       setTimeout(() => {
         setPopElement(element.id);
-        
-        // Clear individual animation after it completes
-        setTimeout(() => {
-          setPopElement(prev => prev === element.id ? null : prev);
-        }, 300); // Animation duration
-        
       }, index * 50); // 50ms stagger
     });
     
-    // Mark animation complete
+    // Single cleanup after all animations have completed naturally
     const totalDuration = sortedElements.length * 50 + 300;
     setTimeout(() => {
       setIsPlayingLoadAnimation(false);
+      setPopElement(null); // Clear all animations at once
       console.log('[LOAD ANIMATION] Element load animation completed');
     }, totalDuration);
   }, [isPlayingLoadAnimation]);
@@ -2494,8 +2489,7 @@ ${shared.responseFormat}`;
           }}
         >
           <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-xl font-bold text-white">🏆 Achievements</h3>
+            <div className="flex justify-end items-center mb-4">
               <button
                 onClick={() => setShowAchievements(false)}
                 className="p-2 hover:bg-gray-700 rounded-full transition-colors"
