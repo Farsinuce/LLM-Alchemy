@@ -75,8 +75,12 @@ export async function getOrCreateAnonymousUser(supabase: any): Promise<User | nu
       }
     }
 
-    // Create anonymous user
-    const { data, error } = await supabase.auth.signInAnonymously()
+    // Create anonymous user with Turnstile
+    const { data, error } = await supabase.auth.signInAnonymously({
+      options: {
+        captchaToken: await getTurnstileToken()
+      }
+    })
     
     if (error) {
       console.error('Error creating anonymous user:', error)
@@ -109,6 +113,33 @@ export async function getOrCreateAnonymousUser(supabase: any): Promise<User | nu
     console.error('Error in getOrCreateAnonymousUser:', error)
     return null
   }
+}
+
+// Function to get Turnstile token
+async function getTurnstileToken(): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+    
+    if (!siteKey || typeof window === 'undefined' || !window.turnstile) {
+      resolve(undefined)
+      return
+    }
+
+    try {
+      window.turnstile.render('#turnstile-container', {
+        sitekey: siteKey,
+        callback: function(token: string) {
+          resolve(token)
+        },
+        'error-callback': function() {
+          resolve(undefined)
+        },
+      })
+    } catch (error) {
+      console.error('Turnstile error:', error)
+      resolve(undefined)
+    }
+  })
 }
 
 export async function getDailyCount(supabase: any, userId: string): Promise<number> {

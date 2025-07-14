@@ -132,6 +132,24 @@ export default function Home() {
     setShowAuthModal(true);
   };
 
+  const handleLogout = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      
+      // Clear all local storage related to the app
+      localStorage.removeItem('llm-alchemy-api-key');
+      localStorage.removeItem('llm-alchemy-model');
+      
+      // Clear any other potential auth state
+      window.location.reload();
+      
+      showToast('Logged out successfully');
+    } catch (error: any) {
+      showToast('Error logging out: ' + error.message);
+    }
+  };
+
   // Payment handlers
   const handleStripePayment = async (productId: string) => {
     if (isAnonymous) {
@@ -361,9 +379,18 @@ export default function Home() {
                 <span>{shouldShowUpgrade ? 'Upgrade Account' : 'Create Account'}</span>
               </button>
             ) : (
-              <div className="flex items-center gap-2 px-4 py-2 bg-green-600/20 rounded-lg text-green-400 text-sm">
-                <span>✓</span>
-                <span>Signed in as {dbUser?.display_name || dbUser?.email}</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-4 py-2 bg-green-600/20 rounded-lg text-green-400 text-sm">
+                  <span>✓</span>
+                  <span>Signed in as {dbUser?.display_name || dbUser?.email || user?.email || 'User'}</span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 rounded-lg text-red-400 hover:text-red-300 text-sm transition-colors"
+                >
+                  <span>🚪</span>
+                  <span>Logout</span>
+                </button>
               </div>
             )}
           </div>
