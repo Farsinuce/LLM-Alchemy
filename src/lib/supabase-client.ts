@@ -9,6 +9,12 @@ export interface User {
   subscription_status: 'free' | 'premium'
   subscription_ends_at?: string | null
   token_balance?: number
+  display_name?: string | null
+  avatar_url?: string | null
+  google_id?: string | null
+  email_verified?: boolean
+  upgraded_from_anonymous?: boolean
+  anonymous_data_migrated?: boolean
 }
 
 export interface UserSession {

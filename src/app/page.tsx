@@ -5,6 +5,14 @@ import { useEffect, useState } from 'react';
 import { Sparkles, ArrowRight, X } from 'lucide-react';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
 import { createClient, getGameProgress, resetGameState } from '@/lib/supabase-client';
+import AuthModal from '@/components/auth/AuthModal';
+import { 
+  shouldShowUpgradePrompt, 
+  shouldShowUpgradeButton, 
+  upgradeAnonymousAccount, 
+  upgradeAnonymousAccountWithGoogle,
+  checkAndHandleUpgradeCallback
+} from '@/lib/auth-utils';
 
 interface GameProgress {
   science: { elements: number, endElements: number, achievements: number, lastPlayed?: string } | null;
@@ -13,7 +21,7 @@ interface GameProgress {
 }
 
 export default function Home() {
-  const { user, dailyCount, loading } = useSupabase();
+  const { user, dbUser, dailyCount, loading } = useSupabase();
   const router = useRouter();
   const [progress, setProgress] = useState<GameProgress | null>(null);
   const [showResetModal, setShowResetModal] = useState(false);
@@ -25,6 +33,15 @@ export default function Home() {
   const [tempApiKey, setTempApiKey] = useState<string>('');
   const [isValidatingKey, setIsValidatingKey] = useState<boolean>(false);
   const [toast, setToast] = useState<string>('');
+  
+  // Authentication state
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+  const [showUpgradeBenefits, setShowUpgradeBenefits] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  
+  // Payment state
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
 
   // Show toast function
   const showToast = (message: string) => {
@@ -76,6 +93,87 @@ export default function Home() {
       setSelectedModel(savedModel);
     }
   }, []);
+
+  // Check for upgrade callback on mount
+  useEffect(() => {
+    const handleUpgradeCallback = async () => {
+      const wasUpgraded = await checkAndHandleUpgradeCallback();
+      if (wasUpgraded) {
+        showToast('Account upgraded! Your progress has been saved.');
+      }
+    };
+    
+    handleUpgradeCallback();
+  }, []);
+
+  // Authentication handlers
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false);
+    showToast('Welcome! You can now purchase tokens and subscriptions.');
+  };
+
+  const handleUpgradeAccount = async () => {
+    if (!user || !dbUser) return;
+    
+    setIsUpgrading(true);
+    const result = await upgradeAnonymousAccountWithGoogle(user.id);
+    
+    if (result.success) {
+      showToast(result.message);
+    } else {
+      showToast(result.message);
+      setIsUpgrading(false);
+    }
+  };
+
+  const handleShowAuth = (mode: 'login' | 'register' = 'login', showBenefits = false) => {
+    setAuthModalMode(mode);
+    setShowUpgradeBenefits(showBenefits);
+    setShowAuthModal(true);
+  };
+
+  // Payment handlers
+  const handleStripePayment = async (productId: string) => {
+    if (isAnonymous) {
+      // Show auth modal first for anonymous users
+      handleShowAuth('register', true);
+      return;
+    }
+
+    setIsCreatingPayment(true);
+    try {
+      const response = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ productId }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Payment creation failed');
+      }
+
+      // Redirect to Stripe Checkout
+      if (result.url) {
+        window.location.href = result.url;
+      } else {
+        throw new Error('No checkout URL received');
+      }
+
+    } catch (error: any) {
+      showToast(error.message || 'Payment failed');
+    } finally {
+      setIsCreatingPayment(false);
+    }
+  };
+
+  // Check if user should see upgrade prompts
+  const isAnonymous = dbUser?.is_anonymous || false;
+  const shouldShowUpgrade = shouldShowUpgradeButton(dailyCount, 5, isAnonymous);
+  const shouldShowUpgradePromptNow = shouldShowUpgradePrompt(dailyCount, 5, isAnonymous);
 
   // Save API key to localStorage when it changes
   useEffect(() => {
@@ -248,16 +346,79 @@ export default function Home() {
             Free to play • 50 combinations per day
           </div>
           
-          {/* Register / Sign in Button */}
+          {/* Authentication / Account Status */}
           <div className="flex justify-center">
-            <button
-              onClick={() => showToast('Coming soon')}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-gray-300 hover:text-white"
-            >
-              <span>👤</span>
-              <span>Register / Sign in</span>
-            </button>
+            {isAnonymous ? (
+              <button
+                onClick={() => handleShowAuth('register', shouldShowUpgrade)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm ${
+                  shouldShowUpgrade 
+                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium' 
+                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white'
+                }`}
+              >
+                <span>👤</span>
+                <span>{shouldShowUpgrade ? 'Upgrade Account' : 'Create Account'}</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 px-4 py-2 bg-green-600/20 rounded-lg text-green-400 text-sm">
+                <span>✓</span>
+                <span>Signed in as {dbUser?.display_name || dbUser?.email}</span>
+              </div>
+            )}
           </div>
+          
+          {/* Payment Buttons for Authenticated Users */}
+          {!isAnonymous && dbUser && (
+            <div className="mt-6 p-4 bg-gray-800/50 rounded-lg">
+              <h3 className="text-lg font-semibold mb-4 text-center">Get More Tokens</h3>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <button
+                  onClick={() => handleStripePayment('tokens_100')}
+                  disabled={isCreatingPayment}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-medium py-3 px-4 rounded-lg transition-all text-sm"
+                >
+                  {isCreatingPayment ? 'Processing...' : '100 tokens - €0.40'}
+                </button>
+                <button
+                  onClick={() => handleStripePayment('tokens_500')}
+                  disabled={isCreatingPayment}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-medium py-3 px-4 rounded-lg transition-all text-sm"
+                >
+                  {isCreatingPayment ? 'Processing...' : '500 tokens - €1.80'}
+                </button>
+                <button
+                  onClick={() => handleStripePayment('tokens_1000')}
+                  disabled={isCreatingPayment}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-medium py-3 px-4 rounded-lg transition-all text-sm"
+                >
+                  {isCreatingPayment ? 'Processing...' : '1000 tokens - €3.50'}
+                </button>
+                <button
+                  onClick={() => handleStripePayment('subscription_monthly')}
+                  disabled={isCreatingPayment}
+                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white font-medium py-3 px-4 rounded-lg transition-all text-sm"
+                >
+                  {isCreatingPayment ? 'Processing...' : 'Monthly - €5.99'}
+                </button>
+              </div>
+              <div className="text-xs text-gray-400 text-center">
+                Current balance: {dbUser.token_balance || 0} tokens
+              </div>
+            </div>
+          )}
+
+          {/* Quick Sign In for returning users */}
+          {isAnonymous && (
+            <div className="flex justify-center">
+              <button
+                onClick={() => handleShowAuth('login', false)}
+                className="text-sm text-gray-400 hover:text-gray-300 transition-colors"
+              >
+                Already have an account? Sign in
+              </button>
+            </div>
+          )}
           
           {/* API Key Button - More subtle */}
           <div className="flex justify-center">
@@ -430,6 +591,15 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* AuthModal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={handleAuthSuccess}
+        initialMode={authModalMode}
+        showUpgradeBenefits={showUpgradeBenefits}
+      />
 
       {/* Toast */}
       {toast && (
