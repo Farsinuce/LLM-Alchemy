@@ -475,7 +475,7 @@ const LLMAlchemy = () => {
       // Reset to base starting elements for the new mode
       if (isCurrentlyCreative) {
         setElements([
-          { id: 'life', name: 'Life', emoji: '🌱', color: '#32CD32', unlockOrder: 0 },
+          { id: 'life', name: 'Life', emoji: '🧬', color: '#32CD32', unlockOrder: 0 },
           { id: 'earth', name: 'Earth', emoji: '🌍', color: '#8B4513', unlockOrder: 1 },
           { id: 'air', name: 'Air', emoji: '💨', color: '#87CEEB', unlockOrder: 2 },
           { id: 'fire', name: 'Fire', emoji: '🔥', color: '#FF4500', unlockOrder: 3 },
@@ -589,6 +589,15 @@ const LLMAlchemy = () => {
         osc.start(now);
         osc.stop(now + 0.03);
         break;
+      case 'reverse-pop':
+        // Reverse of 'pop' sound - frequency rises instead of falls
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+        gainNode.gain.setValueAtTime(0.4, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.15);
+        break;
     }
   };
 
@@ -680,14 +689,15 @@ const LLMAlchemy = () => {
 
   // Helper function to play pop-in animation for all elements when loading game
   const playElementLoadAnimation = useCallback((elementsToAnimate: Element[]) => {
-    // Don't animate if only base elements (5 or fewer) or already playing
-    if (elementsToAnimate.length <= 5 || isPlayingLoadAnimation) return;
+    // Filter out starting elements (unlockOrder 0-4) and don't animate if only base elements or already playing
+    const elementsToAnimate_filtered = elementsToAnimate.filter(e => e.unlockOrder > 4);
+    if (elementsToAnimate_filtered.length === 0 || isPlayingLoadAnimation) return;
     
-    console.log('[LOAD ANIMATION] Starting CSS-delayed element load animation for', elementsToAnimate.length, 'elements');
+    console.log('[LOAD ANIMATION] Starting CSS-delayed element load animation for', elementsToAnimate_filtered.length, 'elements');
     setIsPlayingLoadAnimation(true);
     
     // Sort by unlock order for proper sequence
-    const sortedElements = [...elementsToAnimate].sort((a, b) => a.unlockOrder - b.unlockOrder);
+    const sortedElements = [...elementsToAnimate_filtered].sort((a, b) => a.unlockOrder - b.unlockOrder);
     
     // Add all elements to animated set immediately - CSS will handle timing
     setAnimatedElements(new Set(sortedElements.map(e => e.id)));
@@ -2267,7 +2277,7 @@ ${shared.responseFormat}`;
                   setLastCombination(null);
                   
                   showToast('Action undone!');
-                  playSound('click');
+                  playSound('reverse-pop');
                   
                 } catch (error) {
                   console.error('Error during undo:', error);
