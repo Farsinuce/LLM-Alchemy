@@ -180,7 +180,6 @@ export default function Home() {
         
         <p className="text-lg text-gray-300 mb-8">
           Combine elements to discover new ones using AI.
-          Science mode for realistic combinations, Creative mode for imaginative results!
         </p>
 
         {/* Progress Display */}
@@ -193,7 +192,7 @@ export default function Home() {
                 <div className="flex justify-between items-center py-2 px-3 bg-blue-600/20 rounded">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">
-                      <span className="hidden sm:inline">🧪 </span>Science Mode
+                      <span className="hidden sm:inline">🧪 </span>Science
                     </span>
                     <span className="text-xs text-gray-400">|</span>
                     <span className="text-sm text-gray-300">
@@ -215,7 +214,7 @@ export default function Home() {
                 <div className="flex justify-between items-center py-2 px-3 bg-purple-600/20 rounded">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">
-                      <span className="hidden sm:inline">🎨 </span>Creative Mode
+                      <span className="hidden sm:inline">🎨 </span>Creative
                     </span>
                     <span className="text-xs text-gray-400">|</span>
                     <span className="text-sm text-gray-300">
@@ -231,10 +230,6 @@ export default function Home() {
                   </button>
                 </div>
               )}
-            </div>
-
-            <div className="text-center mt-4 text-sm text-gray-400">
-              Today: {dailyCount}/50 combinations used
             </div>
           </div>
         )}
@@ -320,7 +315,7 @@ export default function Home() {
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Use your own API key to play without daily limits
+                  Use your own API key to play without limits
                 </p>
               </div>
               
@@ -400,7 +395,7 @@ export default function Home() {
           <div className="bg-gray-800 rounded-xl p-6 max-w-sm w-full">
             <h3 className="text-xl font-bold mb-3">Reset Progress?</h3>
             <p className="text-gray-300 mb-4">
-              Reset current progress in {selectedMode} mode and start fresh?
+              Reset discovered elements in {selectedMode} mode?
             </p>
             
             <div className="mb-6">
@@ -411,7 +406,7 @@ export default function Home() {
                   onChange={(e) => setResetAchievements(e.target.checked)}
                   className="rounded"
                 />
-                Also reset achievements
+                Reset achievements
               </label>
             </div>
             
@@ -429,7 +424,7 @@ export default function Home() {
                 onClick={confirmReset}
                 className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded transition-colors font-medium"
               >
-                Reset Progress
+                Reset
               </button>
             </div>
           </div>

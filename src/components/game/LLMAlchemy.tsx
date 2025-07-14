@@ -330,7 +330,7 @@ const LLMAlchemy = () => {
                 case 'character':
                   achievementId = 'first-character';
                   achievementName = 'Fictional Hero';
-                  achievementDescription = 'Summoned a legendary character';
+                  achievementDescription = 'Summoned a legendary being';
                   achievementEmoji = '🦸';
                   break;
                 case 'disaster':
@@ -2195,6 +2195,9 @@ ${shared.responseFormat}`;
                 return;
               }
               
+              // Play sound immediately for instant feedback
+              playSound('reverse-pop');
+              
               // Perform undo
               if (lastCombination) {
                 try {
@@ -2277,7 +2280,6 @@ ${shared.responseFormat}`;
                   setLastCombination(null);
                   
                   showToast('Action undone!');
-                  playSound('reverse-pop');
                   
                 } catch (error) {
                   console.error('Error during undo:', error);
