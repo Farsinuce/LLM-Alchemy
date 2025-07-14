@@ -714,32 +714,19 @@ const LLMAlchemy = () => {
     // Don't animate if only base elements (5 or fewer) or already playing
     if (elementsToAnimate.length <= 5 || isPlayingLoadAnimation) return;
     
-    console.log('[LOAD ANIMATION] Starting SEQUENTIAL element load animation for', elementsToAnimate.length, 'elements');
+    console.log('[LOAD ANIMATION] Starting CSS-delayed element load animation for', elementsToAnimate.length, 'elements');
     setIsPlayingLoadAnimation(true);
     
     // Sort by unlock order for proper sequence
     const sortedElements = [...elementsToAnimate].sort((a, b) => a.unlockOrder - b.unlockOrder);
     
-    // Animate each element SEQUENTIALLY - no overlap, one finishes before next starts
-    sortedElements.forEach((element, index) => {
-      const startTime = index * 350; // 300ms animation + 50ms pause between
-      
-      // Start animation
-      setTimeout(() => {
-        console.log('[LOAD ANIMATION] Starting animation for element', index + 1, ':', element.name);
-        setAnimatedElements(prev => new Set(prev).add(element.id));
-        setPopElement(element.id);
-      }, startTime);
-      
-      // Clear animation after it completes
-      setTimeout(() => {
-        console.log('[LOAD ANIMATION] Completed animation for element', index + 1, ':', element.name);
-        setPopElement(null);
-      }, startTime + 300); // Clear after 300ms animation
-    });
+    // Add all elements to animated set immediately - CSS will handle timing
+    setAnimatedElements(new Set(sortedElements.map(e => e.id)));
     
-    // Mark entire sequence complete
-    const totalDuration = sortedElements.length * 350;
+    // Calculate total duration: (elements * 25ms delay) + 300ms animation
+    const totalDuration = (sortedElements.length * 25) + 300;
+    
+    // Mark sequence complete after all animations finish
     setTimeout(() => {
       setIsPlayingLoadAnimation(false);
       setAnimatedElements(new Set()); // Clear for next time
@@ -2132,7 +2119,7 @@ ${shared.responseFormat}`;
               } ${
                 touchDragging?.id === element.id && !touchDragging?.fromMixingArea ? 'opacity-30' : ''
               } ${
-                isPlayingLoadAnimation && !animatedElements.has(element.id) ? 'opacity-0' : ''
+                isPlayingLoadAnimation && animatedElements.has(element.id) ? 'animate-element-load-delayed' : ''
               }`}
               style={{ 
                 backgroundColor: element.color,
@@ -2141,7 +2128,10 @@ ${shared.responseFormat}`;
                 transition: isDraggingDivider ? 'none' : undefined,
                 touchAction: 'none',
                 WebkitTouchCallout: 'none',
-                WebkitUserSelect: 'none'
+                WebkitUserSelect: 'none',
+                animationDelay: isPlayingLoadAnimation && animatedElements.has(element.id) 
+                  ? `${element.unlockOrder * 25}ms` 
+                  : undefined
               }}
             >
               <div className="text-lg sm:text-xl">{element.emoji}</div>
@@ -2720,6 +2710,12 @@ ${shared.responseFormat}`;
           100% { transform: scale(0); opacity: 0; }
         }
         
+        @keyframes element-load-delayed {
+          0% { transform: scale(0); opacity: 0; }
+          70% { transform: scale(1.2); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        
         @keyframes element-pop {
           0% { transform: scale(0); }
           50% { transform: scale(1.2); }
@@ -2767,6 +2763,11 @@ ${shared.responseFormat}`;
         
         .animate-element-pop-out {
           animation: element-pop-out 0.3s ease-out forwards;
+        }
+        
+        .animate-element-load-delayed {
+          animation: element-load-delayed 0.3s ease-out;
+          animation-fill-mode: both;
         }
         
         .animate-element-shake {
