@@ -188,8 +188,12 @@ export default function Home() {
     }
   };
 
-  // Check if user should see upgrade prompts
-  const isAnonymous = dbUser?.is_anonymous || false;
+  // Check auth states
+  const hasSession = !!user;
+  const isRegistered = hasSession && !dbUser?.is_anonymous;
+  const isAnonymous = hasSession && (dbUser?.is_anonymous || false);
+  const isLoggedOut = !hasSession;
+  
   const shouldShowUpgrade = shouldShowUpgradeButton(dailyCount, 5, isAnonymous);
   const shouldShowUpgradePromptNow = shouldShowUpgradePrompt(dailyCount, 5, isAnonymous);
 
@@ -366,7 +370,24 @@ export default function Home() {
           
           {/* Authentication / Account Status */}
           <div className="flex justify-center">
-            {isAnonymous ? (
+            {isLoggedOut ? (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => handleShowAuth('register')}
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-sm text-white font-medium"
+                >
+                  <span>👤</span>
+                  <span>Create Account</span>
+                </button>
+                <button
+                  onClick={() => handleShowAuth('login')}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-gray-300 hover:text-white"
+                >
+                  <span>🔑</span>
+                  <span>Sign In</span>
+                </button>
+              </div>
+            ) : isAnonymous ? (
               <button
                 onClick={() => handleShowAuth('register', shouldShowUpgrade)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm ${

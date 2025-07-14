@@ -93,17 +93,22 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       isInitializing = true
       
       try {
-        // Get current session
+        // Get current session (don't create new anonymous user)
         const { data: { session } } = await supabase.auth.getSession()
         
         if (!mounted) return
         
         if (session?.user) {
-          // User already exists
+          // User already exists - load their data
           setUser(session.user)
           
-          // Get DB user record
-          const dbUser = await getOrCreateAnonymousUser(supabase)
+          // Get existing DB user record (don't create)
+          const { data: dbUser } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+          
           if (mounted && dbUser) {
             setDbUser(dbUser)
             const count = await getDailyCount(supabase, session.user.id)
@@ -113,24 +118,8 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
               setTokenBalance(balance)
             }
           }
-        } else {
-          // No session, create anonymous user
-          const dbUser = await getOrCreateAnonymousUser(supabase)
-          if (mounted && dbUser) {
-            setDbUser(dbUser)
-            // Get the new session
-            const { data: { session: newSession } } = await supabase.auth.getSession()
-            if (newSession?.user && mounted) {
-              setUser(newSession.user)
-              const count = await getDailyCount(supabase, newSession.user.id)
-              const balance = await getTokenBalance(supabase, newSession.user.id)
-              if (mounted) {
-                setDailyCount(count)
-                setTokenBalance(balance)
-              }
-            }
-          }
         }
+        // No else clause - don't create anonymous user automatically
       } catch (error) {
         console.error('Auth initialization error:', error)
       } finally {
