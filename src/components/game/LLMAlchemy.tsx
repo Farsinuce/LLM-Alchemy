@@ -197,6 +197,7 @@ const LLMAlchemy = () => {
   
   // Element load animation state
   const [isPlayingLoadAnimation, setIsPlayingLoadAnimation] = useState<boolean>(false);
+  const [animatedElements, setAnimatedElements] = useState<Set<string>>(new Set());
   
   // Load API key from localStorage on mount (optional - for convenience)
   useEffect(() => {
@@ -726,6 +727,7 @@ const LLMAlchemy = () => {
       // Start animation
       setTimeout(() => {
         console.log('[LOAD ANIMATION] Starting animation for element', index + 1, ':', element.name);
+        setAnimatedElements(prev => new Set(prev).add(element.id));
         setPopElement(element.id);
       }, startTime);
       
@@ -740,6 +742,7 @@ const LLMAlchemy = () => {
     const totalDuration = sortedElements.length * 350;
     setTimeout(() => {
       setIsPlayingLoadAnimation(false);
+      setAnimatedElements(new Set()); // Clear for next time
       console.log('[LOAD ANIMATION] ALL animations completed - total duration:', totalDuration + 'ms');
     }, totalDuration);
   }, [isPlayingLoadAnimation]);
@@ -2128,6 +2131,8 @@ ${shared.responseFormat}`;
                 shakeElement === element.id ? 'animate-element-shake' : ''
               } ${
                 touchDragging?.id === element.id && !touchDragging?.fromMixingArea ? 'opacity-30' : ''
+              } ${
+                isPlayingLoadAnimation && !animatedElements.has(element.id) ? 'opacity-0' : ''
               }`}
               style={{ 
                 backgroundColor: element.color,
