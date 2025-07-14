@@ -702,8 +702,8 @@ const LLMAlchemy = () => {
     // Add all elements to animated set immediately - CSS will handle timing
     setAnimatedElements(new Set(sortedElements.map(e => e.id)));
     
-    // Calculate total duration: (elements * 25ms delay) + 300ms animation
-    const totalDuration = (sortedElements.length * 25) + 300;
+    // Calculate total duration: (elements * 25ms delay) + 300ms animation + 200ms buffer
+    const totalDuration = (sortedElements.length * 25) + 300 + 200;
     
     // Mark sequence complete after all animations finish
     setTimeout(() => {
