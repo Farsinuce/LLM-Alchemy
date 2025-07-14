@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Sparkles, CheckCircle, ArrowRight, Home } from 'lucide-react';
 
-export default function PaymentSuccess() {
+function PaymentSuccessContent() {
   const [status, setStatus] = useState('Processing payment...');
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
   const router = useRouter();
@@ -101,5 +101,27 @@ export default function PaymentSuccess() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentSuccess() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4">
+        <div className="max-w-md w-full text-center">
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <Sparkles className="text-yellow-400" size={48} />
+            <h1 className="text-3xl font-bold">LLM Alchemy</h1>
+          </div>
+          <div className="bg-gray-800 rounded-xl p-8 mb-6">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mx-auto mb-4"></div>
+            <h2 className="text-xl font-bold mb-2">Loading Payment Status</h2>
+            <p className="text-gray-400">Please wait...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
