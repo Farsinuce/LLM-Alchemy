@@ -22,7 +22,6 @@ interface MixingElement extends Element {
   y: number;
   index: number;
   energized: boolean;
-  isAnimating?: boolean;
   fromMixingArea?: boolean;
   mixIndex?: number | null;
 }
@@ -87,20 +86,10 @@ const CONSTANTS = {
   TOAST_DURATION: 3000,
   ELEMENT_SIZES: { sm: 48, md: 56, lg: 64 },
   BREAKPOINTS: { sm: 640, md: 768 },
-  FLOATING_EMOJI_UPDATE: 100,
-  REASONING_POPUP_DELAY: 50,
   COLLISION_SPACING: 8,
   MAX_COLLISION_DISTANCE: 300,
   COLLISION_POSITIONS: 16,
-  DAILY_LIMIT: 5, // Easy to change for testing/production
-  SOUND_VOLUMES: {
-    press: 0.1,
-    plop: 0.3,
-    pop: 0.4,
-    reward: 0.3,
-    endElement: 0.35,
-    click: 0.2
-  }
+  DAILY_LIMIT: 5 // Easy to change for testing/production
 };
 
 // Utility functions
@@ -115,33 +104,6 @@ const isTouchDevice =
   typeof window !== "undefined" &&
   (("ontouchstart" in window) || navigator.maxTouchPoints > 0);
 
-// localStorage helper functions for daily counter
-const getDailyCount = () => {
-  if (typeof window === "undefined") return { count: 0, date: new Date().toDateString() };
-  
-  const stored = localStorage.getItem('llm-alchemy-daily');
-  if (!stored) return { count: 0, date: new Date().toDateString() };
-  
-  try {
-    const { count, date } = JSON.parse(stored);
-    // Reset if new day
-    if (date !== new Date().toDateString()) {
-      return { count: 0, date: new Date().toDateString() };
-    }
-    return { count, date };
-  } catch {
-    return { count: 0, date: new Date().toDateString() };
-  }
-};
-
-const incrementLocalCounter = () => {
-  if (typeof window === "undefined") return { count: 0, date: new Date().toDateString() };
-  
-  const current = getDailyCount();
-  const updated = { count: current.count + 1, date: current.date };
-  localStorage.setItem('llm-alchemy-daily', JSON.stringify(updated));
-  return updated;
-};
 
 const LLMAlchemy = () => {
   const { user, dbUser, dailyCount, tokenBalance, loading, refreshDailyCount, refreshTokenBalance } = useSupabase();
@@ -237,12 +199,19 @@ const LLMAlchemy = () => {
           if (savedState) {
             // Restore discovered elements
             if (Array.isArray(savedState.elements) && savedState.elements.length > 0) {
+              // Set animation state FIRST to prevent flash
+              if (savedState.elements.length > 5) {
+                setIsPlayingLoadAnimation(true);
+                setAnimatedElements(new Set(savedState.elements.map(e => e.id)));
+              }
+              
+              // Then set elements (they'll start invisible due to animation state)
               setElements(savedState.elements);
               
-              // Trigger load animation for discovered elements (after a brief delay to ensure rendering)
-              setTimeout(() => {
+              // Trigger load animation immediately (no delay needed)
+              if (savedState.elements.length > 5) {
                 playElementLoadAnimation(savedState.elements);
-              }, 150);
+              }
             }
             
             // Restore end elements
@@ -2379,7 +2348,7 @@ ${shared.responseFormat}`;
               touchAction: 'none',
               WebkitTouchCallout: 'none',
               WebkitUserSelect: 'none',
-              transition: element.isAnimating ? 'left 0.3s ease-out, top 0.3s ease-out' : 'none',
+              transition: 'none',
               boxShadow: element.energized ? '0 0 20px rgba(250, 204, 21, 0.5), 0 0 0 2px #facc15' :
                         hoveredElement === element.index ? '0 0 0 2px rgba(255, 255, 255, 0.6)' :
                         hoveredUIElement === `mixing-${element.index}` && !isDragging ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
