@@ -75,8 +75,24 @@ export async function getOrCreateAnonymousUser(supabase: any): Promise<User | nu
       }
     }
 
-    // Create anonymous user (invisible Turnstile handles captcha automatically)
-    const { data, error } = await supabase.auth.signInAnonymously()
+    // Create anonymous user with optional Turnstile support
+    let captchaToken: string | undefined;
+    
+    // Try to get Turnstile token if available (graceful fallback if not)
+    try {
+      const { getTurnstileToken, waitForTurnstile } = await import('./turnstile');
+      const turnstileReady = await waitForTurnstile(2000); // Wait up to 2 seconds
+      
+      if (turnstileReady) {
+        captchaToken = await getTurnstileToken() || undefined;
+      }
+    } catch (error) {
+      console.warn('Turnstile not available, proceeding without captcha:', error);
+    }
+
+    const { data, error } = await supabase.auth.signInAnonymously(
+      captchaToken ? { options: { captchaToken } } : undefined
+    )
     
     if (error) {
       console.error('Error creating anonymous user:', error)
