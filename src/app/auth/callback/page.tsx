@@ -12,7 +12,25 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Get the URL parameters
+        setStatus('Completing authentication...');
+        
+        // For email auth, we need to exchange the code first
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        if (code) {
+          // Exchange the code for a session
+          const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (exchangeError) {
+            console.error('Code exchange error:', exchangeError);
+            setStatus('Authentication failed. Redirecting...');
+            setTimeout(() => router.push('/'), 3000);
+            return;
+          }
+        }
+        
+        // Now get the session (should be available after code exchange)
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
