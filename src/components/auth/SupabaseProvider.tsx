@@ -145,20 +145,26 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
             setDailyCount(0)
             setTokenBalance(0)
           } else if (event === 'SIGNED_IN' && session?.user) {
-            setUser(session.user)
-            
-            // Get or create DB user
-            const dbUser = await getOrCreateAnonymousUser(supabase)
-            if (mounted && dbUser) {
-              setDbUser(dbUser)
-              const count = await getDailyCount(supabase, session.user.id)
-              const balance = await getTokenBalance(supabase, session.user.id)
-              if (mounted) {
-                setDailyCount(count)
-                setTokenBalance(balance)
-              }
-            }
+        setUser(session.user)
+        
+        // Only get existing DB user, don't create new ones here
+        // (creation should only happen via explicit signInAnonymously call)
+        const { data: dbUser } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+        
+        if (mounted && dbUser) {
+          setDbUser(dbUser)
+          const count = await getDailyCount(supabase, session.user.id)
+          const balance = await getTokenBalance(supabase, session.user.id)
+          if (mounted) {
+            setDailyCount(count)
+            setTokenBalance(balance)
           }
+        }
+      }
         } catch (error) {
           console.error('Auth state change error:', error)
         } finally {

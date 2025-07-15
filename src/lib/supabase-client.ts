@@ -56,6 +56,35 @@ export function createClient() {
   return createBrowserClient(supabaseUrl, supabaseKey)
 }
 
+// Authentication functions
+export async function signInWithEmail(supabase: any, email: string): Promise<{ error: any }> {
+  try {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+    return { error };
+  } catch (error) {
+    return { error };
+  }
+}
+
+export async function signInWithGoogle(supabase: any): Promise<{ error: any }> {
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+    return { error };
+  } catch (error) {
+    return { error };
+  }
+}
+
 // Helper functions for common database operations
 export async function getOrCreateAnonymousUser(supabase: any): Promise<User | null> {
   try {
@@ -117,6 +146,11 @@ export async function getOrCreateAnonymousUser(supabase: any): Promise<User | nu
     if (dbError) {
       console.error('Error creating user record:', dbError)
       return null
+    }
+
+    // Store anonymous user ID for potential migration later
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('anonymous_user_id', data.user.id)
     }
 
     return dbUser

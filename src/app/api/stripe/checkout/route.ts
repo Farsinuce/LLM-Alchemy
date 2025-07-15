@@ -125,14 +125,7 @@ export async function POST(req: NextRequest) {
         p_amount: product.amount / 100, // Convert cents to euros
         p_currency: 'EUR',
         p_type: paymentType,
-        p_tokens_granted: product.tokens,
-        p_subscription_type: isSubscription ? 'monthly' : null,
-        p_checkout_url: session.url,
-        p_metadata: {
-          stripe_session_id: session.id,
-          product_id: productId,
-          description: product.description,
-        },
+        p_tokens_granted: product.tokens
       });
 
     if (paymentError) {

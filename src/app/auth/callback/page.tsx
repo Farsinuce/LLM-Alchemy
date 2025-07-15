@@ -26,27 +26,69 @@ export default function AuthCallback() {
           // User successfully authenticated
           setStatus('Authentication successful! Redirecting...');
           
+          // Check for existing anonymous user data to migrate
+          const anonymousUserId = localStorage.getItem('anonymous_user_id');
+          
           // Create or update user record in our database
+          const userRecord = {
+            id: data.session.user.id,
+            email: data.session.user.email,
+            display_name: data.session.user.user_metadata?.display_name || 
+                         data.session.user.user_metadata?.full_name || 
+                         data.session.user.email?.split('@')[0],
+            avatar_url: data.session.user.user_metadata?.avatar_url,
+            google_id: data.session.user.app_metadata?.provider === 'google' ? 
+                      data.session.user.user_metadata?.sub : null,
+            is_anonymous: false,
+            email_verified: data.session.user.email_confirmed_at !== null,
+            upgraded_from_anonymous: !!anonymousUserId,
+            updated_at: new Date().toISOString()
+          };
+
           const { data: userData, error: userError } = await supabase
             .from('users')
-            .upsert({
-              id: data.session.user.id,
-              email: data.session.user.email,
-              display_name: data.session.user.user_metadata?.display_name || 
-                           data.session.user.user_metadata?.full_name || 
-                           data.session.user.email?.split('@')[0],
-              avatar_url: data.session.user.user_metadata?.avatar_url,
-              google_id: data.session.user.app_metadata?.provider === 'google' ? 
-                        data.session.user.user_metadata?.sub : null,
-              is_anonymous: false,
-              email_verified: data.session.user.email_confirmed_at !== null,
-              updated_at: new Date().toISOString()
-            }, {
+            .upsert(userRecord, {
               onConflict: 'id'
             });
 
           if (userError) {
             console.error('User creation error:', userError);
+          }
+
+          // Migrate anonymous user data if exists
+          if (anonymousUserId && anonymousUserId !== data.session.user.id) {
+            try {
+              // Transfer game states
+              await supabase
+                .from('game_states')
+                .update({ user_id: data.session.user.id })
+                .eq('user_id', anonymousUserId);
+
+              // Transfer user sessions
+              await supabase
+                .from('user_sessions')
+                .update({ user_id: data.session.user.id })
+                .eq('user_id', anonymousUserId);
+
+              // Mark migration complete
+              await supabase
+                .from('users')
+                .update({ anonymous_data_migrated: true })
+                .eq('id', data.session.user.id);
+
+              // Clean up anonymous user record
+              await supabase
+                .from('users')
+                .delete()
+                .eq('id', anonymousUserId);
+
+              // Remove from localStorage
+              localStorage.removeItem('anonymous_user_id');
+              
+              console.log('✅ Anonymous user data migrated successfully');
+            } catch (migrationError) {
+              console.error('Migration error (non-critical):', migrationError);
+            }
           }
 
           // Redirect to home page
