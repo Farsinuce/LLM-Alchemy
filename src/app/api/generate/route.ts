@@ -144,10 +144,35 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Use emoji from LLM response directly (LLM instructed to avoid Asian characters)
+    // Handle the new multi-outcome format from the LLM
+    if (parsedResult.outcomes !== undefined) {
+      // New format: {"outcomes": [...]} or {"outcomes": null, "reasoning": "..."}
+      if (parsedResult.outcomes === null) {
+        // No valid combination found
+        return NextResponse.json({
+          outcomes: null,
+          reasoning: parsedResult.reasoning || 'No reaction'
+        });
+      } else if (Array.isArray(parsedResult.outcomes)) {
+        // Valid outcomes found - validate each outcome
+        const validatedOutcomes = parsedResult.outcomes.map((outcome: any) => ({
+          result: outcome.result || 'Unknown',
+          emoji: outcome.emoji || '✨',
+          color: outcome.color || '#808080',
+          rarity: outcome.rarity || 'common',
+          reasoning: outcome.reasoning || '',
+          tags: Array.isArray(outcome.tags) ? outcome.tags : [],
+          isEndElement: outcome.isEndElement || false
+        }));
+        
+        return NextResponse.json({
+          outcomes: validatedOutcomes
+        });
+      }
+    }
+    
+    // Fallback for old format or malformed response
     const validatedEmoji = parsedResult.emoji || '✨';
-
-    // Validate the parsed result
     const validatedResult = {
       result: parsedResult.result || null,
       emoji: validatedEmoji,
