@@ -2537,6 +2537,25 @@ Or if no valid combination:
           </button>
         )}
 
+        {/* Subtle Upgrade button for registered freemium users */}
+        {dbUser && !dbUser.is_anonymous && dbUser.subscription_status === 'free' && (
+          <button
+            onClick={() => {
+              // Navigate back to home page where they can upgrade
+              router.push('/')
+            }}
+            onMouseEnter={() => setHoveredUIElement('upgrade-button-mixing')}
+            onMouseLeave={() => setHoveredUIElement(null)}
+            className="absolute bottom-4 left-1/2 transform -translate-x-1/2 px-3 py-2 bg-gradient-to-r from-purple-600/80 to-blue-600/80 hover:from-purple-500/90 hover:to-blue-500/90 rounded-lg transition-all z-20 flex items-center gap-1 text-sm text-white font-medium backdrop-blur-sm"
+            style={{
+              boxShadow: hoveredUIElement === 'upgrade-button-mixing' && !isMixing ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
+            }}
+          >
+            <span>⭐</span>
+            <span>Upgrade</span>
+          </button>
+        )}
+
         {mixingArea.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center">
             <p className="text-gray-500 text-center px-4">

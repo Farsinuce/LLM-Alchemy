@@ -249,7 +249,11 @@ export default function Home() {
     };
   }, [user]);
 
-  const hasAnyProgress = progress && (progress.science || progress.creative);
+  // Only show progress if there are more than the starting elements (5 base elements)
+  const hasAnyProgress = progress && (
+    (progress.science && progress.science.elements > 5) || 
+    (progress.creative && progress.creative.elements > 5)
+  );
 
   const handleContinueGame = () => {
     if (hasAnyProgress && progress) {
@@ -370,34 +374,13 @@ export default function Home() {
           
           {/* Authentication / Account Status */}
           <div className="flex justify-center">
-            {isLoggedOut ? (
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => handleShowAuth('register')}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-sm text-white font-medium"
-                >
-                  <span>👤</span>
-                  <span>Create Account</span>
-                </button>
-                <button
-                  onClick={() => handleShowAuth('login')}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-gray-300 hover:text-white"
-                >
-                  <span>🔑</span>
-                  <span>Sign In</span>
-                </button>
-              </div>
-            ) : isAnonymous ? (
+            {(isLoggedOut || isAnonymous) ? (
               <button
-                onClick={() => handleShowAuth('register', shouldShowUpgrade)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm ${
-                  shouldShowUpgrade 
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium' 
-                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white'
-                }`}
+                onClick={() => handleShowAuth('register')}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-sm text-white font-medium"
               >
                 <span>👤</span>
-                <span>{shouldShowUpgrade ? 'Upgrade Account' : 'Create Account'}</span>
+                <span>Register / Sign in</span>
               </button>
             ) : (
               <div className="flex items-center gap-3">
@@ -415,6 +398,20 @@ export default function Home() {
               </div>
             )}
           </div>
+          
+          {/* Upgrade button for registered freemium users */}
+          {isRegistered && dbUser?.subscription_status === 'free' && (
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={() => handleStripePayment('subscription_monthly')}
+                disabled={isCreatingPayment}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-lg transition-colors text-sm text-white font-medium"
+              >
+                <span>⭐</span>
+                <span>{isCreatingPayment ? 'Processing...' : 'Upgrade'}</span>
+              </button>
+            </div>
+          )}
           
           {/* Payment Buttons for Authenticated Users */}
           {!isAnonymous && dbUser && (
@@ -456,30 +453,35 @@ export default function Home() {
             </div>
           )}
 
-          {/* Quick Sign In for returning users */}
-          {isAnonymous && (
-            <div className="flex justify-center">
+          {/* LLM Options and API Key Buttons */}
+          <div className="flex justify-center gap-3">
+            {/* LLM Options for premium users or those with API keys */}
+            {(isRegistered && (dbUser?.subscription_status === 'premium' || userApiKey)) && (
               <button
-                onClick={() => handleShowAuth('login', false)}
-                className="text-sm text-gray-400 hover:text-gray-300 transition-colors"
+                onClick={() => {
+                  setTempApiKey(userApiKey);
+                  setShowApiKeyModal(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg transition-colors text-sm text-white font-medium"
               >
-                Already have an account? Sign in
+                <span>⚙️</span>
+                <span>LLM Options</span>
               </button>
-            </div>
-          )}
-          
-          {/* API Key Button - More subtle */}
-          <div className="flex justify-center">
-            <button
-              onClick={() => {
-                setTempApiKey(userApiKey);
-                setShowApiKeyModal(true);
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-gray-300 hover:text-white"
-            >
-              <span>🔑</span>
-              <span>{userApiKey ? 'Update API Key' : 'Use Your Own API Key'}</span>
-            </button>
+            )}
+            
+            {/* API Key Button - More subtle, only show if not already premium */}
+            {!(isRegistered && dbUser?.subscription_status === 'premium') && (
+              <button
+                onClick={() => {
+                  setTempApiKey(userApiKey);
+                  setShowApiKeyModal(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-gray-300 hover:text-white"
+              >
+                <span>🔑</span>
+                <span>{userApiKey ? 'Update API Key' : 'Use Your Own API Key'}</span>
+              </button>
+            )}
           </div>
           
           {userApiKey && (
