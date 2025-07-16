@@ -447,3 +447,107 @@ export async function addTokens(supabase: any, userId: string, tokens: number): 
     return 0
   }
 }
+
+// Monthly usage tracking functions for subscription fair use
+export async function getMonthlyUsage(supabase: any, userId: string): Promise<number> {
+  try {
+    const { data, error } = await supabase.rpc('get_monthly_usage', {
+      p_user_id: userId
+    })
+
+    if (error) {
+      console.error('Error getting monthly usage:', error)
+      return 0
+    }
+
+    return data || 0
+  } catch (error) {
+    console.error('Error in getMonthlyUsage:', error)
+    return 0
+  }
+}
+
+export async function incrementMonthlyUsage(supabase: any, userId: string): Promise<number> {
+  try {
+    const { data, error } = await supabase.rpc('increment_monthly_usage', {
+      p_user_id: userId
+    })
+
+    if (error) {
+      console.error('Error incrementing monthly usage:', error)
+      return 0
+    }
+
+    return data || 0
+  } catch (error) {
+    console.error('Error in incrementMonthlyUsage:', error)
+    return 0
+  }
+}
+
+export async function hasExceededFairUse(supabase: any, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('has_exceeded_fair_use', {
+      p_user_id: userId
+    })
+
+    if (error) {
+      console.error('Error checking fair use limit:', error)
+      return false
+    }
+
+    return data || false
+  } catch (error) {
+    console.error('Error in hasExceededFairUse:', error)
+    return false
+  }
+}
+
+// User preferences functions
+export async function getUserPreferences(supabase: any, userId: string): Promise<{
+  preferredLlmModel: 'flash' | 'pro',
+  openrouterApiKey?: string
+}> {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('preferred_llm_model, openrouter_api_key')
+      .eq('id', userId)
+      .single()
+
+    if (error) {
+      console.error('Error getting user preferences:', error)
+      return { preferredLlmModel: 'flash' }
+    }
+
+    return {
+      preferredLlmModel: data?.preferred_llm_model || 'flash',
+      openrouterApiKey: data?.openrouter_api_key || undefined
+    }
+  } catch (error) {
+    console.error('Error in getUserPreferences:', error)
+    return { preferredLlmModel: 'flash' }
+  }
+}
+
+export async function updateUserPreferences(supabase: any, userId: string, preferences: {
+  preferredLlmModel?: 'flash' | 'pro',
+  openrouterApiKey?: string | null
+}): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update(preferences)
+      .eq('id', userId)
+
+    if (error) {
+      console.error('Error updating user preferences:', error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error in updateUserPreferences:', error)
+    return false
+  }
+}
