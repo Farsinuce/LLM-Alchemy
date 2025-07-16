@@ -34,6 +34,7 @@ export interface GameState {
   end_elements: any[]
   combinations: Record<string, string | null>
   achievements: any[]
+  failed_combinations: string[]
   updated_at: string
 }
 

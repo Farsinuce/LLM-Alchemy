@@ -15,6 +15,8 @@ interface Element {
   reasoning?: string;
   tags?: string[];
   isEndElement?: boolean;
+  parents?: Element[]; // Runtime only - the elements that created this one
+  energyEnhanced?: boolean; // Runtime only - tracks if this was created via energy enhancement
 }
 
 interface MixingElement extends Element {
@@ -151,6 +153,9 @@ const LLMAlchemy = () => {
   const [undoAvailable, setUndoAvailable] = useState<boolean>(false);
   const [totalCombinationsMade, setTotalCombinationsMade] = useState<number>(0);
   
+  // Failed combinations tracking for improved LLM context
+  const [failedCombinations, setFailedCombinations] = useState<string[]>([]);
+  
   // New animation state for mixing area elements
   const [animatingElements, setAnimatingElements] = useState<Set<string>>(new Set());
   
@@ -192,13 +197,27 @@ const LLMAlchemy = () => {
   useEffect(() => {
     const loadSavedState = async () => {
       if (user && gameMode) {
+        console.log(`[GAME_STATE_DEBUG] 🔄 Loading saved state for user ${user.id} in ${gameMode} mode...`);
+        
         try {
           const supabase = createClient();
           const savedState = await loadGameState(supabase, user.id, gameMode);
           
           if (savedState) {
+            console.log(`[GAME_STATE_DEBUG] ✅ Found saved state:`, {
+              elements: savedState.elements?.length || 0,
+              end_elements: savedState.end_elements?.length || 0,
+              combinations: Object.keys(savedState.combinations || {}).length,
+              achievements: savedState.achievements?.length || 0,
+              failed_combinations: savedState.failed_combinations?.length || 0,
+              last_updated: savedState.updated_at
+            });
+            
             // Restore discovered elements
             if (Array.isArray(savedState.elements) && savedState.elements.length > 0) {
+              console.log(`[GAME_STATE_DEBUG] 🧪 Restoring ${savedState.elements.length} elements:`, 
+                savedState.elements.map(e => e.name).join(', '));
+              
               // Set animation state FIRST to prevent flash
               if (savedState.elements.length > 5) {
                 setIsPlayingLoadAnimation(true);
@@ -216,21 +235,35 @@ const LLMAlchemy = () => {
             
             // Restore end elements
             if (Array.isArray(savedState.end_elements) && savedState.end_elements.length > 0) {
+              console.log(`[GAME_STATE_DEBUG] 🏁 Restoring ${savedState.end_elements.length} end elements:`, 
+                savedState.end_elements.map(e => e.name).join(', '));
               setEndElements(savedState.end_elements);
             }
             
             // Restore combinations
             if (savedState.combinations && typeof savedState.combinations === 'object') {
+              console.log(`[GAME_STATE_DEBUG] 🔗 Restoring ${Object.keys(savedState.combinations).length} combinations`);
               setCombinations(savedState.combinations);
             }
             
             // Restore achievements
             if (Array.isArray(savedState.achievements) && savedState.achievements.length > 0) {
+              console.log(`[GAME_STATE_DEBUG] 🏆 Restoring ${savedState.achievements.length} achievements:`, 
+                savedState.achievements.map(a => a.name).join(', '));
               setAchievements(savedState.achievements);
             }
+            
+            // Restore failed combinations
+            if (Array.isArray(savedState.failed_combinations) && savedState.failed_combinations.length > 0) {
+              console.log(`[GAME_STATE_DEBUG] ❌ Restoring ${savedState.failed_combinations.length} failed combinations:`, 
+                savedState.failed_combinations.join(', '));
+              setFailedCombinations(savedState.failed_combinations);
+            }
+          } else {
+            console.log(`[GAME_STATE_DEBUG] 📭 No saved state found for ${gameMode} mode - starting fresh`);
           }
         } catch (error) {
-          console.error('Error loading game state:', error);
+          console.error('[GAME_STATE_DEBUG] ❌ Error loading game state:', error);
         }
       }
     };
@@ -238,10 +271,19 @@ const LLMAlchemy = () => {
     loadSavedState();
   }, [user, gameMode]);
 
-  // Auto-save game state when elements, endElements, combinations, or achievements change
+  // Auto-save game state when elements, endElements, combinations, achievements, or failed combinations change
   useEffect(() => {
     const saveState = async () => {
       if (user && gameMode && (elements.length > 5 || endElements.length > 0 || Object.keys(combinations).length > 0)) {
+        console.log(`[GAME_STATE_DEBUG] 💾 Auto-saving state for user ${user.id} in ${gameMode} mode...`, {
+          elements: elements.length,
+          end_elements: endElements.length,
+          combinations: Object.keys(combinations).length,
+          achievements: achievements.length,
+          failed_combinations: failedCombinations.length,
+          trigger: 'auto-save-debounced'
+        });
+        
         try {
           const supabase = createClient();
           await saveGameState(supabase, user.id, {
@@ -249,18 +291,29 @@ const LLMAlchemy = () => {
             elements: elements,
             end_elements: endElements,
             combinations: combinations,
-            achievements: achievements
+            achievements: achievements,
+            failed_combinations: failedCombinations
           });
+          console.log(`[GAME_STATE_DEBUG] ✅ Auto-save completed successfully`);
         } catch (error) {
-          console.error('Error saving game state:', error);
+          console.error('[GAME_STATE_DEBUG] ❌ Auto-save failed:', error);
         }
+      } else {
+        console.log(`[GAME_STATE_DEBUG] ⏭️ Skipping auto-save:`, {
+          hasUser: !!user,
+          hasGameMode: !!gameMode,
+          elementsCount: elements.length,
+          endElementsCount: endElements.length,
+          combinationsCount: Object.keys(combinations).length,
+          reason: !user ? 'no user' : !gameMode ? 'no game mode' : 'not enough progress'
+        });
       }
     };
 
     // Use debounce for background saves but immediate save is handled in performMix
     const timeoutId = setTimeout(saveState, 2000);
     return () => clearTimeout(timeoutId);
-  }, [user, gameMode, elements, endElements, combinations, achievements]);
+  }, [user, gameMode, elements, endElements, combinations, achievements, failedCombinations]);
 
   // Handle back to home
   const handleBackToHome = () => {
@@ -854,90 +907,134 @@ const LLMAlchemy = () => {
 }`
   }), []);
 
-  const buildSciencePrompt = (elements: Element[], mixingElements: Element[], shared: any, recentText: string) => {
+  const buildSciencePrompt = (elements: Element[], mixingElements: Element[], shared: any, recentText: string, failedText: string) => {
     return `Generate science-based element combinations.
-
 Current unlocked elements: ${elements.map(e => e.name).join(', ')}
 Mixing: ${mixingElements.map(e => e.name).join(' + ')}
 
-CORE RULES - Scientific Accuracy:
-1. Generate ONLY common, well-known scientific outcomes (high school level understanding)
-2. NEVER create obscure scientific terms (NO: Heterokaryon, Plasmogamy, etc.)
-3. Outcomes must have clear SCIENTIFIC CONNECTIONS - results should logically follow from combination based on real scientific principles
-4. Examples of GOOD outcomes: Rock, Sand, Steam, Cloud, Plant, Tree, Metal, Glass
-5. Mixing the same element with itself CAN produce results (e.g., Fungi + Fungi = Mycelium)
+CONTEXT: This is a discovery game where players combine elements. Not every combination works - that's part of the challenge. Returning null for illogical combinations is expected and good game design.
 
-MODE CONSTRAINTS - Scale & Scope:
-SCALE LIMITS:
-- Never generate outcomes larger than a building or smaller than a molecule
-- If a combination would create something too large, return a fragment instead
-- Examples: Rock + Rock = Gravel (not Boulder), Water + Water = Pool (not Ocean)
+CORE PHILOSOPHY:
+Elements represent tangible objects, materials, organisms, or fundamental phenomena - never mundane human actions (stirring, grinding) or abstract concepts (happiness, speed, infinity).
 
-TECHNOLOGY PREFERENCE:
-- Prefer natural outcomes: Geode, Fossil, Microbe, Plant
-- Advanced technology (Computer, Phone) → MUST be End Elements
-- Guide toward biology, geology, chemistry over technology
+SCIENTIFIC GROUNDING:
+1. Generate ONLY outcomes with clear scientific logic
+2. Results must be well-known at high school level (no obscure terms)
+3. If no logical connection exists between elements, return null
+4. Mixing the same element with itself CAN produce results if scientifically valid
 
-COMBINATION RULES:
-SIMILAR ELEMENTS RULE:
-- If outcome is too similar to existing elements, return the existing element name
-- Creates natural "rediscovery" rather than null responses
+SCALE & SCOPE:
+- Physical objects: molecule to building sized
+- Natural phenomena: can exceed building scale if fundamental (Atmosphere, Magnetic Field, Gravity)
+- Use concrete manifestations (Decay not Death, Electricity not Power)
 
-ENDLESS CHAINS PREVENTION:
-- Focus on tangible ELEMENTS rather than phenomena progressions
-- Avoid very similar variations: Rain vs Drizzle, Mist vs Fog
-- Water→Steam→Cloud is GOOD (distinct states)
-- Rain→Drizzle→Sprinkle is BAD (minor variations)
-- Return null when results become nonsensical
+FUNDAMENTAL COMBINATIONS REMINDER:
+Basic element combinations ALWAYS produce basic results, regardless of game progress:
+- Water + Fire = Steam (never Obsidian or advanced materials)
+- Fundamental + Fundamental = Simple outcome
+- Complex outcomes require at least one complex input
+
+REDUNDANCY PREVENTION:
+- Never create elements too similar to existing ones
+- If outcome would be similar, return the existing element name instead
+- Highly specific variants can exist as End Elements if sufficiently distinct
+
+TECHNOLOGY RULES:
+- Natural/ancient tech: normal elements (Brick, Glass, Wheel)
+- Industrial tech: normal elements approaching end territory (Engine, Turbine)
+- Modern high-tech: MUST be End Elements (Computer, Telescope, Laser Cutter)
+- Technology complexity caps at: Computer, Smartphone, Laser Cutter (all End Elements)
 
 ENERGY TRANSFORMATION:
 - Energy + element must create NEW substance, not adjective version
 - Energy + Rock = Crystal (not "Energized Rock")
 - If no valid transformation exists, return null
 
-END ELEMENTS (evolutionary dead-ends):
-- Extremophile, Fish, Arthropod (broad categories)
-- Diamond, Obsidian (final mineral forms)  
-- Computer, Book (advanced human tech)
+END ELEMENTS (mark isEndElement: true):
+- Peak technology: Computer, Telescope, Hologram
+- Ultimate materials: Diamond, Obsidian
+- Complex organisms: Fish, Arthropod, Carnivorous Plant
+- Highly specialized outcomes with no logical progressions
 
-${shared.raritySystem}
+VALID ELEMENT TYPES:
+✓ Natural materials (Rock, Sand, Metal)
+✓ Living organisms (Plant, Bacteria, Mushroom)
+✓ Natural phenomena (Rain, Lightning, Photosynthesis)
+✓ Chemical compounds (Water, Salt, Sugar)
+✗ Human actions (Mixing, Cutting, Boiling)
+✗ Abstract concepts (Love, Speed, Past)
+✗ Adjective versions (Hot Water, Energized Rock)
 
-${shared.reasoningRequirement}
-- Focus on the mechanism: "Heat evaporates liquid" or "Pressure crystallizes minerals"
+RARITY SYSTEM:
+Generate 1-3 possible outcomes based on scientific logic:
+- "common": The most expected/obvious outcome
+- "uncommon": A less obvious but scientifically valid outcome  
+- "rare": An unexpected but possible outcome
+Only include outcomes that make scientific sense - don't force rarities.
+
+REASONING REQUIREMENT:
+Every result needs a brief (15-60 character) scientific explanation.
 
 TAGS REQUIREMENT:
 - Assign 1-3 relevant tags for achievement tracking
 - Science tags: "lifeform", "organism", "mineral", "compound", "metal", "plant", "animal", "chemical", "gas", "liquid", "solid"
-- Achievement tags: "food", "tool", "disaster", "danger", "catastrophe"
+- Achievement tags: "food", "tool", "disaster", "danger", "electrical", "optical", "explosive", "toxic", "radioactive", "magnetic", "thermal"
 
-Recent combinations: ${recentText}
+Recent successful combinations (last 10): ${recentText}
+Recent failed combinations (last 5): ${failedText}
 
-${shared.responseFormat}`;
+Respond with ONLY a valid JSON object:
+{
+  "outcomes": [
+    {
+      "result": "Element Name",
+      "emoji": "appropriate emoji",
+      "color": "hex color",
+      "rarity": "common",
+      "isEndElement": false,
+      "reasoning": "brief explanation",
+      "tags": ["tag1", "tag2"]
+    }
+  ]
+}
+Or if no valid combination:
+{
+  "outcomes": null,
+  "reasoning": "No reaction"
+}`;
   };
 
-  const buildCreativePrompt = (elements: Element[], mixingElements: Element[], shared: any, recentText: string) => {
+  const buildCreativePrompt = (elements: Element[], mixingElements: Element[], shared: any, recentText: string, failedText: string) => {
     return `Generate creative element combinations.
-
 Current unlocked elements: ${elements.map(e => e.name).join(', ')}
 Mixing: ${mixingElements.map(e => e.name).join(' + ')}
 
-CORE RULES - Creative Connections:
+CONTEXT: This is a discovery game where players combine elements. Not every combination works - that's part of the challenge. Returning null for illogical combinations is expected and good game design.
+
+CORE PHILOSOPHY:
+Elements represent tangible objects, creatures, phenomena, or cultural concepts - never mundane actions or abstract emotions.
+
+CREATIVE GROUNDING:
 1. Generate outcomes from real sources: mythology, animals, plants, folklore, pop culture
 2. Outputs MUST have clear thematic/conceptual links to ALL inputs
 3. If no logical connection exists, return null instead of forcing a result
 4. BALANCE epic vs mundane: Not everything should be legendary
 
-MODE CONSTRAINTS - Grounded Creativity:
-SIMILAR ELEMENTS RULE (Flexible):
+FUNDAMENTAL COMBINATIONS REMINDER:
+Basic element combinations should produce basic results, regardless of game progress:
+- Fire + Water = Steam (not legendary creatures)
+- Basic + Basic = Simple outcome
+- Legendary outcomes require thematic depth or cultural significance
+
+REDUNDANCY PREVENTION:
 - Allow meaningful variations when they represent distinct concepts
 - Example: "Storm" and "Hurricane" are different enough to coexist
 - But avoid pure adjective versions: "Flying Unicorn" → return "Pegasus" instead
 
 COMPOUND WORDS:
-- Allowed when iconic: "Storm Cloud" ✓, "Ice Cream" ✓
-- NOT allowed for adjective combos: "Flying Unicorn" ✗
+- Allowed when iconic: "Storm Cloud" ✓, "Ice Cream" ✓, "Fire Sword" ✓
+- NOT allowed for adjective combos: "Flying Unicorn" ✗, "Giant Dragon" ✗
 
-COMBINATION RULES:
 TRANSFORMATION FOCUS:
 - Make creative leaps to distinct entities
 - "Unicorn → Pegasus" GOOD, "Unicorn → Flying Unicorn" BAD
@@ -947,19 +1044,42 @@ LOGICAL CONNECTIONS:
 - Consider: shared properties, cultural associations, functional relationships
 - Example: Fire + Earth = "Pottery" (mundane) OR "Phoenix" (epic)
 
-${shared.raritySystem}
+RARITY SYSTEM:
+Generate 1-3 possible outcomes based on creative logic:
+- "common": The most expected/thematic outcome
+- "uncommon": A less obvious but culturally valid outcome
+- "rare": An unexpected but meaningful outcome
+Only include outcomes that make creative sense - don't force rarities.
 
-${shared.reasoningRequirement}
-- Focus on the conceptual bridge between inputs and output
+REASONING REQUIREMENT:
+Every result needs a brief (15-60 character) creative explanation.
 
 TAGS REQUIREMENT:
 - Assign 1-3 relevant tags for achievement tracking
 - Creative tags: "food", "lifeform", "creature", "animal", "metal", "tool", "fictional-character", "object", "place", "concept"
 - Achievement tags: "disaster", "danger", "catastrophe"
 
-Recent combinations: ${recentText}
+Recent successful combinations (last 10): ${recentText}
+Recent failed combinations (last 5): ${failedText}
 
-${shared.responseFormat}`;
+Respond with ONLY a valid JSON object:
+{
+  "outcomes": [
+    {
+      "result": "Element Name",
+      "emoji": "appropriate emoji", 
+      "color": "hex color",
+      "rarity": "common",
+      "reasoning": "brief explanation",
+      "tags": ["tag1", "tag2"]
+    }
+  ]
+}
+Or if no valid combination:
+{
+  "outcomes": null,
+  "reasoning": "No reaction"
+}`;
   };
 
   const generateCombination = async (elem1: Element, elem2: Element, elem3: Element | null = null) => {
@@ -1083,10 +1203,15 @@ ${shared.responseFormat}`;
     // Prepare mixing elements for prompt
     const mixingElements = [elem1, elem2, elem3].filter((e): e is Element => e !== null);
     
+    // Prepare failed combinations text
+    const failedText = failedCombinations.length > 0 
+      ? failedCombinations.slice(-5).join(', ')
+      : 'none';
+
     // Build mode-specific prompt
     const prompt = gameMode === 'science' 
-      ? buildSciencePrompt(elements, mixingElements, sharedSections, recentText)
-      : buildCreativePrompt(elements, mixingElements, sharedSections, recentText);
+      ? buildSciencePrompt(elements, mixingElements, sharedSections, recentText, failedText)
+      : buildCreativePrompt(elements, mixingElements, sharedSections, recentText, failedText);
 
     // Debug logging for request
     console.log(`[LLM-Alchemy Debug] Making API request:`, {
@@ -1098,46 +1223,103 @@ ${shared.responseFormat}`;
       tokenBalance
     });
 
-    try {
-      const requestBody = { 
-        prompt, 
-        gameMode,
-        apiKey: userApiKey,
-        useProModel
-      };
+    // Enhanced fetch with timeout and retry
+    const makeRequest = async (isRetry: boolean = false): Promise<any> => {
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => abortController.abort(), 5000); // 5 second timeout
       
-      console.log(`[LLM-Alchemy Debug] Request body:`, requestBody);
-      
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      console.log(`[LLM-Alchemy Debug] Response status:`, response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[LLM-Alchemy Debug] API request failed:`, {
-          status: response.status,
-          statusText: response.statusText,
-          errorText
-        });
-        throw new Error(`API request failed: ${response.status}`);
-      }
-
-      const rawResponse = await response.text();
-      console.log(`[LLM-Alchemy Debug] Raw response:`, rawResponse);
-      
-      let parsedResult;
       try {
-        parsedResult = JSON.parse(rawResponse);
-        console.log(`[LLM-Alchemy Debug] Parsed result:`, parsedResult);
-      } catch (parseError) {
-        console.error(`[LLM-Alchemy Debug] Failed to parse response as JSON:`, parseError);
-        throw parseError;
+        const requestBody = { 
+          prompt, 
+          gameMode,
+          apiKey: userApiKey,
+          useProModel
+        };
+        
+        console.log(`[LLM-Alchemy Debug] ${isRetry ? 'Retry' : 'Initial'} request:`, requestBody);
+        
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+          signal: abortController.signal
+        });
+
+        clearTimeout(timeoutId);
+        console.log(`[LLM-Alchemy Debug] ${isRetry ? 'Retry' : 'Initial'} response status:`, response.status, response.statusText);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`[LLM-Alchemy Debug] API request failed:`, {
+            status: response.status,
+            statusText: response.statusText,
+            errorText
+          });
+          throw new Error(`API request failed: ${response.status}`);
+        }
+
+        const rawResponse = await response.text();
+        console.log(`[LLM-Alchemy Debug] Raw response:`, rawResponse);
+        
+        let parsedResult;
+        try {
+          parsedResult = JSON.parse(rawResponse);
+          console.log(`[LLM-Alchemy Debug] Parsed result:`, parsedResult);
+        } catch (parseError) {
+          console.error(`[LLM-Alchemy Debug] Failed to parse response as JSON:`, parseError);
+          throw parseError;
+        }
+        
+        return parsedResult;
+        
+      } catch (error) {
+        clearTimeout(timeoutId);
+        
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log(`[LLM-Alchemy Debug] Request ${isRetry ? 'retry' : 'initial attempt'} timed out after 5 seconds`);
+          throw new Error('Request timed out');
+        }
+        
+        throw error;
+      }
+    };
+
+    try {
+      let parsedResult;
+      
+      try {
+        // First attempt
+        parsedResult = await makeRequest(false);
+      } catch (firstError) {
+        const errorMessage = firstError instanceof Error ? firstError.message : 'Unknown error';
+        console.log(`[LLM-Alchemy Debug] First attempt failed:`, errorMessage);
+        
+        if (errorMessage === 'Request timed out') {
+          console.log(`[LLM-Alchemy Debug] Attempting auto-retry...`);
+          showToast('Connection slow, retrying...');
+          
+          try {
+            // Auto-retry once
+            parsedResult = await makeRequest(true);
+            console.log(`[LLM-Alchemy Debug] Retry successful!`);
+          } catch (retryError) {
+            const retryErrorMessage = retryError instanceof Error ? retryError.message : 'Unknown error';
+            console.error(`[LLM-Alchemy Debug] Retry also failed:`, retryErrorMessage);
+            
+            if (retryErrorMessage === 'Request timed out') {
+              showToast('LLM timeout - try mixing again');
+            } else {
+              showToast('Network error - check connection');
+            }
+            
+            return { result: null, error: true, timeout: true };
+          }
+        } else {
+          // Non-timeout error on first attempt
+          throw firstError;
+        }
       }
       
       // Check if we got an error response
@@ -1147,23 +1329,74 @@ ${shared.responseFormat}`;
         return { result: null, error: true };
       }
       
-      // Log the final result we're returning
-      const finalResult = {
-        result: parsedResult.result || null,
-        emoji: parsedResult.emoji || '✨',
-        color: parsedResult.color || '#808080',
-        rarity: parsedResult.rarity || 'common',
-        reasoning: parsedResult.reasoning || '',
-        tags: parsedResult.tags || [],
-        isEndElement: parsedResult.isEndElement || false
-      };
+      // Handle new multi-outcome format
+      if (parsedResult.outcomes === null) {
+        // No valid combination
+        console.log(`[LLM-Alchemy Debug] No valid combination found:`, parsedResult.reasoning || 'No reaction');
+        
+        // Track failed combination
+        const failedKey = `${elem1.name}+${elem2.name}${elem3 ? '+Energy' : ''}`;
+        setFailedCombinations(prev => [...prev.slice(-4), failedKey]); // Keep last 5
+        
+        await incrementDailyCounter();
+        return { result: null };
+      }
       
-      console.log(`[LLM-Alchemy Debug] Final result to return:`, finalResult);
+      // Handle successful outcomes array
+      if (Array.isArray(parsedResult.outcomes) && parsedResult.outcomes.length > 0) {
+        let selectedOutcome;
+        
+        if (parsedResult.outcomes.length === 1) {
+          // Only one outcome available
+          selectedOutcome = parsedResult.outcomes[0];
+          console.log(`[LLM-Alchemy Debug] Single outcome available:`, selectedOutcome);
+        } else {
+          // Multiple outcomes - select based on rarity probabilities
+          const rarityWeights = { common: 60, uncommon: 30, rare: 10 };
+          const roll = Math.random() * 100;
+          
+          // Sort outcomes by rarity preference
+          const commonOutcomes = parsedResult.outcomes.filter((o: any) => o.rarity === 'common');
+          const uncommonOutcomes = parsedResult.outcomes.filter((o: any) => o.rarity === 'uncommon');
+          const rareOutcomes = parsedResult.outcomes.filter((o: any) => o.rarity === 'rare');
+          
+          if (roll < 60 && commonOutcomes.length > 0) {
+            selectedOutcome = commonOutcomes[Math.floor(Math.random() * commonOutcomes.length)];
+          } else if (roll < 90 && uncommonOutcomes.length > 0) {
+            selectedOutcome = uncommonOutcomes[Math.floor(Math.random() * uncommonOutcomes.length)];
+          } else if (rareOutcomes.length > 0) {
+            selectedOutcome = rareOutcomes[Math.floor(Math.random() * rareOutcomes.length)];
+          } else {
+            // Fallback to any available outcome
+            selectedOutcome = parsedResult.outcomes[Math.floor(Math.random() * parsedResult.outcomes.length)];
+          }
+          
+          console.log(`[LLM-Alchemy Debug] Selected outcome from ${parsedResult.outcomes.length} options:`, selectedOutcome);
+        }
+        
+        // Log the final result we're returning
+        const finalResult = {
+          result: selectedOutcome.result || null,
+          emoji: selectedOutcome.emoji || '✨',
+          color: selectedOutcome.color || '#808080',
+          rarity: selectedOutcome.rarity || 'common',
+          reasoning: selectedOutcome.reasoning || '',
+          tags: selectedOutcome.tags || [],
+          isEndElement: selectedOutcome.isEndElement || false
+        };
+        
+        console.log(`[LLM-Alchemy Debug] Final result to return:`, finalResult);
+        
+        // Increment daily counter for successful LLM API calls
+        await incrementDailyCounter();
+        
+        return finalResult;
+      }
       
-      // Increment daily counter for successful LLM API calls
+      // Fallback for unexpected response format
+      console.log(`[LLM-Alchemy Debug] Unexpected response format:`, parsedResult);
       await incrementDailyCounter();
-      
-      return finalResult;
+      return { result: null };
       
     } catch (error) {
       console.error('Error generating combination:', error);
@@ -1298,13 +1531,6 @@ ${shared.responseFormat}`;
   };
 
   const performMix = async (elementsToMix: Element[], hasEnergy = false, ...indicesToRemove: number[]) => {
-    console.log('[MIX DEBUG] 1. Starting performMix', {
-      elements: elementsToMix.map(e => e.name),
-      hasEnergy,
-      indicesToRemove,
-      timestamp: new Date().toISOString()
-    });
-    
     setIsMixing(true);
     setMixingElements({ elements: elementsToMix, indices: indicesToRemove });
     
@@ -1312,18 +1538,13 @@ ${shared.responseFormat}`;
     setTouchDragging(null);
     setTouchOffset({ x: 0, y: 0 });
     
-    console.log('[MIX DEBUG] 2. State cleared, removing from mixing area');
-    
     // Immediately remove elements from mixing area
     setMixingArea(mixingArea.filter(el => !indicesToRemove.includes(el.index)));
     
     const sortedNames = elementsToMix.map(e => e.name).sort().join('+');
     const mixKey = hasEnergy ? `${sortedNames}+Energy` : sortedNames;
     
-    console.log('[MIX DEBUG] 3. Checking cache for key:', mixKey);
-    
     if (combinations[mixKey]) {
-      console.log('[MIX DEBUG] 4. Found cached result, processing...');
       const existingResult = combinations[mixKey];
       if (existingResult) {
         const existingElement = elements.find(e => e.name === existingResult) || 
@@ -1345,37 +1566,22 @@ ${shared.responseFormat}`;
       }
       setMixingElements(null);
       setIsMixing(false);
-      console.log('[MIX DEBUG] 5. Cached result processed, mixing complete');
       return;
     }
 
-    console.log('[MIX DEBUG] 6. No cache found, calling generateCombination...');
-    
     const result = await generateCombination(elementsToMix[0], elementsToMix[1], hasEnergy ? { name: 'Energy' } as Element : null);
     
-    console.log('[MIX DEBUG] 7. generateCombination returned:', {
-      hasResult: !!result.result,
-      hasError: 'error' in result && result.error,
-      result: result.result
-    });
-    
     if ('error' in result && result.error) {
-      console.log('[MIX DEBUG] 8. Error in result, cleaning up...');
       setMixingElements(null);
       setIsMixing(false);
       return;
     }
     
-    console.log('[MIX DEBUG] 9. Processing result...');
-    
     if (result.result) {
-      console.log('[MIX DEBUG] 10. Result exists, checking for existing element...');
-      
       const existing = elements.find(e => e.name.toLowerCase() === result.result!.toLowerCase()) ||
                       endElements.find(e => e.name.toLowerCase() === result.result!.toLowerCase());
       
       if (existing) {
-        console.log('[MIX DEBUG] 11. Found existing element, showing existing unlock');
         setShowUnlock({ ...existing, isNew: false });
         if (!existing.isEndElement) {
           setShakeElement(existing.id);
@@ -1387,8 +1593,6 @@ ${shared.responseFormat}`;
           setTimeout(() => setShowUnlock(null), 1500);
         }
       } else {
-        console.log('[MIX DEBUG] 12. New element! Creating element object...');
-        
         const isEndElement = 'isEndElement' in result ? result.isEndElement || false : false;
         const newElement = {
           id: result.result.toLowerCase().replace(/\s+/g, '-'),
@@ -1399,10 +1603,10 @@ ${shared.responseFormat}`;
           rarity: 'rarity' in result ? result.rarity : 'common',
           reasoning: ('reasoning' in result ? result.reasoning : null) || '',
           tags: ('tags' in result ? result.tags : null) || [],
-          isEndElement
+          isEndElement,
+          parents: elementsToMix, // Track the parent elements that created this one
+          energyEnhanced: hasEnergy && elementsToMix.length === 2 // Track if this was energy-enhanced (not energy as element)
         };
-        
-        console.log('[MIX DEBUG] 13. Updating arrays and playing sound...');
         
         // Update arrays first
         const updatedElements = isEndElement ? elements : [...elements, newElement];
@@ -1417,8 +1621,6 @@ ${shared.responseFormat}`;
           setPopElement(newElement.id);
         }
         
-        console.log('[MIX DEBUG] 14. Checking achievements...');
-        
         // Check for achievements with updated arrays (safe)
         let contextualAchievement = null;
         let allAchievements: Achievement[] = [];
@@ -1426,11 +1628,9 @@ ${shared.responseFormat}`;
           allAchievements = checkAchievements(newElement, updatedElements, updatedEndElements);
           contextualAchievement = allAchievements.find(a => a.id.startsWith('first-'));
         } catch (achievementError) {
-          console.error('[MIX DEBUG] Achievement check failed:', achievementError);
+          console.error('Achievement check failed:', achievementError);
           // Continue without achievements - don't block the unlock flow
         }
-
-        console.log('[MIX DEBUG] 15. Setting up undo and tracking...');
 
         // Track this combination for undo functionality and enable undo
         setLastCombination({
@@ -1444,31 +1644,40 @@ ${shared.responseFormat}`;
         setUndoAvailable(true);
         setTotalCombinationsMade(prev => prev + 1);
 
-        console.log('[MIX DEBUG] 16. Starting database save...');
-
         // Save immediately after discovery (fix for Bug 1)
         if (user && gameMode) {
           try {
             const supabase = createClient();
-            console.log('[MIX DEBUG] 17. Calling saveGameState...');
+            console.log(`[GAME_STATE_DEBUG] 💾 Immediate save after discovery for user ${user.id} in ${gameMode} mode...`, {
+              new_element: newElement.name,
+              elements: updatedElements.length,
+              end_elements: updatedEndElements.length,
+              combinations: Object.keys({ ...combinations, [mixKey]: result.result }).length,
+              achievements: [...achievements, ...allAchievements].length,
+              failed_combinations: failedCombinations.length,
+              trigger: 'immediate-save-after-discovery'
+            });
             
             await saveGameState(supabase, user.id, {
               game_mode: gameMode,
               elements: updatedElements,
               end_elements: updatedEndElements,
               combinations: { ...combinations, [mixKey]: result.result },
-              achievements: [...achievements, ...allAchievements]
+              achievements: [...achievements, ...allAchievements],
+              failed_combinations: failedCombinations
             });
             
-            console.log('[MIX DEBUG] 18. Database save completed successfully');
+            console.log(`[GAME_STATE_DEBUG] ✅ Immediate save completed successfully`);
           } catch (error) {
-            console.error('[MIX DEBUG] 19. Database save failed:', error);
+            console.error(`[GAME_STATE_DEBUG] ❌ Immediate save failed:`, error);
           }
         } else {
-          console.log('[MIX DEBUG] 17. Skipping database save (no user or gameMode)');
+          console.log(`[GAME_STATE_DEBUG] ⏭️ Skipping immediate save:`, {
+            hasUser: !!user,
+            hasGameMode: !!gameMode,
+            reason: !user ? 'no user' : 'no game mode'
+          });
         }
-        
-        console.log('[MIX DEBUG] 20. Setting up unlock animation...');
         
         setShowUnlock({ 
           ...newElement, 
@@ -1478,8 +1687,6 @@ ${shared.responseFormat}`;
         setUnlockAnimationStartTime(Date.now());
         
         if (!isEndElement) {
-          console.log('[MIX DEBUG] 21. Adding element to mixing area...');
-          
           // Add new element to mixing area center with collision detection IMMEDIATELY
           const rect = dropZoneRef.current!.getBoundingClientRect();
           const offset = window.innerWidth < 640 ? 24 : window.innerWidth < 768 ? 28 : 32;
@@ -1510,18 +1717,14 @@ ${shared.responseFormat}`;
         }
       }
       
-      console.log('[MIX DEBUG] 22. Updating combinations cache...');
       setCombinations({ ...combinations, [mixKey]: result.result });
     } else {
-      console.log('[MIX DEBUG] 10. No result, showing "No reaction"');
       showToast('No reaction');
       setCombinations({ ...combinations, [mixKey]: null });
     }
     
-    console.log('[MIX DEBUG] 23. Cleaning up - setting mixing to false');
     setMixingElements(null);
     setIsMixing(false);
-    console.log('[MIX DEBUG] 24. performMix completed successfully');
   };
 
   const handleTouchStart = (e: React.TouchEvent, element: Element, fromMixingArea = false, index: number | null = null) => {
@@ -2603,6 +2806,14 @@ ${shared.responseFormat}`;
             <div className="font-medium text-center mb-1">
               {reasoningPopup.element.emoji} {reasoningPopup.element.name}
             </div>
+            {reasoningPopup.element.parents && reasoningPopup.element.parents.length > 0 && (
+              <div className="text-center text-sm mb-1">
+                {reasoningPopup.element.energyEnhanced 
+                  ? reasoningPopup.element.parents.map(parent => parent.emoji).join('〰️')
+                  : reasoningPopup.element.parents.map(parent => parent.emoji).join('+')
+                }
+              </div>
+            )}
             <div className="text-gray-300 italic text-center text-xs">
               &quot;{reasoningPopup.element.reasoning}&quot;
             </div>
