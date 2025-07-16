@@ -818,6 +818,14 @@ const LLMAlchemy = () => {
     return (yiq >= 128) ? '#000000' : '#FFFFFF';
   };
 
+  const getRarityHoverColor = (rarity: string = 'common') => {
+    switch (rarity) {
+      case 'uncommon': return '#10B981'; // Green
+      case 'rare': return '#8B5CF6';     // Purple  
+      default: return '#6B7280';         // Gray (common)
+    }
+  };
+
   // Optimized collision detection with cached element size
   const elementSize = useMemo(() => getElementSize(), []);
 
@@ -1226,7 +1234,7 @@ Or if no valid combination:
     // Enhanced fetch with timeout and retry
     const makeRequest = async (isRetry: boolean = false): Promise<any> => {
       const abortController = new AbortController();
-      const timeoutId = setTimeout(() => abortController.abort(), 5000); // 5 second timeout
+      const timeoutId = setTimeout(() => abortController.abort(), 8000); // 8 second timeout
       
       try {
         const requestBody = { 
@@ -1278,7 +1286,7 @@ Or if no valid combination:
         clearTimeout(timeoutId);
         
         if (error instanceof Error && error.name === 'AbortError') {
-          console.log(`[LLM-Alchemy Debug] Request ${isRetry ? 'retry' : 'initial attempt'} timed out after 5 seconds`);
+          console.log(`[LLM-Alchemy Debug] Request ${isRetry ? 'retry' : 'initial attempt'} timed out after 8 seconds`);
           throw new Error('Request timed out');
         }
         
@@ -2264,7 +2272,7 @@ Or if no valid combination:
                 style={{ 
                   backgroundColor: energyElement.color,
                   color: getContrastColor(energyElement.color),
-                  boxShadow: !isDraggingDivider && hoveredUIElement === `element-${energyElement.id}` && !isDragging ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : '',
+                  boxShadow: !isDraggingDivider && hoveredUIElement === `element-${energyElement.id}` && !isDragging ? `0 0 0 2px ${getRarityHoverColor(energyElement.rarity)}` : '',
                   transition: isDraggingDivider ? 'none' : undefined,
                   touchAction: 'none',
                   WebkitTouchCallout: 'none',
@@ -2565,8 +2573,8 @@ Or if no valid combination:
               WebkitUserSelect: 'none',
               transition: 'none',
               boxShadow: element.energized ? '0 0 20px rgba(250, 204, 21, 0.5), 0 0 0 2px #facc15' :
-                        hoveredElement === element.index ? '0 0 0 2px rgba(255, 255, 255, 0.6)' :
-                        hoveredUIElement === `mixing-${element.index}` && !isDragging ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
+                        hoveredElement === element.index ? `0 0 0 2px ${getRarityHoverColor(element.rarity)}` :
+                        hoveredUIElement === `mixing-${element.index}` && !isDragging ? `0 0 0 2px ${getRarityHoverColor(element.rarity)}` : ''
             }}
           >
             <div className="text-lg sm:text-xl pointer-events-none">{element.emoji}</div>
@@ -2803,9 +2811,6 @@ Or if no valid combination:
               if (!reasoningPopup.fromHover) hideReasoningPopup();
             }}
           >
-            <div className="font-medium text-center mb-1">
-              {reasoningPopup.element.emoji} {reasoningPopup.element.name}
-            </div>
             {reasoningPopup.element.parents && reasoningPopup.element.parents.length > 0 && (
               <div className="text-center text-sm mb-1">
                 {reasoningPopup.element.energyEnhanced 
@@ -2815,7 +2820,7 @@ Or if no valid combination:
               </div>
             )}
             <div className="text-gray-300 italic text-center text-xs">
-              &quot;{reasoningPopup.element.reasoning}&quot;
+              {reasoningPopup.element.reasoning}
             </div>
             {/* Arrow pointing down */}
             <div className="absolute top-full left-1/2 transform -translate-x-1/2">
