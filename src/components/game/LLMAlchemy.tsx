@@ -1542,6 +1542,14 @@ Or if no valid combination:
     setIsMixing(true);
     setMixingElements({ elements: elementsToMix, indices: indicesToRemove });
     
+    // Outer safety timeout - force clear mixing state after 15 seconds
+    const mixingTimeout = setTimeout(() => {
+      console.log('[MIXING_DEBUG] ⚠️ Mixing timeout reached - force clearing state');
+      setIsMixing(false);
+      setMixingElements(null);
+      showToast('Mixing timeout - please refresh page');
+    }, 15000);
+    
     // Clear touch dragging state to ensure mobile elements disappear
     setTouchDragging(null);
     setTouchOffset({ x: 0, y: 0 });
@@ -1731,6 +1739,7 @@ Or if no valid combination:
       setCombinations({ ...combinations, [mixKey]: null });
     }
     
+    clearTimeout(mixingTimeout);
     setMixingElements(null);
     setIsMixing(false);
   };
@@ -2311,18 +2320,18 @@ Or if no valid combination:
               } ${
                 isPlayingLoadAnimation && animatedElements.has(element.id) ? 'animate-element-load-delayed' : ''
               }`}
-              style={{ 
-                backgroundColor: element.color,
-                color: getContrastColor(element.color),
-                boxShadow: !isDraggingDivider && hoveredUIElement === `element-${element.id}` && !isDragging ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : '',
-                transition: isDraggingDivider ? 'none' : undefined,
-                touchAction: 'none',
-                WebkitTouchCallout: 'none',
-                WebkitUserSelect: 'none',
-                animationDelay: isPlayingLoadAnimation && animatedElements.has(element.id) 
-                  ? `${element.unlockOrder * 25}ms` 
-                  : undefined
-              }}
+                style={{ 
+                  backgroundColor: element.color,
+                  color: getContrastColor(element.color),
+                  boxShadow: !isDraggingDivider && hoveredUIElement === `element-${element.id}` && !isDragging ? `0 0 0 2px ${getRarityHoverColor(element.rarity)}` : '',
+                  transition: isDraggingDivider ? 'none' : undefined,
+                  touchAction: 'none',
+                  WebkitTouchCallout: 'none',
+                  WebkitUserSelect: 'none',
+                  animationDelay: isPlayingLoadAnimation && animatedElements.has(element.id) 
+                    ? `${element.unlockOrder * 25}ms` 
+                    : undefined
+                }}
             >
               <div className="text-lg sm:text-xl">{element.emoji}</div>
               <div className="text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight">{element.name}</div>
@@ -2608,17 +2617,28 @@ Or if no valid combination:
             {showUnlock.isNew && (
               <>
                 <div className={`absolute inset-0 rounded-xl blur-xl animate-pulse pointer-events-none ${
-                  showUnlock.isEndElement ? 'bg-gradient-to-r from-blue-400 to-cyan-600' : 'bg-gradient-to-r from-yellow-400 to-yellow-600'
+                  showUnlock.isEndElement ? 'bg-gradient-to-r from-blue-400 to-cyan-600' : 
+                  showUnlock.rarity === 'rare' ? 'bg-gradient-to-r from-purple-400 to-purple-600' :
+                  showUnlock.rarity === 'uncommon' ? 'bg-gradient-to-r from-green-400 to-green-600' :
+                  'bg-gradient-to-r from-yellow-400 to-yellow-600'
                 }`}></div>
                 <div className={`absolute inset-0 rounded-xl opacity-50 animate-ping pointer-events-none ${
-                  showUnlock.isEndElement ? 'bg-gradient-to-r from-blue-300 to-cyan-400' : 'bg-gradient-to-r from-yellow-300 to-amber-400'
+                  showUnlock.isEndElement ? 'bg-gradient-to-r from-blue-300 to-cyan-400' :
+                  showUnlock.rarity === 'rare' ? 'bg-gradient-to-r from-purple-300 to-purple-400' :
+                  showUnlock.rarity === 'uncommon' ? 'bg-gradient-to-r from-green-300 to-green-400' :
+                  'bg-gradient-to-r from-yellow-300 to-amber-400'
                 }`}></div>
               </>
             )}
             <div 
               className="relative bg-gray-800 rounded-xl p-8 border-2" 
               style={{ 
-                borderColor: showUnlock.isNew ? (showUnlock.isEndElement ? '#60A5FA' : '#FBBF24') : showUnlock.color,
+                borderColor: showUnlock.isNew ? (
+                  showUnlock.isEndElement ? '#60A5FA' : 
+                  showUnlock.rarity === 'rare' ? '#8B5CF6' :
+                  showUnlock.rarity === 'uncommon' ? '#10B981' :
+                  '#FBBF24'
+                ) : showUnlock.color,
                 pointerEvents: unlockAnimationStartTime && Date.now() - unlockAnimationStartTime > 500 ? 'auto' : 'none',
                 cursor: unlockAnimationStartTime && Date.now() - unlockAnimationStartTime > 500 ? 'pointer' : 'default'
               }}
