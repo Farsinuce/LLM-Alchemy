@@ -1569,6 +1569,7 @@ Failure or rejection:
       } else {
         showToast('No reaction');
       }
+      clearTimeout(mixingTimeout);
       setMixingElements(null);
       setIsMixing(false);
       return;
@@ -1577,6 +1578,7 @@ Failure or rejection:
     const result = await generateCombination(elementsToMix[0], elementsToMix[1], hasEnergy ? { name: 'Energy' } as Element : null);
     
     if ('error' in result && result.error) {
+      clearTimeout(mixingTimeout);
       setMixingElements(null);
       setIsMixing(false);
       return;
