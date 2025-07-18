@@ -892,12 +892,12 @@ const LLMAlchemy = () => {
   };
 
 
-  // Modular prompt building system - Fixed stale closure issue
+  // Modular prompt building system
   const buildSharedSections = useCallback((rarityTarget: string, currentGameMode: string) => ({
     raritySystem: `RARITY SYSTEM (Target: ${rarityTarget}):
-- "common" = the most expected/obvious outcome (60% chance)
-- "uncommon" = a less obvious but plausible outcome (30% chance)
-- "rare" = an unexpected but valid outcome (10% chance)
+- "common" = the most expected/obvious outcome (80% chance)
+- "uncommon" = a less obvious but plausible outcome (15% chance)
+- "rare" = an unexpected but valid outcome (5% chance)
 - Generate outcome with ${rarityTarget} rarity for this combination`,
 
     reasoningRequirement: `REASONING REQUIREMENT:
@@ -916,14 +916,52 @@ const LLMAlchemy = () => {
   }), []);
 
   const buildSciencePrompt = (elements: Element[], mixingElements: Element[], shared: any, recentText: string, failedText: string) => {
-    return `Generate science-based element combinations.
-Current unlocked elements: ${elements.map(e => e.name).join(', ')}
+    return `You are an element combination system for a science-based alchemy game. Your role is to determine logical outcomes when players mix elements, following strict rules to maintain game balance and scientific grounding. You may reject nonsensical or frivolous mixes by returning null.
+
+Current discovered elements: ${elements.map(e => e.name).join(', ')}
 Mixing: ${mixingElements.map(e => e.name).join(' + ')}
 
-CONTEXT: This is a discovery game where players combine elements. Not every combination works - that's part of the challenge. Returning null for illogical combinations is expected and good game design.
+CORE RULES:
+• Generate only common, well-known scientific outcomes (high school level)
+• NO obscure terms (Heterokaryon, Plasmogamy, etc.)
+• Outcomes must have clear scientific connections based on real principles
+• Good examples: Rock, Sand, Steam, Cloud, Plant, Tree, Metal, Glass
+• Same element ×2 OK if logical (Fungi+Fungi=Mycelium)
 
-CORE PHILOSOPHY:
-Elements represent tangible objects, materials, organisms, or fundamental phenomena - never mundane human actions (stirring, grinding) or abstract concepts (happiness, speed, infinity).
+COMBINATION RULES:
+Similar Elements: If outcome too similar to existing, return existing element name (for natural "rediscovery" rather than null responses).
+Endless Chains: Focus on tangible elements, not phenomena progressions. Water→Steam→Cloud GOOD (distinct states); Rain→Drizzle→Sprinkle BAD (minor variations) - return null when results become nonsensical.
+Avoid Escalation: Instead of going bigger, explore states (solid→liquid→gas), compositions (rock→gravel→sand), applications (water→ice→lens), variants (metal→iron).
+Energy Transform: Energy+element=NEW substance (Energy+Rock=Crystal, not "Energized Rock") - if no valid transformation exists, return null.
+No Abstract: Never create Life/Death/Time/Love/Speed. Use concrete forms ("Decay" not "Death").
+Basic Stays Basic: Water+Fire usually=Steam regardless of game progress (don't overcomplicate fundamental reactions).
+Thoughtful: Fire+Rain could=Steam (partial reaction states).
+
+MODE CONSTRAINTS - Scale & Scope:
+SCALE LIMITS:
+• Never generate physical outcomes larger than a building or smaller than a molecule
+• If a combination would create something larger, return a fragment instead (Rock+Rock=Gravel not Boulder, Water+Water=Pool not Ocean)
+• Natural phenomena exception: Can exceed if fundamental (Atmosphere, Hurricane are valid; but Cosmic phenomena like Black Hole or Supernova are invalid)
+• Very large phenomena must be End Elements
+
+VALID TYPES:
+✓ Natural materials (Rock, Sand, Metal)
+✓ Living organisms (Plant, Bacteria, Fish)
+✓ Natural phenomena (Lightning, Hurricane)
+✓ Chemical compounds (Water, Salt, Acid)
+
+INVALID TYPES:
+✗ Human actions (Mixing, Cutting)
+✗ Abstract concepts (Life, Speed)
+✗ Adjective versions (Hot Water, Energized Rock)
+
+TECHNOLOGY: Prefer natural outcomes. Advanced tech/complex life (Computer, Phone, Shark, Human)→MUST be End Elements.
+Guide toward biology, geology, chemistry over advanced technology.
+
+END ELEMENTS (evolutionary dead-end examples):
+• Extremophile (broad category)
+• Diamond, Obsidian (final mineral forms)  
+• Computer, Phone (too advanced human tech)
 
 SCIENTIFIC GROUNDING:
 1. Generate ONLY outcomes with clear scientific logic
@@ -931,62 +969,13 @@ SCIENTIFIC GROUNDING:
 3. If no logical connection exists between elements, return null
 4. Mixing the same element with itself CAN produce results if scientifically valid
 
-SCALE & SCOPE:
-- Physical objects: molecule to building sized
-- Natural phenomena: can exceed building scale if fundamental (Atmosphere, Magnetic Field, Gravity)
-- Use concrete manifestations (Decay not Death, Electricity not Power)
-
-FUNDAMENTAL COMBINATIONS REMINDER:
-Basic element combinations ALWAYS produce basic results, regardless of game progress:
-- Water + Fire = Steam (never Obsidian or advanced materials)
-- Fundamental + Fundamental = Simple outcome
-- Complex outcomes require at least one complex input
-
-REDUNDANCY PREVENTION:
-- Never create elements too similar to existing ones
-- If outcome would be similar, return the existing element name instead
-- Highly specific variants can exist as End Elements if sufficiently distinct
-
-TECHNOLOGY RULES:
-- Natural/ancient tech: normal elements (Brick, Glass, Wheel)
-- Industrial tech: normal elements approaching end territory (Engine, Turbine)
-- Modern high-tech: MUST be End Elements (Computer, Telescope, Laser Cutter)
-- Technology complexity caps at: Computer, Smartphone, Laser Cutter (all End Elements)
-
-ENERGY TRANSFORMATION:
-- Energy + element must create NEW substance, not adjective version
-- Energy + Rock = Crystal (not "Energized Rock")
-- If no valid transformation exists, return null
-
-END ELEMENTS (mark isEndElement: true):
-- Peak technology: Computer, Telescope, Hologram
-- Ultimate materials: Diamond, Obsidian
-- Complex organisms: Fish, Arthropod, Carnivorous Plant
-- Highly specialized outcomes with no logical progressions
-
-VALID ELEMENT TYPES:
-✓ Natural materials (Rock, Sand, Metal)
-✓ Living organisms (Plant, Bacteria, Mushroom)
-✓ Natural phenomena (Rain, Lightning, Photosynthesis)
-✓ Chemical compounds (Water, Salt, Sugar)
-✗ Human actions (Mixing, Cutting, Boiling)
-✗ Abstract concepts (Love, Speed, Past)
-✗ Adjective versions (Hot Water, Energized Rock)
-
-RARITY SYSTEM:
-Generate 1-3 possible outcomes based on scientific logic:
-- "common": The most expected/obvious outcome
-- "uncommon": A less obvious but scientifically valid outcome  
-- "rare": An unexpected but possible outcome
-Only include outcomes that make scientific sense - don't force rarities.
-
 REASONING REQUIREMENT:
 Every result needs a brief (15-60 character) scientific explanation.
+Focus on mechanism: "Heat evaporates liquid" or "Pressure crystallizes minerals"
 
 TAGS REQUIREMENT:
 - Assign 1-3 relevant tags for achievement tracking
-- Science tags: "lifeform", "organism", "mineral", "compound", "metal", "plant", "animal", "chemical", "gas", "liquid", "solid"
-- Achievement tags: "food", "tool", "disaster", "danger", "electrical", "optical", "explosive", "toxic", "radioactive", "magnetic", "thermal"
+- Science tags: "lifeform", "organism", "mineral", "compound", "metal", "plant", "animal", "chemical", "gas", "liquid", "solid", "food", "tool", "disaster", "danger", "catastrophe"
 
 Recent successful combinations (last 10): ${recentText}
 Recent failed combinations (last 5): ${failedText}
@@ -1005,16 +994,16 @@ Respond with ONLY a valid JSON object:
     }
   ]
 }
-Or if no valid combination:
+Failure or rejection:
 {
   "outcomes": null,
-  "reasoning": "No reaction"
+  "reasoning": "No reaction: [specific reason, max 40 chars]"
 }`;
   };
 
   const buildCreativePrompt = (elements: Element[], mixingElements: Element[], shared: any, recentText: string, failedText: string) => {
-    return `Generate creative element combinations.
-Current unlocked elements: ${elements.map(e => e.name).join(', ')}
+    return `You are an element combination system for an alchemy game. Your role is to determine logical and creative outcomes when players mix elements, following strict rules to maintain game balance and grounding. You may reject nonsensical or frivolous mixes by returning null..
+Current discovered elements: ${elements.map(e => e.name).join(', ')}
 Mixing: ${mixingElements.map(e => e.name).join(' + ')}
 
 CONTEXT: This is a discovery game where players combine elements. Not every combination works - that's part of the challenge. Returning null for illogical combinations is expected and good game design.
@@ -1068,7 +1057,7 @@ TAGS REQUIREMENT:
 - Achievement tags: "disaster", "danger", "catastrophe"
 
 Recent successful combinations (last 10): ${recentText}
-Recent failed combinations (last 5): ${failedText}
+Recent rejected combinations (last 5): ${failedText}
 
 Respond with ONLY a valid JSON object:
 {
@@ -1083,10 +1072,10 @@ Respond with ONLY a valid JSON object:
     }
   ]
 }
-Or if no valid combination:
+Failure or rejection:
 {
   "outcomes": null,
-  "reasoning": "No reaction"
+  "reasoning": "No reaction: [specific reason, max 40 chars]"
 }`;
   };
 
@@ -1195,8 +1184,8 @@ Or if no valid combination:
     // Randomized rarity system
     const roll = Math.random();
     let rarityTarget;
-    if (roll < 0.6) rarityTarget = 'common';
-    else if (roll < 0.9) rarityTarget = 'uncommon';
+    if (roll < 0.8) rarityTarget = 'common';
+    else if (roll < 0.95) rarityTarget = 'uncommon';
     else rarityTarget = 'rare';
 
     // Keep only last 10 combinations for context (prevents endless chains)
