@@ -1336,7 +1336,7 @@ Failure or rejection:
         setFailedCombinations(prev => [...prev.slice(-4), failedKey]); // Keep last 5
         
         await incrementDailyCounter();
-        return { result: null };
+        return { result: null, reasoning: parsedResult.reasoning };
       }
       
       // Handle successful outcomes array
@@ -1724,7 +1724,11 @@ Failure or rejection:
       
       setCombinations({ ...combinations, [mixKey]: result.result });
     } else {
-      showToast('No reaction');
+      // Display LLM reasoning if available, otherwise fallback to generic message
+      const reasoningText = 'reasoning' in result && result.reasoning 
+        ? result.reasoning 
+        : 'No reaction';
+      showToast(reasoningText);
       setCombinations({ ...combinations, [mixKey]: null });
     }
     
