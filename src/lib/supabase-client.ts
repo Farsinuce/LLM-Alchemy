@@ -186,9 +186,8 @@ export async function getDailyCount(supabase: any, userId: string): Promise<numb
       if (error.code === 'PGRST116') {
         // No rows returned - user hasn't used any combinations today
         return 0
-      } else if (error.code === 'PGRST301' || error.message?.includes('406')) {
-        // RLS policy issues - return 0 and continue silently
-        console.warn('Database access restricted, continuing with fallback')
+      } else if (error.code === 'PGRST301' || error.message?.includes('406') || error.status === 406) {
+        // RLS policy issues - return 0 and continue silently (expected for anonymous users)
         return 0
       } else {
         console.error('Error getting daily count:', error)
@@ -279,9 +278,8 @@ export async function loadGameState(supabase: any, userId: string, gameMode: str
       if (error.code === 'PGRST116') {
         // No rows returned - no saved state for this mode
         return null
-      } else if (error.code === 'PGRST301' || error.message?.includes('406')) {
-        // RLS policy issues - return null and continue silently
-        console.warn('Database access restricted for game state, continuing without persistence')
+      } else if (error.code === 'PGRST301' || error.message?.includes('406') || error.status === 406) {
+        // RLS policy issues - return null and continue silently (expected for anonymous users)
         return null
       } else {
         console.error('Error loading game state:', error)
