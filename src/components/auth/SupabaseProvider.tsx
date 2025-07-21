@@ -138,68 +138,71 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         if (!mounted || isInitializing) return
         
-        try {
-          if (event === 'SIGNED_OUT') {
-            setUser(null)
-            setDbUser(null)
-            setDailyCount(0)
-            setTokenBalance(0)
-          } else if (event === 'SIGNED_IN' && session?.user) {
-            setUser(session.user)
-            
-            // Get or create DB user record for authenticated users
-            let { data: dbUser } = await supabase
-              .from('users')
-              .select('*')
-              .eq('id', session.user.id)
-              .single()
-            
-            // If no user record exists, create one for authenticated users
-            if (!dbUser && session.user.email) {
-              const newUserRecord = {
-                id: session.user.id,
-                email: session.user.email,
-                display_name: session.user.user_metadata?.display_name || 
-                             session.user.user_metadata?.full_name || 
-                             session.user.email?.split('@')[0],
-                avatar_url: session.user.user_metadata?.avatar_url,
-                google_id: session.user.app_metadata?.provider === 'google' ? 
-                          session.user.user_metadata?.sub : null,
-                is_anonymous: false,
-                email_verified: session.user.email_confirmed_at !== null,
-                subscription_status: 'free' as const,
-                updated_at: new Date().toISOString()
-              }
-
-              const { data: newUser, error: createError } = await supabase
+        // Add 50ms delay to prevent deadlock
+        setTimeout(async () => {
+          try {
+            if (event === 'SIGNED_OUT') {
+              setUser(null)
+              setDbUser(null)
+              setDailyCount(0)
+              setTokenBalance(0)
+            } else if (event === 'SIGNED_IN' && session?.user) {
+              setUser(session.user)
+              
+              // Get or create DB user record for authenticated users
+              let { data: dbUser } = await supabase
                 .from('users')
-                .insert([newUserRecord])
-                .select()
+                .select('*')
+                .eq('id', session.user.id)
                 .single()
+              
+              // If no user record exists, create one for authenticated users
+              if (!dbUser && session.user.email) {
+                const newUserRecord = {
+                  id: session.user.id,
+                  email: session.user.email,
+                  display_name: session.user.user_metadata?.display_name || 
+                               session.user.user_metadata?.full_name || 
+                               session.user.email?.split('@')[0],
+                  avatar_url: session.user.user_metadata?.avatar_url,
+                  google_id: session.user.app_metadata?.provider === 'google' ? 
+                            session.user.user_metadata?.sub : null,
+                  is_anonymous: false,
+                  email_verified: session.user.email_confirmed_at !== null,
+                  subscription_status: 'free' as const,
+                  updated_at: new Date().toISOString()
+                }
 
-              if (!createError && newUser) {
-                dbUser = newUser
-                console.log('✅ Created user record for authenticated user:', session.user.id)
-              } else {
-                console.error('Error creating authenticated user record:', createError)
+                const { data: newUser, error: createError } = await supabase
+                  .from('users')
+                  .insert([newUserRecord])
+                  .select()
+                  .single()
+
+                if (!createError && newUser) {
+                  dbUser = newUser
+                  console.log('✅ Created user record for authenticated user:', session.user.id)
+                } else {
+                  console.error('Error creating authenticated user record:', createError)
+                }
+              }
+              
+              if (mounted && dbUser) {
+                setDbUser(dbUser)
+                const count = await getDailyCount(supabase, session.user.id)
+                const balance = await getTokenBalance(supabase, session.user.id)
+                if (mounted) {
+                  setDailyCount(count)
+                  setTokenBalance(balance)
+                }
               }
             }
-            
-            if (mounted && dbUser) {
-              setDbUser(dbUser)
-              const count = await getDailyCount(supabase, session.user.id)
-              const balance = await getTokenBalance(supabase, session.user.id)
-              if (mounted) {
-                setDailyCount(count)
-                setTokenBalance(balance)
-              }
-            }
+          } catch (error) {
+            console.error('Auth state change error:', error)
+          } finally {
+            if (mounted) setLoading(false)
           }
-        } catch (error) {
-          console.error('Auth state change error:', error)
-        } finally {
-          if (mounted) setLoading(false)
-        }
+        }, 50)
       }
     )
 
