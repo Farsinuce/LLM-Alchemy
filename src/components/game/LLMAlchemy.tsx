@@ -1100,7 +1100,9 @@ Failure or rejection:
     }
     
     // Determine if we should use the pro model
-    const useProModel = userApiKey ? (selectedModel === 'pro') : (tokenBalance > 0);
+    const useProModel = userApiKey 
+      ? (selectedModel === 'pro') 
+      : (tokenBalance > 0 && selectedModel === 'pro');
     
     // Log model selection for debugging
     let userType: string;
@@ -2546,24 +2548,64 @@ Failure or rejection:
           </button>
         )}
 
-        {/* Subtle Upgrade button for registered freemium users */}
-        {dbUser && !dbUser.is_anonymous && dbUser.subscription_status === 'free' && (
-          <button
-            onClick={() => {
-              // Navigate back to home page where they can upgrade
-              router.push('/')
-            }}
-            onMouseEnter={() => setHoveredUIElement('upgrade-button-mixing')}
-            onMouseLeave={() => setHoveredUIElement(null)}
-            className="absolute bottom-4 left-1/2 transform -translate-x-1/2 px-3 py-2 bg-gradient-to-r from-purple-600/80 to-blue-600/80 hover:from-purple-500/90 hover:to-blue-500/90 rounded-lg transition-all z-20 flex items-center gap-1 text-sm text-white font-medium backdrop-blur-sm"
-            style={{
-              boxShadow: hoveredUIElement === 'upgrade-button-mixing' && !isMixing ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
-            }}
-          >
-            <span>⭐</span>
-            <span>Upgrade</span>
-          </button>
-        )}
+        {/* Upgrade/Register button based on user status */}
+        {(() => {
+          // Anonymous users - show Register/Sign in button
+          if (!user || (dbUser?.is_anonymous)) {
+            return (
+              <button
+                onClick={() => {
+                  router.push('/')
+                }}
+                onMouseEnter={() => setHoveredUIElement('register-button-mixing')}
+                onMouseLeave={() => setHoveredUIElement(null)}
+                className="absolute bottom-4 left-1/2 transform -translate-x-1/2 px-3 py-2 bg-gradient-to-r from-blue-600/80 to-purple-600/80 hover:from-blue-500/90 hover:to-purple-500/90 rounded-lg transition-all z-20 flex items-center gap-1 text-sm text-white font-medium backdrop-blur-sm"
+                style={{
+                  boxShadow: hoveredUIElement === 'register-button-mixing' && !isMixing ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
+                }}
+              >
+                <span>👤</span>
+                <span>Register / Sign in</span>
+              </button>
+            );
+          }
+          
+          // Registered users - check if they need upgrade/tokens
+          if (dbUser && !dbUser.is_anonymous) {
+            // Don't show button for:
+            // - API key users (unlimited)
+            // - Premium users (subscription_status: 'premium')
+            // - Users with tokens remaining (token_balance > 0)
+            if (userApiKey || dbUser.subscription_status === 'premium' || (tokenBalance > 0)) {
+              return null;
+            }
+            
+            // Show button for:
+            // - Freemium users (subscription_status: 'free')
+            // - Users who ran out of tokens (token_balance = 0)
+            const isFreemium = dbUser.subscription_status === 'free';
+            const buttonText = isFreemium ? 'Upgrade' : 'Get more';
+            
+            return (
+              <button
+                onClick={() => {
+                  router.push('/')
+                }}
+                onMouseEnter={() => setHoveredUIElement('upgrade-button-mixing')}
+                onMouseLeave={() => setHoveredUIElement(null)}
+                className="absolute bottom-4 left-1/2 transform -translate-x-1/2 px-3 py-2 bg-gradient-to-r from-purple-600/80 to-blue-600/80 hover:from-purple-500/90 hover:to-blue-500/90 rounded-lg transition-all z-20 flex items-center gap-1 text-sm text-white font-medium backdrop-blur-sm"
+                style={{
+                  boxShadow: hoveredUIElement === 'upgrade-button-mixing' && !isMixing ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
+                }}
+              >
+                <span>⭐</span>
+                <span>{buttonText}</span>
+              </button>
+            );
+          }
+          
+          return null;
+        })()}
 
         {mixingArea.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center">
