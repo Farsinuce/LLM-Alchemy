@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Sparkles, X, GripHorizontal, User, ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
-import { createClient, incrementDailyCount, decrementDailyCount, saveGameState, loadGameState, consumeToken, addTokens } from '@/lib/supabase-client';
+import { createClient, incrementDailyCount, decrementDailyCount, saveGameState, loadGameState, consumeToken, addTokens, getLlmModelPreference } from '@/lib/supabase-client';
 
 // Type definitions
 interface Element {
@@ -169,15 +169,29 @@ const LLMAlchemy = () => {
   // Load API key from localStorage on mount (optional - for convenience)
   useEffect(() => {
     const savedApiKey = localStorage.getItem('llm-alchemy-api-key');
-    const savedModel = localStorage.getItem('llm-alchemy-model') as 'flash' | 'pro';
     
     if (savedApiKey) {
       setUserApiKey(savedApiKey);
-    }
-    if (savedModel && (savedModel === 'flash' || savedModel === 'pro')) {
-      setSelectedModel(savedModel);
+      // For API key users, load model preference from localStorage
+      const savedModel = localStorage.getItem('llm-alchemy-model') as 'flash' | 'pro';
+      if (savedModel && (savedModel === 'flash' || savedModel === 'pro')) {
+        setSelectedModel(savedModel);
+      }
     }
   }, []);
+
+  // Load model preference from Supabase for non-API-key users
+  useEffect(() => {
+    const loadModelPreference = async () => {
+      if (user && !userApiKey) {
+        const supabase = createClient();
+        const modelPreference = await getLlmModelPreference(supabase, user.id);
+        setSelectedModel(modelPreference);
+      }
+    };
+
+    loadModelPreference();
+  }, [user, userApiKey]);
   
   const draggedElement = useRef<MixingElement | null>(null);
   const dropZoneRef = useRef<HTMLDivElement | null>(null);

@@ -4,7 +4,13 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Sparkles, ArrowRight, X } from 'lucide-react';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
-import { createClient, getGameProgress, resetGameState } from '@/lib/supabase-client';
+import { 
+  createClient, 
+  getGameProgress, 
+  resetGameState, 
+  getLlmModelPreference, 
+  updateLlmModelPreference 
+} from '@/lib/supabase-client';
 import AuthModal from '@/components/auth/AuthModal';
 import { 
   shouldShowUpgradePrompt, 
@@ -31,6 +37,7 @@ export default function Home() {
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
   const [tempApiKey, setTempApiKey] = useState<string>('');
+  const [tempSelectedModel, setTempSelectedModel] = useState<'flash' | 'pro'>('flash');
   const [isValidatingKey, setIsValidatingKey] = useState<boolean>(false);
   const [toast, setToast] = useState<string>('');
   
@@ -81,18 +88,32 @@ export default function Home() {
     }
   };
 
-  // Load API key from localStorage on mount
+  // Load API key from localStorage and model preference from Supabase on mount
   useEffect(() => {
     const savedApiKey = localStorage.getItem('llm-alchemy-api-key');
-    const savedModel = localStorage.getItem('llm-alchemy-model') as 'flash' | 'pro';
     
     if (savedApiKey) {
       setUserApiKey(savedApiKey);
-    }
-    if (savedModel && (savedModel === 'flash' || savedModel === 'pro')) {
-      setSelectedModel(savedModel);
+      // For API key users, load model preference from localStorage
+      const savedModel = localStorage.getItem('llm-alchemy-model') as 'flash' | 'pro';
+      if (savedModel && (savedModel === 'flash' || savedModel === 'pro')) {
+        setSelectedModel(savedModel);
+      }
     }
   }, []);
+
+  // Load model preference from Supabase for non-API-key users
+  useEffect(() => {
+    const loadModelPreference = async () => {
+      if (user && !userApiKey) {
+        const supabase = createClient();
+        const modelPreference = await getLlmModelPreference(supabase, user.id);
+        setSelectedModel(modelPreference);
+      }
+    };
+
+    loadModelPreference();
+  }, [user, userApiKey]);
 
   // Check for upgrade callback on mount
   useEffect(() => {
@@ -453,35 +474,19 @@ export default function Home() {
             </div>
           )}
 
-          {/* LLM Options and API Key Buttons */}
-          <div className="flex justify-center gap-3">
-            {/* LLM Options for premium users or those with API keys */}
-            {(isRegistered && (dbUser?.subscription_status === 'premium' || userApiKey)) && (
-              <button
-                onClick={() => {
-                  setTempApiKey(userApiKey);
-                  setShowApiKeyModal(true);
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg transition-colors text-sm text-white font-medium"
-              >
-                <span>⚙️</span>
-                <span>LLM Options</span>
-              </button>
-            )}
-            
-            {/* API Key Button - More subtle, only show if not already premium */}
-            {!(isRegistered && dbUser?.subscription_status === 'premium') && (
-              <button
-                onClick={() => {
-                  setTempApiKey(userApiKey);
-                  setShowApiKeyModal(true);
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-gray-300 hover:text-white"
-              >
-                <span>🔑</span>
-                <span>{userApiKey ? 'Update API Key' : 'Use Your Own API Key'}</span>
-              </button>
-            )}
+          {/* LLM Options Button - Visible to ALL users */}
+          <div className="flex justify-center">
+            <button
+              onClick={() => {
+                setTempApiKey(userApiKey);
+                setTempSelectedModel(selectedModel);
+                setShowApiKeyModal(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg transition-colors text-sm text-white font-medium"
+            >
+              <span>⚙️</span>
+              <span>LLM Options</span>
+            </button>
           </div>
           
           {userApiKey && (
@@ -492,7 +497,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* API Key Modal */}
+      {/* LLM Options Modal */}
       {showApiKeyModal && (
         <div 
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
@@ -503,8 +508,8 @@ export default function Home() {
           }}
         >
           <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">API Key Settings</h3>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold">LLM Options</h3>
               <button
                 onClick={() => setShowApiKeyModal(false)}
                 className="p-2 hover:bg-gray-700 rounded-full transition-colors"
@@ -513,77 +518,135 @@ export default function Home() {
               </button>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Section 1: API Key Input */}
               <div>
-                <label className="block text-sm font-medium mb-2">
-                  OpenRouter API Key
-                </label>
+                <div className="flex items-center gap-1 mb-2">
+                  <label className="text-sm font-medium">
+                    <a 
+                      href="https://openrouter.ai/settings/keys" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:text-blue-300 underline"
+                    >
+                      OpenRouter
+                    </a>
+                    {" "}API Key
+                  </label>
+                </div>
                 <input
                   type="password"
                   value={tempApiKey}
                   onChange={(e) => setTempApiKey(e.target.value)}
-                  placeholder="sk-or-..."
+                  placeholder="sk-or..."
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Use your own API key to play without limits
+                  Use your own API key to play without limits (localStorage)
                 </p>
               </div>
               
-              {tempApiKey && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Model Selection
-                  </label>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        value="flash"
-                        checked={selectedModel === 'flash'}
-                        onChange={(e) => setSelectedModel(e.target.value as 'flash' | 'pro')}
-                        className="text-purple-500"
-                      />
-                      <span>Gemini Flash 2.5 (Faster, Cheaper)</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        value="pro"
-                        checked={selectedModel === 'pro'}
-                        onChange={(e) => setSelectedModel(e.target.value as 'flash' | 'pro')}
-                        className="text-purple-500"
-                      />
-                      <span>Gemini Pro 2.5 (Better Quality)</span>
-                    </label>
-                  </div>
-                </div>
-              )}
+              {/* Separator */}
+              <div className="border-t border-gray-600"></div>
               
-              <div className="flex gap-2 justify-end mt-6">
+              {/* Section 2: Model Selection Toggle */}
+              <div>
+                <label className="block text-sm font-medium mb-3">
+                  LLM Selection
+                </label>
+                
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      // Check if user can toggle
+                      const canToggle = userApiKey || 
+                                      dbUser?.subscription_status === 'premium' || 
+                                      (dbUser?.token_balance && dbUser.token_balance > 0);
+                      
+                      if (canToggle) {
+                        setTempSelectedModel(tempSelectedModel === 'flash' ? 'pro' : 'flash');
+                      } else {
+                        showToast('Upgrade to toggle between Speed and Reasoning modes');
+                      }
+                    }}
+                    className={`
+                      w-full h-12 rounded-lg border-2 relative overflow-hidden transition-all
+                      ${(userApiKey || dbUser?.subscription_status === 'premium' || (dbUser?.token_balance && dbUser.token_balance > 0))
+                        ? 'border-purple-500 bg-gray-700 hover:bg-gray-600 cursor-pointer'
+                        : 'border-gray-600 bg-gray-700/50 cursor-not-allowed opacity-50'
+                      }
+                    `}
+                  >
+                    <div className={`
+                      absolute top-1 h-10 w-1/2 bg-purple-600 rounded-md transition-transform duration-200 ease-in-out
+                      ${tempSelectedModel === 'pro' ? 'translate-x-full' : 'translate-x-0'}
+                    `}></div>
+                    
+                    <div className="relative z-10 flex h-full">
+                      <div className={`
+                        flex-1 flex items-center justify-center font-medium transition-colors
+                        ${tempSelectedModel === 'flash' ? 'text-white' : 'text-gray-300'}
+                      `}>
+                        Speed
+                      </div>
+                      <div className={`
+                        flex-1 flex items-center justify-center font-medium transition-colors
+                        ${tempSelectedModel === 'pro' ? 'text-white' : 'text-gray-300'}
+                      `}>
+                        Reasoning
+                      </div>
+                    </div>
+                  </button>
+                  
+                  {!(userApiKey || dbUser?.subscription_status === 'premium' || (dbUser?.token_balance && dbUser.token_balance > 0)) && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Upgrade to unlock reasoning mode
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex gap-3 justify-end mt-6">
                 <button
-                  onClick={() => setShowApiKeyModal(false)}
+                  onClick={() => {
+                    setShowApiKeyModal(false);
+                    setTempApiKey(userApiKey);
+                    setTempSelectedModel(selectedModel);
+                  }}
                   className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={async () => {
+                    let validationPassed = true;
+                    
+                    // Validate API key if provided
                     if (tempApiKey.trim()) {
-                      // Validate API key before saving
                       const isValid = await validateApiKey(tempApiKey);
-                      if (isValid) {
-                        setUserApiKey(tempApiKey);
-                        setShowApiKeyModal(false);
-                      } else {
-                        alert('Invalid API key. Please check your OpenRouter API key and try again.');
+                      if (!isValid) {
+                        showToast('Invalid API key. Please check your OpenRouter API key and try again.');
                         return;
                       }
-                    } else {
-                      // Allow clearing the API key
-                      setUserApiKey('');
-                      setShowApiKeyModal(false);
                     }
+                    
+                    // Save API key to localStorage
+                    if (tempApiKey.trim()) {
+                      setUserApiKey(tempApiKey);
+                    } else {
+                      setUserApiKey('');
+                    }
+                    
+                    // Save model preference to Supabase
+                    if (user && tempSelectedModel !== selectedModel) {
+                      const supabase = createClient();
+                      const success = await updateLlmModelPreference(supabase, user.id, tempSelectedModel);
+                      if (success) {
+                        setSelectedModel(tempSelectedModel);
+                      }
+                    }
+                    
+                    setShowApiKeyModal(false);
                   }}
                   disabled={isValidatingKey}
                   className={`px-4 py-2 rounded-lg transition-colors ${

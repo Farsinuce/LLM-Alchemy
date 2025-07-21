@@ -15,6 +15,7 @@ export interface User {
   email_verified?: boolean
   upgraded_from_anonymous?: boolean
   anonymous_data_migrated?: boolean
+  llm_model?: 'flash' | 'pro'
 }
 
 export interface UserSession {
@@ -510,51 +511,42 @@ export async function hasExceededFairUse(supabase: any, userId: string): Promise
   }
 }
 
-// User preferences functions
-export async function getUserPreferences(supabase: any, userId: string): Promise<{
-  preferredLlmModel: 'flash' | 'pro',
-  openrouterApiKey?: string
-}> {
+// LLM Model preference functions
+export async function getLlmModelPreference(supabase: any, userId: string): Promise<'flash' | 'pro'> {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('preferred_llm_model, openrouter_api_key')
+      .select('llm_model')
       .eq('id', userId)
       .single()
 
     if (error) {
-      console.error('Error getting user preferences:', error)
-      return { preferredLlmModel: 'flash' }
+      console.error('Error getting LLM model preference:', error)
+      return 'flash'
     }
 
-    return {
-      preferredLlmModel: data?.preferred_llm_model || 'flash',
-      openrouterApiKey: data?.openrouter_api_key || undefined
-    }
+    return data?.llm_model || 'flash'
   } catch (error) {
-    console.error('Error in getUserPreferences:', error)
-    return { preferredLlmModel: 'flash' }
+    console.error('Error in getLlmModelPreference:', error)
+    return 'flash'
   }
 }
 
-export async function updateUserPreferences(supabase: any, userId: string, preferences: {
-  preferredLlmModel?: 'flash' | 'pro',
-  openrouterApiKey?: string | null
-}): Promise<boolean> {
+export async function updateLlmModelPreference(supabase: any, userId: string, model: 'flash' | 'pro'): Promise<boolean> {
   try {
     const { error } = await supabase
       .from('users')
-      .update(preferences)
+      .update({ llm_model: model })
       .eq('id', userId)
 
     if (error) {
-      console.error('Error updating user preferences:', error)
+      console.error('Error updating LLM model preference:', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('Error in updateUserPreferences:', error)
+    console.error('Error in updateLlmModelPreference:', error)
     return false
   }
 }
