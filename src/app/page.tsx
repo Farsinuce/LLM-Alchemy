@@ -19,6 +19,7 @@ import {
   upgradeAnonymousAccountWithGoogle,
   checkAndHandleUpgradeCallback
 } from '@/lib/auth-utils';
+import { GAME_CONFIG } from '@/lib/game-config';
 
 interface GameProgress {
   science: { elements: number, endElements: number, achievements: number, lastPlayed?: string } | null;
@@ -215,8 +216,8 @@ export default function Home() {
   const isAnonymous = hasSession && (dbUser?.is_anonymous || false);
   const isLoggedOut = !hasSession;
   
-  const shouldShowUpgrade = shouldShowUpgradeButton(dailyCount, 5, isAnonymous);
-  const shouldShowUpgradePromptNow = shouldShowUpgradePrompt(dailyCount, 5, isAnonymous);
+  const shouldShowUpgrade = shouldShowUpgradeButton(dailyCount, GAME_CONFIG.DAILY_FREE_COMBINATIONS, isAnonymous);
+  const shouldShowUpgradePromptNow = shouldShowUpgradePrompt(dailyCount, GAME_CONFIG.DAILY_FREE_COMBINATIONS, isAnonymous);
 
   // Save API key to localStorage when it changes
   useEffect(() => {
@@ -395,7 +396,7 @@ export default function Home() {
             ) : dbUser?.subscription_status === 'premium' || (dbUser?.token_balance && dbUser.token_balance > 0) ? (
               `${dbUser.token_balance || 0} tokens remaining`
             ) : (
-              `${Math.max(0, 50 - (dailyCount || 0))} combinations left today`
+              `${Math.max(0, GAME_CONFIG.DAILY_FREE_COMBINATIONS - (dailyCount || 0))} combinations left today`
             )}
           </div>
           

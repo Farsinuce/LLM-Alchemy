@@ -3,6 +3,7 @@ import { Sparkles, X, GripHorizontal, User, ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
 import { createClient, incrementDailyCount, decrementDailyCount, saveGameState, loadGameState, consumeToken, addTokens, getLlmModelPreference } from '@/lib/supabase-client';
+import { GAME_CONFIG } from '@/lib/game-config';
 
 // Type definitions
 interface Element {
@@ -91,7 +92,7 @@ const CONSTANTS = {
   COLLISION_SPACING: 8,
   MAX_COLLISION_DISTANCE: 300,
   COLLISION_POSITIONS: 16,
-  DAILY_LIMIT: 5 // Easy to change for testing/production
+  DAILY_LIMIT: GAME_CONFIG.DAILY_FREE_COMBINATIONS
 };
 
 // Utility functions
