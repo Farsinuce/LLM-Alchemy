@@ -383,14 +383,20 @@ export default function Home() {
         <div className="space-y-6">
           <button 
             onClick={handleContinueGame}
-            className="flex items-center justify-center gap-3 w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 text-lg"
+            className="max-w-sm mx-auto flex items-center justify-center gap-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 text-lg"
           >
             {hasAnyProgress ? 'CONTINUE GAME' : 'NEW GAME'}
             <ArrowRight size={24} />
           </button>
           
           <div className="text-sm text-gray-400 font-medium">
-            Free to play – 50 combinations per day
+            {userApiKey ? (
+              "Unlimited combinations"
+            ) : dbUser?.subscription_status === 'premium' || (dbUser?.token_balance && dbUser.token_balance > 0) ? (
+              `${dbUser.token_balance || 0} tokens remaining`
+            ) : (
+              `${Math.max(0, 50 - (dailyCount || 0))} combinations left today`
+            )}
           </div>
           
           {/* Secondary Buttons */}
@@ -398,7 +404,7 @@ export default function Home() {
             {(isLoggedOut || isAnonymous) && (
               <button
                 onClick={() => handleShowAuth('register')}
-                className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors text-white font-medium"
+                className="w-64 flex items-center justify-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors text-white font-medium"
               >
                 <span>👤</span>
                 <span>Register / Sign In</span>
@@ -411,7 +417,7 @@ export default function Home() {
                 setTempSelectedModel(selectedModel);
                 setShowApiKeyModal(true);
               }}
-              className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors text-white font-medium"
+              className="w-64 flex items-center justify-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors text-white font-medium"
             >
               <span>⚙️</span>
               <span>LLM Options</span>
@@ -420,17 +426,16 @@ export default function Home() {
           
           {/* Signed-in User Status */}
           {isRegistered && (
-            <div className="flex flex-col items-center gap-3 mt-4">
+            <div className="flex items-center justify-center gap-4 mt-4">
               <div className="flex items-center gap-2 px-4 py-2 bg-green-600/20 rounded-lg text-green-400 text-sm">
                 <span>✓</span>
                 <span>Signed in as {dbUser?.display_name || dbUser?.email || user?.email || 'User'}</span>
               </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 rounded-lg text-red-400 hover:text-red-300 text-sm transition-colors"
+                className="px-3 py-2 bg-red-600/20 hover:bg-red-600/30 rounded-lg text-red-400 hover:text-red-300 text-sm transition-colors"
               >
-                <span>🚪</span>
-                <span>Logout</span>
+                🚪 Logout
               </button>
             </div>
           )}
