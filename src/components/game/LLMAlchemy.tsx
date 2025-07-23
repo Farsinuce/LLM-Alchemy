@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
 import { createClient, incrementDailyCount, decrementDailyCount, saveGameState, loadGameState, consumeToken, addTokens, getLlmModelPreference } from '@/lib/supabase-client';
 import { buildSharedSections, buildSciencePrompt, buildCreativePrompt } from '@/lib/llm-prompts';
+import { Achievement, checkAchievements, updateAchievementsWithProgress } from '@/lib/achievements';
 
 // Type definitions
 interface Element {
@@ -29,13 +30,6 @@ interface MixingElement extends Element {
   mixIndex?: number | null;
 }
 
-interface Achievement {
-  id: string;
-  name: string;
-  description: string;
-  emoji: string;
-  unlocked: number;
-}
 
 interface FloatingEmoji {
   id: number;
@@ -198,7 +192,7 @@ const LLMAlchemy = () => {
   const dropZoneRef = useRef<HTMLDivElement | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const floatingEmojiId = useRef<number>(0);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Handle URL mode parameter and game state loading
   useEffect(() => {
@@ -346,184 +340,6 @@ const LLMAlchemy = () => {
     };
   }, []);
 
-  // Achievement checking function
-  const checkAchievements = (newElement: Element, allElements: Element[], allEndElements: Element[]): Achievement[] => {
-    const newAchievements: Achievement[] = [];
-    
-    try {
-      // Tag-based achievement detection
-      if (newElement.tags && Array.isArray(newElement.tags)) {
-        for (const tag of newElement.tags) {
-          let achievementId: string | null = null;
-          let achievementName: string = '';
-          let achievementDescription: string = '';
-          let achievementEmoji: string = '🏆';
-          
-          // Check if this is the first element with this tag
-          const hasExistingWithTag = [...allElements, ...allEndElements]
-            .filter(e => e.id !== newElement.id)
-            .some(e => e.tags && e.tags.includes(tag));
-          
-          if (!hasExistingWithTag) {
-            // Map tags to achievements based on game mode
-            if (gameMode === 'creative') {
-              switch (tag) {
-                case 'food':
-                  achievementId = 'first-food';
-                  achievementName = 'Edible Elements';
-                  achievementDescription = 'Created your first food item';
-                  achievementEmoji = '🍎';
-                  break;
-                case 'lifeform':
-                case 'creature':
-                case 'animal':
-                  achievementId = 'first-lifeform';
-                  achievementName = 'First Lifeform!';
-                  achievementDescription = 'Brought life into existence';
-                  achievementEmoji = '🧬';
-                  break;
-                case 'metal':
-                  achievementId = 'first-metal';
-                  achievementName = 'Metalworker';
-                  achievementDescription = 'Forged your first metal';
-                  achievementEmoji = '⚒️';
-                  break;
-                case 'tool':
-                  achievementId = 'first-tool';
-                  achievementName = 'Tool Maker';
-                  achievementDescription = 'Crafted your first tool';
-                  achievementEmoji = '🔨';
-                  break;
-                case 'fictional-character':
-                case 'character':
-                  achievementId = 'first-character';
-                  achievementName = 'Fictional Hero';
-                  achievementDescription = 'Summoned a legendary being';
-                  achievementEmoji = '🦸';
-                  break;
-                case 'disaster':
-                  achievementId = 'first-disaster';
-                  achievementName = 'Chaos Alchemist';
-                  achievementDescription = 'Unleashed destructive forces';
-                  achievementEmoji = '💥';
-                  break;
-              }
-            } else { // Science mode
-              switch (tag) {
-                case 'lifeform':
-                case 'organism':
-                case 'microorganism':
-                  achievementId = 'first-lifeform';
-                  achievementName = 'Genesis';
-                  achievementDescription = 'Created the first living organism';
-                  achievementEmoji = '🧬';
-                  break;
-                case 'mineral':
-                case 'compound':
-                  achievementId = 'first-mineral';
-                  achievementName = 'Geologist';
-                  achievementDescription = 'Discovered your first mineral compound';
-                  achievementEmoji = '💎';
-                  break;
-                case 'metal':
-                  achievementId = 'first-metal';
-                  achievementName = 'Metallurgist';
-                  achievementDescription = 'Refined your first metal';
-                  achievementEmoji = '⚒️';
-                  break;
-                case 'plant':
-                  achievementId = 'first-plant';
-                  achievementName = 'Botanist';
-                  achievementDescription = 'Cultivated plant life';
-                  achievementEmoji = '🌱';
-                  break;
-              }
-            }
-            
-            // Add the achievement if we found a match and don't already have it
-            if (achievementId && !achievements.find(a => a.id === achievementId)) {
-              newAchievements.push({
-                id: achievementId,
-                name: achievementName,
-                description: achievementDescription,
-                emoji: achievementEmoji,
-                unlocked: Date.now()
-              });
-            }
-          }
-        }
-      }
-      
-      // Milestone achievements using passed arrays
-      const totalElements = allElements.length + allEndElements.length;
-      
-      // 10 elements achievement
-      if (totalElements >= 10 && !achievements.find(a => a.id === 'alchemist-apprentice')) {
-        newAchievements.push({
-          id: 'alchemist-apprentice',
-          name: 'Alchemist Apprentice',
-          description: 'Discovered 10 elements',
-          emoji: '🎓',
-          unlocked: Date.now()
-        });
-      }
-      
-      // 50 elements achievement
-      if (totalElements >= 50 && !achievements.find(a => a.id === 'skilled-alchemist')) {
-        newAchievements.push({
-          id: 'skilled-alchemist',
-          name: 'Skilled Alchemist',
-          description: 'Discovered 50 elements',
-          emoji: '🧙',
-          unlocked: Date.now()
-        });
-      }
-      
-      // 100 elements achievement
-      if (totalElements >= 100 && !achievements.find(a => a.id === 'century-club')) {
-        newAchievements.push({
-          id: 'century-club',
-          name: 'Century Club',
-          description: 'Discovered 100 elements',
-          emoji: '💯',
-          unlocked: Date.now()
-        });
-      }
-      
-      // End element achievements (Science mode only)
-      if (gameMode === 'science') {
-        if (allEndElements.length >= 1 && !achievements.find(a => a.id === 'dead-end')) {
-          newAchievements.push({
-            id: 'dead-end',
-            name: 'End of Branch',
-            description: 'Discovered your first End Element',
-            emoji: '🔚',
-            unlocked: Date.now()
-          });
-        }
-        
-        if (allEndElements.length >= 10 && !achievements.find(a => a.id === 'end-collector')) {
-          newAchievements.push({
-            id: 'end-collector',
-            name: 'End Collector',
-            description: 'Collected 10 End Elements',
-            emoji: '🏁',
-            unlocked: Date.now()
-          });
-        }
-      }
-      
-    } catch (error) {
-      console.error('Error checking achievements:', error);
-    }
-    
-    // Update achievements state if we have new ones
-    if (newAchievements.length > 0) {
-      setAchievements(prevAchievements => [...prevAchievements, ...newAchievements]);
-    }
-    
-    return newAchievements;
-  };
 
   useEffect(() => {
     // Initialize Web Audio API
@@ -1464,8 +1280,13 @@ const LLMAlchemy = () => {
         let contextualAchievement = null;
         let allAchievements: Achievement[] = [];
         try {
-          allAchievements = checkAchievements(newElement, updatedElements, updatedEndElements);
+          allAchievements = checkAchievements(newElement, updatedElements, updatedEndElements, achievements, gameMode);
           contextualAchievement = allAchievements.find(a => a.id.startsWith('first-'));
+          
+          // Update achievements state if we have new ones
+          if (allAchievements.length > 0) {
+            setAchievements(prevAchievements => [...prevAchievements, ...allAchievements]);
+          }
         } catch (achievementError) {
           console.error('Achievement check failed:', achievementError);
           // Continue without achievements - don't block the unlock flow
@@ -2581,91 +2402,156 @@ const LLMAlchemy = () => {
       )}
 
       {/* Achievements Modal */}
-      {showAchievements && (
-        <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowAchievements(false);
-            }
-          }}
-        >
-          <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex justify-end items-center mb-4">
-              <button
-                onClick={() => setShowAchievements(false)}
-                className="p-2 hover:bg-gray-700 rounded-full transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="overflow-y-auto flex-1 space-y-6">
-              {/* Achievements Section */}
-              <div>
-                <h4 className="text-lg font-semibold mb-3 text-yellow-400">🏆 Achievements ({achievements.length})</h4>
-                {achievements.length === 0 ? (
-                  <p className="text-gray-400 text-sm">None unlocked yet.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {achievements
-                      .sort((a, b) => b.unlocked - a.unlocked)
-                      .map((achievement) => (
-                        <div
-                          key={achievement.id}
-                          className="bg-gray-700/50 rounded-lg p-3 border border-gray-600"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{achievement.emoji}</span>
-                            <div>
-                              <div className="font-medium text-yellow-300">{achievement.name}</div>
-                              <div className="text-sm text-gray-300">{achievement.description}</div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                )}
+      {showAchievements && (() => {
+        // Update achievements with progress information before displaying
+        const achievementsWithProgress = updateAchievementsWithProgress(achievements, elements, endElements);
+        
+        return (
+          <div 
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowAchievements(false);
+              }
+            }}
+          >
+            <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col">
+              <div className="flex justify-end items-center mb-4">
+                <button
+                  onClick={() => setShowAchievements(false)}
+                  className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
               </div>
-
-              {/* End Elements Section (Science Mode Only) */}
-              {gameMode === 'science' && (
+              
+              <div className="overflow-y-auto flex-1 space-y-6">
+                {/* Achievements Section */}
                 <div>
-                  <h4 className="text-lg font-semibold mb-3 text-blue-400">🏁 End Elements ({endElements.length})</h4>
-                  {endElements.length === 0 ? (
-                    <p className="text-gray-400 text-sm">Nothing discovered yet.</p>
+                  <h4 className="text-lg font-semibold mb-3 text-yellow-400">🏆 Achievements ({achievementsWithProgress.length})</h4>
+                  {achievementsWithProgress.length === 0 ? (
+                    <p className="text-gray-400 text-sm">None unlocked yet.</p>
                   ) : (
                     <div className="space-y-2">
-                      {endElements
-                        .sort((a, b) => b.unlockOrder - a.unlockOrder)
-                        .map((element) => (
-                          <div
-                            key={element.id}
-                            className="bg-gray-700/50 rounded-lg p-3 border border-gray-600"
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-2xl">{element.emoji}</span>
-                              <div>
-                                <div className="font-medium" style={{ color: element.color }}>
-                                  {element.name}
-                                </div>
-                                {element.reasoning && (
-                                  <div className="text-sm text-gray-400 italic">
-                                    &quot;{element.reasoning}&quot;
+                      {achievementsWithProgress
+                        .sort((a: Achievement, b: Achievement) => b.unlocked - a.unlocked)
+                        .map((achievement: Achievement) => {
+                          // Get tier colors
+                          const getTierColor = (tier?: 1 | 2 | 3) => {
+                            switch (tier) {
+                              case 1: return 'border-amber-600'; // Bronze
+                              case 2: return 'border-gray-400';  // Silver  
+                              case 3: return 'border-yellow-400'; // Gold
+                              default: return 'border-gray-600';
+                            }
+                          };
+                          
+                          const getTierTextColor = (tier?: 1 | 2 | 3) => {
+                            switch (tier) {
+                              case 1: return 'text-amber-400'; // Bronze
+                              case 2: return 'text-gray-300';  // Silver
+                              case 3: return 'text-yellow-300'; // Gold
+                              default: return 'text-yellow-300';
+                            }
+                          };
+                          
+                          const getTierProgressColor = (tier?: 1 | 2 | 3) => {
+                            switch (tier) {
+                              case 1: return 'bg-amber-600'; // Bronze
+                              case 2: return 'bg-gray-400';  // Silver
+                              case 3: return 'bg-yellow-400'; // Gold
+                              default: return 'bg-gray-500';
+                            }
+                          };
+                          
+                          return (
+                            <div
+                              key={achievement.id}
+                              className={`bg-gray-700/50 rounded-lg p-3 border-2 ${getTierColor(achievement.tier)} relative group cursor-pointer transition-all hover:bg-gray-700/70`}
+                              title={achievement.isProgressive && achievement.nextTierAt ? 
+                                `Next: ${achievement.nextTierAt - (achievement.currentCount || 0)} more needed` : 
+                                ''
+                              }
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="text-2xl">{achievement.emoji}</span>
+                                <div className="flex-1">
+                                  <div className={`font-medium ${getTierTextColor(achievement.tier)}`}>
+                                    {achievement.name}
                                   </div>
-                                )}
+                                  <div className="text-sm text-gray-300">{achievement.description}</div>
+                                  
+                                  {/* Progress bar for tiered achievements */}
+                                  {achievement.isProgressive && achievement.nextTierAt && (
+                                    <div className="mt-2">
+                                      <div className="w-full bg-gray-600/50 rounded-full h-1.5">
+                                        <div 
+                                          className={`h-1.5 rounded-full transition-all duration-300 ${getTierProgressColor(achievement.tier)}`}
+                                          style={{
+                                            width: `${Math.min(100, ((achievement.currentCount || 0) / achievement.nextTierAt) * 100)}%`
+                                          }}
+                                        ></div>
+                                      </div>
+                                      <div className="text-xs text-gray-400 mt-1">
+                                        {achievement.currentCount || 0}/{achievement.nextTierAt}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Max tier indicator */}
+                                  {achievement.isProgressive && !achievement.nextTierAt && (
+                                    <div className="text-xs text-yellow-300 mt-1">
+                                      ⭐ Max tier reached ({achievement.currentCount})
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                     </div>
                   )}
                 </div>
-              )}
+
+                {/* End Elements Section (Science Mode Only) */}
+                {gameMode === 'science' && (
+                  <div>
+                    <h4 className="text-lg font-semibold mb-3 text-blue-400">🏁 End Elements ({endElements.length})</h4>
+                    {endElements.length === 0 ? (
+                      <p className="text-gray-400 text-sm">Nothing discovered yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {endElements
+                          .sort((a, b) => b.unlockOrder - a.unlockOrder)
+                          .map((element) => (
+                            <div
+                              key={element.id}
+                              className="bg-gray-700/50 rounded-lg p-3 border border-gray-600"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="text-2xl">{element.emoji}</span>
+                                <div>
+                                  <div className="font-medium" style={{ color: element.color }}>
+                                    {element.name}
+                                  </div>
+                                  {element.reasoning && (
+                                    <div className="text-sm text-gray-400 italic">
+                                      &quot;{element.reasoning}&quot;
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
 
       {/* Toast */}
