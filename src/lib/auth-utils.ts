@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase-client';
+import { GAME_CONFIG } from '@/lib/game-config';
 
 export interface AccountUpgradeResult {
   success: boolean;
