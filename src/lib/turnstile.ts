@@ -18,8 +18,8 @@ declare global {
 }
 
 /**
- * Generate an invisible Turnstile token
- * This creates a temporary invisible widget, gets the token, then removes it
+ * Generate a Turnstile token using managed mode (more reliable on mobile)
+ * Includes timeout fallback to prevent indefinite hanging
  */
 export async function getTurnstileToken(): Promise<string | null> {
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -35,6 +35,17 @@ export async function getTurnstileToken(): Promise<string | null> {
   }
 
   return new Promise((resolve) => {
+    let resolved = false;
+    
+    // 3 second timeout to prevent hanging
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        console.warn('Turnstile timeout - proceeding without token');
+        resolve(null);
+      }
+    }, 3000);
+
     try {
       // Create a temporary container
       const container = document.createElement('div');
@@ -44,34 +55,46 @@ export async function getTurnstileToken(): Promise<string | null> {
       container.style.visibility = 'hidden';
       document.body.appendChild(container);
 
-      // Render invisible widget
+      // Render managed widget (more reliable than invisible)
       const widgetId = window.turnstile!.render(container, {
         sitekey: siteKey,
-        size: 'invisible',
+        size: 'normal', // Changed from invisible to normal (managed mode)
         callback: (token: string) => {
-          // Clean up
-          try {
-            window.turnstile!.remove(widgetId);
-            document.body.removeChild(container);
-          } catch (e) {
-            console.warn('Error cleaning up Turnstile widget:', e);
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeout);
+            // Clean up
+            try {
+              window.turnstile!.remove(widgetId);
+              document.body.removeChild(container);
+            } catch (e) {
+              console.warn('Error cleaning up Turnstile widget:', e);
+            }
+            resolve(token);
           }
-          resolve(token);
         },
         'error-callback': () => {
-          // Clean up on error
-          try {
-            document.body.removeChild(container);
-          } catch (e) {
-            console.warn('Error cleaning up Turnstile widget:', e);
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeout);
+            // Clean up on error
+            try {
+              document.body.removeChild(container);
+            } catch (e) {
+              console.warn('Error cleaning up Turnstile widget:', e);
+            }
+            resolve(null);
           }
-          resolve(null);
         }
       });
 
     } catch (error) {
-      console.error('Turnstile error:', error);
-      resolve(null);
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        console.error('Turnstile error:', error);
+        resolve(null);
+      }
     }
   });
 }

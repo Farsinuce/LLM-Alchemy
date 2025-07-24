@@ -93,29 +93,31 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       isInitializing = true
       
       try {
-        // Get current session (don't create new anonymous user)
+        // Get current session (don't create new anonymous user automatically)
         const { data: { session } } = await supabase.auth.getSession()
         
         if (!mounted) return
         
         if (session?.user) {
-          // User already exists - load their data
+          // User already exists - load their data in parallel
           setUser(session.user)
           
-          // Get existing DB user record (don't create)
-          const { data: dbUser } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
+          // Parallelize database operations for faster loading
+          const [dbUserResult, dailyCountResult, tokenBalanceResult] = await Promise.allSettled([
+            supabase.from('users').select('*').eq('id', session.user.id).single(),
+            getDailyCount(supabase, session.user.id),
+            getTokenBalance(supabase, session.user.id)
+          ])
           
-          if (mounted && dbUser) {
-            setDbUser(dbUser)
-            const count = await getDailyCount(supabase, session.user.id)
-            const balance = await getTokenBalance(supabase, session.user.id)
-            if (mounted) {
-              setDailyCount(count)
-              setTokenBalance(balance)
+          if (mounted) {
+            if (dbUserResult.status === 'fulfilled' && dbUserResult.value.data) {
+              setDbUser(dbUserResult.value.data)
+            }
+            if (dailyCountResult.status === 'fulfilled') {
+              setDailyCount(dailyCountResult.value)
+            }
+            if (tokenBalanceResult.status === 'fulfilled') {
+              setTokenBalance(tokenBalanceResult.value)
             }
           }
         }
@@ -138,7 +140,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         if (!mounted || isInitializing) return
         
-        // Add 50ms delay to prevent deadlock
+        // Keep 50ms delay only for deadlock prevention in auth state changes
         setTimeout(async () => {
           try {
             if (event === 'SIGNED_OUT') {
@@ -189,11 +191,19 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
               
               if (mounted && dbUser) {
                 setDbUser(dbUser)
-                const count = await getDailyCount(supabase, session.user.id)
-                const balance = await getTokenBalance(supabase, session.user.id)
+                // Parallelize these database calls too
+                const [dailyCountResult, tokenBalanceResult] = await Promise.allSettled([
+                  getDailyCount(supabase, session.user.id),
+                  getTokenBalance(supabase, session.user.id)
+                ])
+                
                 if (mounted) {
-                  setDailyCount(count)
-                  setTokenBalance(balance)
+                  if (dailyCountResult.status === 'fulfilled') {
+                    setDailyCount(dailyCountResult.value)
+                  }
+                  if (tokenBalanceResult.status === 'fulfilled') {
+                    setTokenBalance(tokenBalanceResult.value)
+                  }
                 }
               }
             }

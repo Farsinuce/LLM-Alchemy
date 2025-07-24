@@ -97,15 +97,15 @@ export async function signInWithGoogle(supabase: any): Promise<{ error: any }> {
 // Helper functions for common database operations
 export async function getOrCreateAnonymousUser(supabase: any): Promise<User | null> {
   try {
-    // First try to get current user
-    const { data: { user } } = await supabase.auth.getUser()
+    // First check for existing session to prevent duplicate signups
+    const { data: { session } } = await supabase.auth.getSession()
     
-    if (user) {
-      // Get user record from our database
+    if (session?.user) {
+      // Get existing user record from our database
       const { data: dbUser } = await supabase
         .from('users')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', session.user.id)
         .single()
       
       if (dbUser) {
@@ -113,16 +113,20 @@ export async function getOrCreateAnonymousUser(supabase: any): Promise<User | nu
       }
     }
 
-    // Create anonymous user with optional Turnstile support
+    // Create anonymous user with Turnstile protection and timeout fallback
     let captchaToken: string | undefined;
     
-    // Try to get Turnstile token if available (graceful fallback if not)
+    // Get Turnstile token with race condition to prevent hanging
     try {
       const { getTurnstileToken, waitForTurnstile } = await import('./turnstile');
       const turnstileReady = await waitForTurnstile(2000); // Wait up to 2 seconds
       
       if (turnstileReady) {
-        captchaToken = await getTurnstileToken() || undefined;
+        // Race the Turnstile token against a 3-second timeout
+        captchaToken = await Promise.race([
+          getTurnstileToken(),
+          new Promise<undefined>(resolve => setTimeout(() => resolve(undefined), 3000))
+        ]) || undefined;
       }
     } catch (error) {
       console.warn('Turnstile not available, proceeding without captcha:', error);
