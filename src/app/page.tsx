@@ -384,7 +384,7 @@ export default function Home() {
         <div className="space-y-4">
           <button 
             onClick={handleContinueGame}
-            className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105"
+            className="flex items-center justify-center gap-2 max-w-md mx-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105"
           >
             {hasAnyProgress ? 'Continue Game' : 'New Game'}
             <ArrowRight size={20} />
@@ -403,26 +403,54 @@ export default function Home() {
           {/* Authentication / Account Status */}
           <div className="flex justify-center">
             {(isLoggedOut || isAnonymous) ? (
-              <button
-                onClick={() => handleShowAuth('register')}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-sm text-white font-medium"
-              >
-                <span>👤</span>
-                <span>Register / Sign in</span>
-              </button>
-            ) : (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-4 py-2 bg-green-600/20 rounded-lg text-green-400 text-sm">
-                  <span>✓</span>
-                  <span>Signed in as {dbUser?.display_name || dbUser?.email || user?.email || 'User'}</span>
-                </div>
+              <div className="flex gap-3 w-full max-w-md">
                 <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 rounded-lg text-red-400 hover:text-red-300 text-sm transition-colors"
+                  onClick={() => handleShowAuth('register')}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-white font-medium flex-1"
                 >
-                  <span>🚪</span>
-                  <span>Logout</span>
+                  <span>👤</span>
+                  <span>Register / Sign in</span>
                 </button>
+                <button
+                  onClick={() => {
+                    setTempApiKey(userApiKey);
+                    setTempSelectedModel(selectedModel);
+                    setShowApiKeyModal(true);
+                  }}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-white font-medium flex-1"
+                >
+                  <span>⚙️</span>
+                  <span>LLM Options</span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-center gap-3">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-green-600/20 rounded-lg text-green-400 text-sm">
+                    <span>✓</span>
+                    <span>Signed in as {dbUser?.display_name || dbUser?.email || user?.email || 'User'}</span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 rounded-lg text-red-400 hover:text-red-300 text-sm transition-colors"
+                  >
+                    <span>🚪</span>
+                    <span>Logout</span>
+                  </button>
+                </div>
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => {
+                      setTempApiKey(userApiKey);
+                      setTempSelectedModel(selectedModel);
+                      setShowApiKeyModal(true);
+                    }}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-white font-medium"
+                  >
+                    <span>⚙️</span>
+                    <span>LLM Options</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -481,20 +509,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* LLM Options Button - Visible to ALL users */}
-          <div className="flex justify-center">
-            <button
-              onClick={() => {
-                setTempApiKey(userApiKey);
-                setTempSelectedModel(selectedModel);
-                setShowApiKeyModal(true);
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg transition-colors text-sm text-white font-medium"
-            >
-              <span>⚙️</span>
-              <span>LLM Options</span>
-            </button>
-          </div>
           
           {userApiKey && (
             <div className="text-xs text-green-400 mt-2">
