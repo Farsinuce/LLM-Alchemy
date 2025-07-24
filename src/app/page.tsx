@@ -403,10 +403,10 @@ export default function Home() {
           {/* Authentication / Account Status */}
           <div className="flex justify-center">
             {(isLoggedOut || isAnonymous) ? (
-              <div className="space-y-3 w-full max-w-md">
+              <div className="space-y-3 flex flex-col items-center">
                 <button
                   onClick={() => handleShowAuth('register')}
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-white font-medium w-full"
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-white font-medium"
                 >
                   <span>👤</span>
                   <span>Register / Sign in</span>
@@ -417,7 +417,7 @@ export default function Home() {
                     setTempSelectedModel(selectedModel);
                     setShowApiKeyModal(true);
                   }}
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-white font-medium w-full"
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-white font-medium"
                 >
                   <span>⚙️</span>
                   <span>LLM Options</span>
