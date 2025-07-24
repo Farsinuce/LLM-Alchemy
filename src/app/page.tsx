@@ -19,7 +19,6 @@ import {
   upgradeAnonymousAccountWithGoogle,
   checkAndHandleUpgradeCallback
 } from '@/lib/auth-utils';
-import { GAME_CONFIG } from '@/lib/game-config';
 
 interface GameProgress {
   science: { elements: number, endElements: number, achievements: number, lastPlayed?: string } | null;
@@ -216,8 +215,8 @@ export default function Home() {
   const isAnonymous = hasSession && (dbUser?.is_anonymous || false);
   const isLoggedOut = !hasSession;
   
-  const shouldShowUpgrade = shouldShowUpgradeButton(dailyCount, GAME_CONFIG.DAILY_FREE_COMBINATIONS, isAnonymous);
-  const shouldShowUpgradePromptNow = shouldShowUpgradePrompt(dailyCount, GAME_CONFIG.DAILY_FREE_COMBINATIONS, isAnonymous);
+  const shouldShowUpgrade = shouldShowUpgradeButton(dailyCount, 5, isAnonymous);
+  const shouldShowUpgradePromptNow = shouldShowUpgradePrompt(dailyCount, 5, isAnonymous);
 
   // Save API key to localStorage when it changes
   useEffect(() => {
@@ -317,14 +316,14 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
+    <main className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4">
       <div className="max-w-lg w-full text-center">
-        <div className="flex items-center justify-center gap-3 mb-6">
+        <div className="flex items-center justify-center gap-3 mb-8">
           <Sparkles className="text-yellow-400" size={48} />
-          <h1 className="text-4xl sm:text-5xl font-bold">LLM Alchemy</h1>
+          <h1 className="text-5xl font-bold">LLM Alchemy</h1>
         </div>
         
-        <p className="text-lg text-gray-300 mb-12">
+        <p className="text-lg text-gray-300 mb-8">
           Combine elements to discover new ones using AI.
         </p>
 
@@ -380,66 +379,46 @@ export default function Home() {
           </div>
         )}
         
-        {/* Main Action Button */}
-        <div className="space-y-6">
+        {/* Single Action Button */}
+        <div className="space-y-4">
           <button 
             onClick={handleContinueGame}
-            className="max-w-sm mx-auto flex items-center justify-center gap-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 text-lg"
+            className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105"
           >
-            {hasAnyProgress ? 'CONTINUE GAME' : 'NEW GAME'}
-            <ArrowRight size={24} />
+            {hasAnyProgress ? 'Continue Game' : 'New Game'}
+            <ArrowRight size={20} />
           </button>
           
-          <div className="text-sm text-gray-400 font-medium">
-            {userApiKey ? (
-              "Unlimited combinations"
-            ) : dbUser?.subscription_status === 'premium' || (dbUser?.token_balance && dbUser.token_balance > 0) ? (
-              `${dbUser.token_balance || 0} tokens remaining`
-            ) : (
-              `${Math.max(0, GAME_CONFIG.DAILY_FREE_COMBINATIONS - (dailyCount || 0))} combinations left today`
-            )}
+          <div className="text-sm text-gray-400">
+            Free to play • 50 combinations per day
           </div>
           
-          {/* Secondary Buttons */}
-          <div className="flex flex-col items-center gap-4">
-            {(isLoggedOut || isAnonymous) && (
+          {/* Authentication / Account Status */}
+          <div className="flex justify-center">
+            {(isLoggedOut || isAnonymous) ? (
               <button
                 onClick={() => handleShowAuth('register')}
-                className="w-64 flex items-center justify-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors text-white font-medium"
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-sm text-white font-medium"
               >
                 <span>👤</span>
-                <span>Register / Sign In</span>
+                <span>Register / Sign in</span>
               </button>
-            )}
-            
-            <button
-              onClick={() => {
-                setTempApiKey(userApiKey);
-                setTempSelectedModel(selectedModel);
-                setShowApiKeyModal(true);
-              }}
-              className="w-64 flex items-center justify-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors text-white font-medium"
-            >
-              <span>⚙️</span>
-              <span>LLM Options</span>
-            </button>
-          </div>
-          
-          {/* Signed-in User Status */}
-          {isRegistered && (
-            <div className="flex items-center justify-center gap-4 mt-4">
-              <div className="flex items-center gap-2 px-4 py-2 bg-green-600/20 rounded-lg text-green-400 text-sm">
-                <span>✓</span>
-                <span>Signed in as {dbUser?.display_name || dbUser?.email || user?.email || 'User'}</span>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-4 py-2 bg-green-600/20 rounded-lg text-green-400 text-sm">
+                  <span>✓</span>
+                  <span>Signed in as {dbUser?.display_name || dbUser?.email || user?.email || 'User'}</span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 rounded-lg text-red-400 hover:text-red-300 text-sm transition-colors"
+                >
+                  <span>🚪</span>
+                  <span>Logout</span>
+                </button>
               </div>
-              <button
-                onClick={handleLogout}
-                className="px-3 py-2 bg-red-600/20 hover:bg-red-600/30 rounded-lg text-red-400 hover:text-red-300 text-sm transition-colors"
-              >
-                🚪 Logout
-              </button>
-            </div>
-          )}
+            )}
+          </div>
           
           {/* Upgrade button for registered freemium users */}
           {isRegistered && dbUser?.subscription_status === 'free' && (
@@ -457,7 +436,7 @@ export default function Home() {
           
           {/* Payment Buttons for Authenticated Users */}
           {!isAnonymous && dbUser && (
-            <div className="mt-8 p-6 bg-slate-800/50 rounded-lg">
+            <div className="mt-6 p-4 bg-gray-800/50 rounded-lg">
               <h3 className="text-lg font-semibold mb-4 text-center">Get More Tokens</h3>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <button
@@ -494,6 +473,21 @@ export default function Home() {
               </div>
             </div>
           )}
+
+          {/* LLM Options Button - Visible to ALL users */}
+          <div className="flex justify-center">
+            <button
+              onClick={() => {
+                setTempApiKey(userApiKey);
+                setTempSelectedModel(selectedModel);
+                setShowApiKeyModal(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg transition-colors text-sm text-white font-medium"
+            >
+              <span>⚙️</span>
+              <span>LLM Options</span>
+            </button>
+          </div>
           
           {userApiKey && (
             <div className="text-xs text-green-400 mt-2">

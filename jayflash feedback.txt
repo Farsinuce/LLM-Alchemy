@@ -1,0 +1,15 @@
+Joachim siger: ville være nice, hvis man kunne se hvilke to elementer ens element var blandet ud fra
+
+LLM bliver mærkelig over tid:
+water + fire = giver pludselig obsidian
+
+
+Unlimited skal seamlessly nedgradere til Flash efter 3000 uses
+
+Mangler en time-out /refresh hvis LLM ikke har produceret et svar inden 10 sekunder
+
+
+No text for element emojis (neither asian nor english), just emojis.
+
+
+Does the GAME store all failed combinations (besides us sending the previous few failed attempts to the LLM)? so it will NOT call the LLM API if a combination has been tried before - e.g. yesterday?
