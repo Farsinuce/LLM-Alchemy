@@ -5,6 +5,7 @@ import { useSupabase } from '@/components/auth/SupabaseProvider';
 import { createClient, incrementDailyCount, decrementDailyCount, saveGameState, loadGameState, consumeToken, addTokens, getLlmModelPreference } from '@/lib/supabase-client';
 import { buildSharedSections, buildSciencePrompt, buildCreativePrompt } from '@/lib/llm-prompts';
 import { Achievement, checkAchievements, updateAchievementsWithProgress } from '@/lib/achievements';
+import { GAME_CONFIG } from '@/lib/game-config';
 
 // Type definitions
 interface Element {
@@ -85,8 +86,7 @@ const CONSTANTS = {
   BREAKPOINTS: { sm: 640, md: 768 },
   COLLISION_SPACING: 8,
   MAX_COLLISION_DISTANCE: 300,
-  COLLISION_POSITIONS: 16,
-  DAILY_LIMIT: 5 // Easy to change for testing/production
+  COLLISION_POSITIONS: 16
 };
 
 // Utility functions
@@ -503,8 +503,8 @@ const LLMAlchemy = () => {
     }
     
     // Otherwise check daily limit
-    if (dailyCount >= CONSTANTS.DAILY_LIMIT) {
-      showToast(`Daily limit reached: ${dailyCount}/${CONSTANTS.DAILY_LIMIT} - Click "Get more" for tokens!`);
+    if (dailyCount >= GAME_CONFIG.DAILY_FREE_COMBINATIONS) {
+      showToast(`Daily limit reached: ${dailyCount}/${GAME_CONFIG.DAILY_FREE_COMBINATIONS} - Click "Get more" for tokens!`);
       return false;
     }
     return true;
@@ -748,7 +748,7 @@ const LLMAlchemy = () => {
     } else {
       userType = useProModel ? 'Token User' : 'Freemium User';
       model = useProModel ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash';
-      reason = useProModel ? `Has tokens (${tokenBalance} remaining)` : `Daily limit user (${dailyCount}/${CONSTANTS.DAILY_LIMIT} used)`;
+      reason = useProModel ? `Has tokens (${tokenBalance} remaining)` : `Daily limit user (${dailyCount}/${GAME_CONFIG.DAILY_FREE_COMBINATIONS} used)`;
     }
     
     console.log(`[LLM-Alchemy Frontend] User Type: ${userType} | Model: ${model} | Reason: ${reason}`);
@@ -1783,7 +1783,7 @@ const LLMAlchemy = () => {
               <>
                 <span className="text-yellow-400">Tokens: {tokenBalance}</span>
               </>
-            ) : dailyCount >= CONSTANTS.DAILY_LIMIT ? (
+            ) : dailyCount >= GAME_CONFIG.DAILY_FREE_COMBINATIONS ? (
               <button
                 onClick={async () => {
                   if (user) {
@@ -1800,7 +1800,7 @@ const LLMAlchemy = () => {
             ) : (
               <>
                 <User size={14} />
-                <span>{dailyCount}/{CONSTANTS.DAILY_LIMIT} today</span>
+                <span>{dailyCount}/{GAME_CONFIG.DAILY_FREE_COMBINATIONS} today</span>
               </>
             )}
           </div>
