@@ -4,16 +4,17 @@ This document outlines the design system implemented for consistent UI styling a
 
 ## Overview
 
-We've implemented a lightweight design system using Tailwind CSS with custom configuration and utility classes. The system focuses on:
+We've implemented a lightweight design system using Tailwind CSS v4 with custom theming and utility classes. The system focuses on:
 - Consistent colors and theming
 - Standardized button variants
-- Typography hierarchy
+- Typography hierarchy  
 - Reusable component patterns
+
+**Note**: This project uses Tailwind CSS v4, which has different configuration syntax than v3. Design tokens are defined in CSS using the `@theme` directive instead of a separate config file.
 
 ## Files Changed
 
-- `tailwind.config.js` - Custom color palette and design tokens
-- `src/app/globals.css` - Utility classes for common patterns
+- `src/app/globals.css` - Design tokens, custom colors, and utility classes (Tailwind v4 compatible)
 - `src/app/page.tsx` - ✅ Fully refactored to use new design system
 - `src/components/auth/AuthModal.tsx` - ✅ Fully refactored to use new design system
 - `src/components/game/LLMAlchemy.tsx` - 🔄 Partially updated (modal backdrop, sort buttons, floating action button)
