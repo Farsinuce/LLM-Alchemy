@@ -151,6 +151,9 @@ const LLMAlchemy = () => {
   // Failed combinations tracking for improved LLM context
   const [failedCombinations, setFailedCombinations] = useState<string[]>([]);
   
+  // Element dimming for drag feedback
+  const [dimmedElements, setDimmedElements] = useState<Set<string>>(new Set());
+  
   // New animation state for mixing area elements
   const [animatingElements, setAnimatingElements] = useState<Set<string>>(new Set());
   
@@ -488,6 +491,37 @@ const LLMAlchemy = () => {
   const showToast = (message: string) => {
     setToast(message);
     setTimeout(() => setToast(''), 3000);
+  };
+
+  // Helper function to find which elements have been previously mixed with the given element
+  const getPreviouslyMixedElements = (elementName: string): Set<string> => {
+    const mixedWith = new Set<string>();
+    
+    // Check combinations object
+    Object.keys(combinations).forEach(comboKey => {
+      const parts = comboKey.split('+');
+      if (parts.includes(elementName)) {
+        parts.forEach(part => {
+          if (part !== elementName && part !== 'Energy') {
+            mixedWith.add(part);
+          }
+        });
+      }
+    });
+    
+    // Check failed combinations
+    failedCombinations.forEach(failedCombo => {
+      const parts = failedCombo.split('+');
+      if (parts.includes(elementName)) {
+        parts.forEach(part => {
+          if (part !== elementName && part !== 'Energy') {
+            mixedWith.add(part);
+          }
+        });
+      }
+    });
+    
+    return mixedWith;
   };
 
   // Function to check if daily limit is reached (before API call)
@@ -1075,6 +1109,11 @@ const LLMAlchemy = () => {
     } as MixingElement;
     setIsDragging(true);
     setHoveredUIElement(null); // Clear any UI hover state when starting to drag
+    
+    // Calculate and set dimmed elements
+    const previouslyMixed = getPreviouslyMixedElements(element.name);
+    setDimmedElements(previouslyMixed);
+    
     e.dataTransfer.effectAllowed = 'copy';
     playSound('press');
   };
@@ -1082,6 +1121,7 @@ const LLMAlchemy = () => {
   const handleDragEnd = () => {
     setIsDragging(false);
     setHoveredElement(null);
+    setDimmedElements(new Set()); // Clear dimming
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -1419,6 +1459,10 @@ const LLMAlchemy = () => {
       y: offset  // Half of element height
     });
     
+    // Calculate and set dimmed elements
+    const previouslyMixed = getPreviouslyMixedElements(element.name);
+    setDimmedElements(previouslyMixed);
+    
     // Immediately position the drag element
     setTimeout(() => {
       const draggedEl = document.getElementById('touch-drag-element');
@@ -1559,6 +1603,7 @@ const LLMAlchemy = () => {
     setHoveredElement(null);
     setTouchStartTime(null);
     setTouchStartPos(null);
+    setDimmedElements(new Set()); // Clear dimming
   };
 
   // Touch handlers for dividers
@@ -1967,6 +2012,8 @@ const LLMAlchemy = () => {
                 touchDragging?.id === element.id && !touchDragging?.fromMixingArea ? 'opacity-30' : ''
               } ${
                 isPlayingLoadAnimation && animatedElements.has(element.id) ? 'animate-element-load-delayed' : ''
+              } ${
+                dimmedElements.has(element.name) ? 'element-dimmed' : ''
               }`}
                 style={{ 
                   backgroundColor: element.color,
@@ -2277,6 +2324,8 @@ const LLMAlchemy = () => {
               touchDragging?.mixIndex === element.index && touchDragging?.fromMixingArea ? 'opacity-30' : ''
             } ${
               animatingElements.has(`${element.id}-${element.index}`) ? 'animate-element-pop-out' : ''
+            } ${
+              dimmedElements.has(element.name) ? 'element-dimmed' : ''
             }`}
             style={{ 
               left: element.x, 
