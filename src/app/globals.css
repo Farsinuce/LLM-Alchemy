@@ -1,17 +1,43 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  /* Custom Colors */
+  --color-primary: #8b5cf6;
+  --color-primary-hover: #7c3aed;
+  --color-primary-light: #a78bfa;
+  --color-primary-dark: #6d28d9;
+  
+  --color-secondary: #3b82f6;
+  --color-secondary-hover: #2563eb;
+  --color-secondary-light: #60a5fa;
+  --color-secondary-dark: #1d4ed8;
+  
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-danger-light: #f87171;
+  
+  --color-success: #10b981;
+  --color-success-hover: #059669;
+  --color-success-light: #34d399;
+  
+  --color-warning: #f59e0b;
+  --color-warning-hover: #d97706;
+  --color-warning-light: #fbbf24;
+  
+  --color-science: #3b82f6;
+  --color-science-hover: #2563eb;
+  
+  --color-creative: #8b5cf6;
+  --color-creative-hover: #7c3aed;
+  
+  --color-surface-primary: #111827;
+  --color-surface-secondary: #1f2937;
+  --color-surface-tertiary: #374151;
+}
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -44,23 +70,48 @@ body {
   
   /* Button Variants */
   .btn-primary {
-    @apply bg-primary hover:bg-primary-hover text-white;
+    background-color: var(--color-primary);
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    background-color: var(--color-primary-hover);
   }
   
   .btn-secondary {
-    @apply bg-secondary hover:bg-secondary-hover text-white;
+    background-color: var(--color-secondary);
+    color: white;
+  }
+  
+  .btn-secondary:hover {
+    background-color: var(--color-secondary-hover);
   }
   
   .btn-surface {
-    @apply bg-surface-tertiary hover:bg-gray-600 text-white;
+    background-color: var(--color-surface-tertiary);
+    color: white;
+  }
+  
+  .btn-surface:hover {
+    @apply bg-gray-600;
   }
   
   .btn-danger {
-    @apply bg-danger hover:bg-danger-hover text-white;
+    background-color: var(--color-danger);
+    color: white;
+  }
+  
+  .btn-danger:hover {
+    background-color: var(--color-danger-hover);
   }
   
   .btn-success {
-    @apply bg-success hover:bg-success-hover text-white;
+    background-color: var(--color-success);
+    color: white;
+  }
+  
+  .btn-success:hover {
+    background-color: var(--color-success-hover);
   }
   
   .btn-ghost {
@@ -68,11 +119,21 @@ body {
   }
   
   .btn-science {
-    @apply bg-science hover:bg-science-hover text-white;
+    background-color: var(--color-science);
+    color: white;
+  }
+  
+  .btn-science:hover {
+    background-color: var(--color-science-hover);
   }
   
   .btn-creative {
-    @apply bg-creative hover:bg-creative-hover text-white;
+    background-color: var(--color-creative);
+    color: white;
+  }
+  
+  .btn-creative:hover {
+    background-color: var(--color-creative-hover);
   }
   
   /* Button States */
@@ -86,11 +147,13 @@ body {
   
   /* Cards & Surfaces */
   .card {
-    @apply bg-surface-secondary rounded-lg border border-gray-700;
+    background-color: var(--color-surface-secondary);
+    @apply rounded-lg border border-gray-700;
   }
   
   .card-elevated {
-    @apply bg-surface-secondary rounded-lg border border-gray-700 shadow-lg;
+    background-color: var(--color-surface-secondary);
+    @apply rounded-lg border border-gray-700 shadow-lg;
   }
   
   .modal-backdrop {
@@ -98,7 +161,8 @@ body {
   }
   
   .modal-content {
-    @apply bg-surface-secondary rounded-xl p-6 w-full max-w-md border border-gray-600;
+    background-color: var(--color-surface-secondary);
+    @apply rounded-xl p-6 w-full max-w-md border border-gray-600;
   }
   
   /* Typography */
@@ -124,7 +188,12 @@ body {
   
   /* Form Elements */
   .input {
-    @apply w-full px-3 py-2 bg-surface-tertiary border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-primary;
+    background-color: var(--color-surface-tertiary);
+    @apply w-full px-3 py-2 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none;
+  }
+  
+  .input:focus {
+    border-color: var(--color-primary);
   }
   
   .input-sm {
@@ -133,7 +202,8 @@ body {
   
   /* Game Elements */
   .game-mode-toggle {
-    @apply relative inline-flex h-8 w-32 cursor-pointer items-center rounded-full bg-surface-tertiary transition-colors hover:bg-gray-600;
+    background-color: var(--color-surface-tertiary);
+    @apply relative inline-flex h-8 w-32 cursor-pointer items-center rounded-full transition-colors hover:bg-gray-600;
   }
   
   .game-mode-slider {
@@ -184,25 +254,32 @@ body {
   }
   
   .status-warning {
-    @apply bg-warning/20 text-warning border border-warning/50;
+    background-color: color-mix(in srgb, var(--color-warning) 20%, transparent);
+    color: var(--color-warning);
+    border-color: color-mix(in srgb, var(--color-warning) 50%, transparent);
+    @apply border;
   }
   
   .status-error {
-    @apply bg-danger/20 text-danger border border-danger/50;
+    background-color: color-mix(in srgb, var(--color-danger) 20%, transparent);
+    color: var(--color-danger);
+    border-color: color-mix(in srgb, var(--color-danger) 50%, transparent);
+    @apply border;
   }
   
   /* Hover Effects */
   .hover-glow:hover {
-    @apply shadow-glow;
+    box-shadow: 0 0 20px color-mix(in srgb, var(--color-primary) 30%, transparent);
   }
   
   .hover-glow-blue:hover {
-    @apply shadow-glow-blue;
+    box-shadow: 0 0 20px color-mix(in srgb, var(--color-secondary) 30%, transparent);
   }
   
   /* Loading States */
   .loading-spinner {
-    @apply animate-spin rounded-full border-4 border-primary border-t-transparent;
+    border-color: var(--color-primary);
+    @apply animate-spin rounded-full border-4 border-t-transparent;
   }
   
   /* Responsive Text */
@@ -242,4 +319,21 @@ body {
   .scrollbar-mobile::-webkit-scrollbar-thumb:hover {
     background: #6b7280;
   }
+}
+
+/* Specific background colors that need custom colors */
+.bg-surface-primary {
+  background-color: var(--color-surface-primary);
+}
+
+.bg-surface-secondary {
+  background-color: var(--color-surface-secondary);
+}
+
+.bg-surface-tertiary {
+  background-color: var(--color-surface-tertiary);
+}
+
+.text-warning {
+  color: var(--color-warning);
 }
