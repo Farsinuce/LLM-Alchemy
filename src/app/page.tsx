@@ -317,14 +317,14 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4">
+    <main className="min-h-screen bg-surface-primary text-white flex flex-col items-center justify-center p-4">
       <div className="max-w-lg w-full text-center">
         <div className="flex items-center justify-center gap-3 mb-8">
-          <Sparkles className="text-yellow-400" size={48} />
+          <Sparkles className="text-warning" size={48} />
           <h1 className="text-5xl font-bold">LLM Alchemy</h1>
         </div>
         
-        <p className="text-lg text-gray-300 mb-8">
+        <p className="text-body mb-8">
           Combine elements to discover new ones using AI.
         </p>
 
@@ -406,7 +406,7 @@ export default function Home() {
               <div className="space-y-3 flex flex-col items-center">
                 <button
                   onClick={() => handleShowAuth('register')}
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-white font-medium"
+                  className="btn btn-surface btn-sm"
                 >
                   <span>👤</span>
                   <span>Register / Sign in</span>
@@ -417,7 +417,7 @@ export default function Home() {
                     setTempSelectedModel(selectedModel);
                     setShowApiKeyModal(true);
                   }}
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-white font-medium"
+                  className="btn btn-surface btn-sm"
                 >
                   <span>⚙️</span>
                   <span>LLM Options</span>
@@ -432,7 +432,7 @@ export default function Home() {
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 rounded-lg text-red-400 hover:text-red-300 text-sm transition-colors"
+                    className="btn btn-sm status-error"
                   >
                     <span>🚪</span>
                     <span>Logout</span>
@@ -445,7 +445,7 @@ export default function Home() {
                       setTempSelectedModel(selectedModel);
                       setShowApiKeyModal(true);
                     }}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm text-white font-medium"
+                    className="btn btn-surface btn-sm"
                   >
                     <span>⚙️</span>
                     <span>LLM Options</span>
@@ -521,19 +521,19 @@ export default function Home() {
       {/* LLM Options Modal */}
       {showApiKeyModal && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          className="modal-backdrop"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowApiKeyModal(false);
             }
           }}
         >
-          <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full">
+          <div className="modal-content max-w-md">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold">LLM Options</h3>
+              <h3 className="text-heading">LLM Options</h3>
               <button
                 onClick={() => setShowApiKeyModal(false)}
-                className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+                className="btn-ghost p-2 rounded-full"
               >
                 <X size={20} />
               </button>
@@ -634,7 +634,7 @@ export default function Home() {
                     setTempApiKey(userApiKey);
                     setTempSelectedModel(selectedModel);
                   }}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  className="btn btn-surface"
                 >
                   Cancel
                 </button>
@@ -686,15 +686,15 @@ export default function Home() {
 
       {/* Reset Mode Confirmation Modal */}
       {showResetModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-xl p-6 max-w-sm w-full">
-            <h3 className="text-xl font-bold mb-3">Reset Progress?</h3>
-            <p className="text-gray-300 mb-4">
+        <div className="modal-backdrop">
+          <div className="modal-content max-w-sm">
+            <h3 className="text-heading mb-3">Reset Progress?</h3>
+            <p className="text-body mb-4">
               Reset discovered elements in {selectedMode} mode?
             </p>
             
             <div className="mb-6">
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-caption">
                 <input 
                   type="checkbox"
                   checked={resetAchievements}
@@ -711,13 +711,13 @@ export default function Home() {
                   setShowResetModal(false);
                   setResetAchievements(false);
                 }}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded transition-colors"
+                className="btn btn-surface"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmReset}
-                className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded transition-colors font-medium"
+                className="btn btn-danger"
               >
                 Reset
               </button>

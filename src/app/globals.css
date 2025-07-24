@@ -24,3 +24,220 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Design System Utility Classes */
+@layer components {
+  /* Button System */
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 justify-center;
+  }
+  
+  .btn-sm {
+    @apply px-3 py-1 text-sm;
+  }
+  
+  .btn-lg {
+    @apply px-6 py-3 text-lg;
+  }
+  
+  /* Button Variants */
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-hover text-white;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary hover:bg-secondary-hover text-white;
+  }
+  
+  .btn-surface {
+    @apply bg-surface-tertiary hover:bg-gray-600 text-white;
+  }
+  
+  .btn-danger {
+    @apply bg-danger hover:bg-danger-hover text-white;
+  }
+  
+  .btn-success {
+    @apply bg-success hover:bg-success-hover text-white;
+  }
+  
+  .btn-ghost {
+    @apply bg-transparent hover:bg-gray-700 text-gray-300 hover:text-white;
+  }
+  
+  .btn-science {
+    @apply bg-science hover:bg-science-hover text-white;
+  }
+  
+  .btn-creative {
+    @apply bg-creative hover:bg-creative-hover text-white;
+  }
+  
+  /* Button States */
+  .btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  
+  .btn-loading {
+    @apply opacity-75 cursor-wait;
+  }
+  
+  /* Cards & Surfaces */
+  .card {
+    @apply bg-surface-secondary rounded-lg border border-gray-700;
+  }
+  
+  .card-elevated {
+    @apply bg-surface-secondary rounded-lg border border-gray-700 shadow-lg;
+  }
+  
+  .modal-backdrop {
+    @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4;
+  }
+  
+  .modal-content {
+    @apply bg-surface-secondary rounded-xl p-6 w-full max-w-md border border-gray-600;
+  }
+  
+  /* Typography */
+  .text-heading {
+    @apply text-xl font-bold text-white;
+  }
+  
+  .text-subheading {
+    @apply text-lg font-semibold text-white;
+  }
+  
+  .text-body {
+    @apply text-base text-gray-300;
+  }
+  
+  .text-caption {
+    @apply text-sm text-gray-400;
+  }
+  
+  .text-muted {
+    @apply text-gray-500;
+  }
+  
+  /* Form Elements */
+  .input {
+    @apply w-full px-3 py-2 bg-surface-tertiary border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-primary;
+  }
+  
+  .input-sm {
+    @apply px-2 py-1 text-sm;
+  }
+  
+  /* Game Elements */
+  .game-mode-toggle {
+    @apply relative inline-flex h-8 w-32 cursor-pointer items-center rounded-full bg-surface-tertiary transition-colors hover:bg-gray-600;
+  }
+  
+  .game-mode-slider {
+    @apply absolute left-1 h-6 w-14 rounded-full transition-transform;
+  }
+  
+  .game-mode-text {
+    @apply absolute text-xs font-medium z-10;
+  }
+  
+  /* Element Cards */
+  .element-card {
+    @apply flex flex-col items-center justify-center rounded-lg cursor-move hover:scale-110 transition-transform;
+  }
+  
+  .element-card-sm {
+    @apply w-12 h-12;
+  }
+  
+  .element-card-md {
+    @apply w-14 h-14;
+  }
+  
+  .element-card-lg {
+    @apply w-16 h-16;
+  }
+  
+  .element-emoji {
+    @apply text-lg sm:text-xl pointer-events-none;
+  }
+  
+  .element-name {
+    @apply text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight pointer-events-none;
+  }
+  
+  /* Progress Bars */
+  .progress-bar {
+    @apply w-full bg-gray-600/50 rounded-full h-1.5;
+  }
+  
+  .progress-fill {
+    @apply h-1.5 rounded-full transition-all duration-300;
+  }
+  
+  /* Status Indicators */
+  .status-online {
+    @apply bg-green-600/20 text-green-400 border border-green-600/50;
+  }
+  
+  .status-warning {
+    @apply bg-warning/20 text-warning border border-warning/50;
+  }
+  
+  .status-error {
+    @apply bg-danger/20 text-danger border border-danger/50;
+  }
+  
+  /* Hover Effects */
+  .hover-glow:hover {
+    @apply shadow-glow;
+  }
+  
+  .hover-glow-blue:hover {
+    @apply shadow-glow-blue;
+  }
+  
+  /* Loading States */
+  .loading-spinner {
+    @apply animate-spin rounded-full border-4 border-primary border-t-transparent;
+  }
+  
+  /* Responsive Text */
+  .text-responsive-xs {
+    @apply text-xs sm:text-sm;
+  }
+  
+  .text-responsive-sm {
+    @apply text-sm sm:text-base;
+  }
+  
+  .text-responsive-lg {
+    @apply text-lg sm:text-xl;
+  }
+}
+
+/* Custom Scrollbar for Mobile */
+@layer utilities {
+  .scrollbar-mobile {
+    scrollbar-width: thin;
+    scrollbar-color: #4b5563 #1f2937;
+  }
+  
+  .scrollbar-mobile::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-mobile::-webkit-scrollbar-track {
+    background: #1f2937;
+  }
+  
+  .scrollbar-mobile::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 3px;
+  }
+  
+  .scrollbar-mobile::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+  }
+}

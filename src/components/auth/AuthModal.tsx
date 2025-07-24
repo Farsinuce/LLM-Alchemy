@@ -160,25 +160,25 @@ export default function AuthModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="modal-backdrop">
+      <div className="modal-content max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-white">
+          <h2 className="text-heading">
             {mode === 'login' ? 'Sign In' : mode === 'register' ? 'Create Account' : 'Reset Password'}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+            className="btn-ghost p-2 rounded-full"
           >
-            <X size={20} className="text-gray-400" />
+            <X size={20} />
           </button>
         </div>
 
         {/* Upgrade Benefits */}
         {showUpgradeBenefits && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg border border-purple-500/30">
-            <h3 className="text-lg font-semibold text-white mb-2">🚀 Upgrade Benefits</h3>
-            <ul className="text-sm text-gray-300 space-y-1">
+          <div className="mb-6 p-4 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg border border-primary/30">
+            <h3 className="text-subheading mb-2">🚀 Upgrade Benefits</h3>
+            <ul className="text-caption space-y-1">
               <li>• Cross-device game sync</li>
               <li>• Purchase tokens & subscriptions</li>
               <li>• Enhanced undo functionality</li>
@@ -190,14 +190,14 @@ export default function AuthModal({
 
         {/* Error/Success Messages */}
         {error && (
-          <div className="mb-4 p-3 bg-red-600/20 border border-red-600/50 rounded-lg">
-            <p className="text-red-300 text-sm">{error}</p>
+          <div className="mb-4 p-3 status-error rounded-lg">
+            <p className="text-caption">{error}</p>
           </div>
         )}
 
         {success && (
-          <div className="mb-4 p-3 bg-green-600/20 border border-green-600/50 rounded-lg">
-            <p className="text-green-300 text-sm">{success}</p>
+          <div className="mb-4 p-3 status-online rounded-lg">
+            <p className="text-caption">{success}</p>
           </div>
         )}
 
@@ -205,7 +205,7 @@ export default function AuthModal({
         <button
           onClick={handleGoogleAuth}
           disabled={isLoading}
-          className="w-full mb-4 p-3 bg-white hover:bg-gray-100 text-gray-800 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+          className="btn btn-surface w-full mb-4 bg-white hover:bg-gray-100 text-gray-800 flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -225,7 +225,7 @@ export default function AuthModal({
         {/* Email Form */}
         <form onSubmit={handleEmailAuth} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="text-caption font-medium mb-2 block">
               Email Address
             </label>
             <div className="relative">
@@ -235,7 +235,7 @@ export default function AuthModal({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
-                className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+                className="input pl-10"
                 required
               />
             </div>
@@ -243,7 +243,7 @@ export default function AuthModal({
 
           {mode === 'register' && (
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="text-caption font-medium mb-2 block">
                 Display Name (Optional)
               </label>
               <div className="relative">
@@ -253,7 +253,7 @@ export default function AuthModal({
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="How should we call you?"
-                  className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+                  className="input pl-10"
                 />
               </div>
             </div>
@@ -261,7 +261,7 @@ export default function AuthModal({
 
           {mode !== 'forgot' && (
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="text-caption font-medium mb-2 block">
                 Password
               </label>
               <div className="relative">
@@ -271,7 +271,7 @@ export default function AuthModal({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full pl-10 pr-10 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+                  className="input pl-10 pr-10"
                   required
                   minLength={6}
                 />
@@ -289,7 +289,7 @@ export default function AuthModal({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+            className="btn btn-primary w-full"
           >
             {isLoading ? 'Loading...' : 
              mode === 'login' ? 'Sign In' : 
@@ -303,47 +303,47 @@ export default function AuthModal({
           <button
             onClick={handleMagicLink}
             disabled={isLoading}
-            className="w-full p-2 text-sm text-purple-400 hover:text-purple-300 transition-colors"
+            className="btn btn-ghost w-full text-primary hover:text-primary-hover"
           >
             Or send me a magic link (passwordless)
           </button>
         </div>
 
         {/* Mode Switching */}
-        <div className="mt-6 text-center text-sm">
+        <div className="mt-6 text-center text-caption">
           {mode === 'login' ? (
             <>
-              <span className="text-gray-400">Don't have an account? </span>
+              <span className="text-muted">Don't have an account? </span>
               <button
                 onClick={() => setMode('register')}
-                className="text-purple-400 hover:text-purple-300"
+                className="text-primary hover:text-primary-hover"
               >
                 Create one
               </button>
-              <span className="text-gray-400"> or </span>
+              <span className="text-muted"> or </span>
               <button
                 onClick={() => setMode('forgot')}
-                className="text-purple-400 hover:text-purple-300"
+                className="text-primary hover:text-primary-hover"
               >
                 Forgot password?
               </button>
             </>
           ) : mode === 'register' ? (
             <>
-              <span className="text-gray-400">Already have an account? </span>
+              <span className="text-muted">Already have an account? </span>
               <button
                 onClick={() => setMode('login')}
-                className="text-purple-400 hover:text-purple-300"
+                className="text-primary hover:text-primary-hover"
               >
                 Sign in
               </button>
             </>
           ) : (
             <>
-              <span className="text-gray-400">Remember your password? </span>
+              <span className="text-muted">Remember your password? </span>
               <button
                 onClick={() => setMode('login')}
-                className="text-purple-400 hover:text-purple-300"
+                className="text-primary hover:text-primary-hover"
               >
                 Sign in
               </button>

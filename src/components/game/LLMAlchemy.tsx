@@ -1812,9 +1812,9 @@ const LLMAlchemy = () => {
               onClick={() => setSortMode('unlock')}
               onMouseEnter={() => setHoveredUIElement('sort-unlock')}
               onMouseLeave={() => setHoveredUIElement(null)}
-              className={`px-3 py-1 rounded transition-all hidden sm:block ${
-                sortMode === 'unlock' ? (gameMode === 'creative' ? 'bg-purple-600' : 'bg-blue-500') : 'bg-gray-700 hover:bg-gray-600'
-              }`}
+            className={`btn btn-sm hidden sm:block ${
+              sortMode === 'unlock' ? (gameMode === 'creative' ? 'btn-creative' : 'btn-science') : 'btn-surface'
+            }`}
               style={{
                 boxShadow: hoveredUIElement === 'sort-unlock' && sortMode !== 'unlock' && !isMixing ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
               }}
@@ -1825,9 +1825,9 @@ const LLMAlchemy = () => {
               onClick={() => setSortMode('alpha')}
               onMouseEnter={() => setHoveredUIElement('sort-alpha')}
               onMouseLeave={() => setHoveredUIElement(null)}
-              className={`px-3 py-1 rounded transition-all hidden sm:block ${
-                sortMode === 'alpha' ? (gameMode === 'creative' ? 'bg-purple-600' : 'bg-blue-500') : 'bg-gray-700 hover:bg-gray-600'
-              }`}
+            className={`btn btn-sm hidden sm:block ${
+              sortMode === 'alpha' ? (gameMode === 'creative' ? 'btn-creative' : 'btn-science') : 'btn-surface'
+            }`}
               style={{
                 boxShadow: hoveredUIElement === 'sort-alpha' && sortMode !== 'alpha' && !isMixing ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
               }}
@@ -2176,7 +2176,7 @@ const LLMAlchemy = () => {
             onClick={clearMixingArea}
             onMouseEnter={() => setHoveredUIElement('clear-button')}
             onMouseLeave={() => setHoveredUIElement(null)}
-            className="absolute top-4 right-4 p-2 bg-red-600/80 hover:bg-red-500 rounded-full transition-all z-20"
+            className="absolute top-4 right-4 btn btn-danger p-2 rounded-full z-20"
             style={{
               boxShadow: hoveredUIElement === 'clear-button' && !isMixing ? '0 0 0 2px rgba(255, 255, 255, 0.4)' : ''
             }}
@@ -2408,7 +2408,7 @@ const LLMAlchemy = () => {
         
         return (
           <div 
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            className="modal-backdrop"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowAchievements(false);
