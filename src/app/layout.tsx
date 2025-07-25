@@ -29,7 +29,7 @@ export default function RootLayout({
         {/* Preconnect to Turnstile for faster loading */}
         <link rel="preconnect" href="https://challenges.cloudflare.com" />
         <link rel="dns-prefetch" href="https://challenges.cloudflare.com" />
-        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
       </head>
       <body
         className={`${geist.variable} ${geistMono.variable} antialiased`}

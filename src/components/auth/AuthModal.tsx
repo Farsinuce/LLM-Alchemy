@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { X, Mail, Lock, User, Eye, EyeOff, Shield } from 'lucide-react';
 import { createClient } from '@/lib/supabase-client';
+import { getTurnstileTokenWithStatus } from '@/lib/turnstile';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -11,6 +12,9 @@ interface AuthModalProps {
   initialMode?: 'login' | 'register';
   showUpgradeBenefits?: boolean;
 }
+
+// Feature flag for captcha - can be easily toggled via env variable
+const CAPTCHA_ENABLED = process.env.NEXT_PUBLIC_CAPTCHA_ENABLED !== 'false';
 
 export default function AuthModal({ 
   isOpen, 
@@ -27,6 +31,7 @@ export default function AuthModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [captchaState, setCaptchaState] = useState<'idle' | 'checking' | 'failed' | 'success'>('idle');
 
   const supabase = createClient();
 
@@ -35,8 +40,27 @@ export default function AuthModal({
     setIsLoading(true);
     setError('');
     setSuccess('');
+    setCaptchaState('idle');
 
     try {
+      // Get captcha token if enabled and not in forgot password mode
+      let captchaToken: string | undefined;
+      
+      if (CAPTCHA_ENABLED && mode !== 'forgot') {
+        setCaptchaState('checking');
+        const turnstileResult = await getTurnstileTokenWithStatus();
+        
+        if (!turnstileResult.success) {
+          setCaptchaState('failed');
+          setError(turnstileResult.message || 'Security verification failed - please try again');
+          setIsLoading(false);
+          return;
+        }
+        
+        captchaToken = turnstileResult.token;
+        setCaptchaState('success');
+      }
+
       if (mode === 'register') {
         const { error } = await supabase.auth.signUp({
           email,
@@ -44,7 +68,8 @@ export default function AuthModal({
           options: {
             data: {
               display_name: displayName || email.split('@')[0],
-            }
+            },
+            ...(captchaToken && { captchaToken })
           }
         });
 
@@ -55,7 +80,8 @@ export default function AuthModal({
       } else if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({
           email,
-          password
+          password,
+          ...(captchaToken && { options: { captchaToken } })
         });
 
         if (error) throw error;
@@ -73,10 +99,23 @@ export default function AuthModal({
         setSuccess('Password reset email sent!');
         setMode('login');
       }
-    } catch (error: any) {
-      setError(error.message || 'An error occurred');
+    } catch (error) {
+      // Provide clearer error messages for common issues
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      
+      if (errorMessage.includes('captcha')) {
+        setError('Security verification failed - please refresh and try again');
+        setCaptchaState('failed');
+      } else if (errorMessage.includes('Invalid login credentials')) {
+        setError('Invalid email or password');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
+      if (captchaState === 'checking') {
+        setCaptchaState('idle');
+      }
     }
   };
 
@@ -94,8 +133,9 @@ export default function AuthModal({
       });
 
       if (error) throw error;
-    } catch (error: any) {
-      setError(error.message || 'Google authentication failed');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Google authentication failed';
+      setError(errorMessage);
       setIsLoading(false);
     }
   };
@@ -108,12 +148,32 @@ export default function AuthModal({
 
     setIsLoading(true);
     setError('');
+    setCaptchaState('idle');
 
     try {
+      // Get captcha token if enabled
+      let captchaToken: string | undefined;
+      
+      if (CAPTCHA_ENABLED) {
+        setCaptchaState('checking');
+        const turnstileResult = await getTurnstileTokenWithStatus();
+        
+        if (!turnstileResult.success) {
+          setCaptchaState('failed');
+          setError(turnstileResult.message || 'Security verification failed - please try again');
+          setIsLoading(false);
+          return;
+        }
+        
+        captchaToken = turnstileResult.token;
+        setCaptchaState('success');
+      }
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          ...(captchaToken && { captchaToken })
         }
       });
 
@@ -121,10 +181,20 @@ export default function AuthModal({
 
       setSuccess('Magic link sent to your email!');
       setMode('login');
-    } catch (error: any) {
-      setError(error.message || 'Failed to send magic link');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send magic link';
+      
+      if (errorMessage.includes('captcha')) {
+        setError('Security verification failed - please refresh and try again');
+        setCaptchaState('failed');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
+      if (captchaState === 'checking') {
+        setCaptchaState('idle');
+      }
     }
   };
 
@@ -169,6 +239,14 @@ export default function AuthModal({
         {success && (
           <div className="mb-4 p-3 status-online rounded-lg">
             <p className="text-caption">{success}</p>
+          </div>
+        )}
+
+        {/* Captcha status indicator */}
+        {captchaState === 'checking' && (
+          <div className="mb-4 p-3 bg-blue-900/50 rounded-lg flex items-center gap-2">
+            <Shield className="w-4 h-4 text-blue-400 animate-pulse" />
+            <p className="text-caption text-blue-400">Verifying security...</p>
           </div>
         )}
 
@@ -262,10 +340,13 @@ export default function AuthModal({
             disabled={isLoading}
             className="btn btn-primary w-full"
           >
-            {isLoading ? 'Loading...' : 
-             mode === 'login' ? 'Sign In' : 
-             mode === 'register' ? 'Create Account' : 
-             'Send Reset Link'}
+            {isLoading ? (
+              captchaState === 'checking' ? 'Verifying security...' : 'Loading...'
+            ) : (
+              mode === 'login' ? 'Sign In' : 
+              mode === 'register' ? 'Create Account' : 
+              'Send Reset Link'
+            )}
           </button>
         </form>
 
@@ -284,7 +365,7 @@ export default function AuthModal({
         <div className="mt-6 text-center text-caption">
           {mode === 'login' ? (
             <>
-              <span className="text-muted">Don't have an account? </span>
+              <span className="text-muted">Don&apos;t have an account? </span>
               <button
                 onClick={() => setMode('register')}
                 className="text-primary hover:text-primary-hover"

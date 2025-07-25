@@ -109,6 +109,54 @@ export async function getTurnstileToken(): Promise<string | null> {
 }
 
 /**
+ * Result object for Turnstile operations
+ */
+export interface TurnstileResult {
+  success: boolean;
+  token?: string;
+  error?: 'timeout' | 'failed' | 'not-loaded' | 'no-key';
+  message?: string;
+}
+
+/**
+ * Enhanced version with user-friendly error reporting
+ */
+export async function getTurnstileTokenWithStatus(): Promise<TurnstileResult> {
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  
+  if (!siteKey) {
+    return { 
+      success: false, 
+      error: 'no-key',
+      message: 'Security configuration missing' 
+    };
+  }
+
+  if (typeof window === 'undefined' || !window.turnstile) {
+    return { 
+      success: false, 
+      error: 'not-loaded',
+      message: 'Security check not available' 
+    };
+  }
+
+  const token = await getTurnstileToken();
+  
+  if (!token) {
+    return { 
+      success: false, 
+      error: 'timeout',
+      message: 'Security check timed out - please try again' 
+    };
+  }
+
+  return { 
+    success: true, 
+    token 
+  };
+}
+
+/**
  * Check if Turnstile is loaded and ready
  */
 export function isTurnstileReady(): boolean {
