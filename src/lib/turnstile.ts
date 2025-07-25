@@ -8,8 +8,9 @@ declare global {
         sitekey: string;
         callback: (token: string) => void;
         'error-callback'?: () => void;
-        size?: 'normal' | 'invisible';
+        size?: 'normal' | 'compact' | 'flexible';
         theme?: 'light' | 'dark';
+        appearance?: 'always' | 'execute' | 'interaction-only';
       }) => string;
       remove: (widgetId: string) => void;
       reset: (widgetId?: string) => void;
@@ -18,7 +19,8 @@ declare global {
 }
 
 /**
- * Generate a Turnstile token using invisible mode
+ * Generate a Turnstile token using interaction-only appearance
+ * Behaves like invisible mode - only shows UI when interaction is needed
  * Includes timeout fallback to prevent indefinite hanging
  */
 export async function getTurnstileToken(): Promise<string | null> {
@@ -57,10 +59,11 @@ export async function getTurnstileToken(): Promise<string | null> {
       container.style.height = '0px';
       document.body.appendChild(container);
 
-      // Render invisible widget (correct mode for hidden captcha)
+      // Render widget with interaction-only appearance (behaves like invisible)
       const widgetId = window.turnstile!.render(container, {
         sitekey: siteKey,
-        size: 'invisible', // Back to invisible mode for programmatic use
+        size: 'normal', // Use normal size with interaction-only appearance
+        appearance: 'interaction-only', // Only shows when interaction needed
         theme: 'light',
         callback: (token: string) => {
           if (!resolved) {
