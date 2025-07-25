@@ -816,6 +816,8 @@ const LLMAlchemy = () => {
       // Microbe creation
       if ((sortedNames.includes('Mud') || sortedNames.includes('Clay') || sortedNames.includes('Nutrient')) && 
           sortedNames.includes('Air') && sortedNames.includes('Energy')) {
+        // Add 1-second delay to simulate LLM processing
+        await new Promise(resolve => setTimeout(resolve, 1000));
         return { 
           result: 'Microbe', 
           emoji: '🦠', 
@@ -829,6 +831,8 @@ const LLMAlchemy = () => {
       
       // Microbe branches
       if (sortedNames === 'Energy+Microbe+Water' || sortedNames === 'Air+Energy+Microbe' || sortedNames === 'Earth+Energy+Microbe') {
+        // Add 1-second delay to simulate LLM processing
+        await new Promise(resolve => setTimeout(resolve, 1000));
         return { 
           result: 'Algae', 
           emoji: '🌿', 
@@ -840,6 +844,8 @@ const LLMAlchemy = () => {
         };
       }
       if (sortedNames === 'Microbe+Water') {
+        // Add 1-second delay to simulate LLM processing
+        await new Promise(resolve => setTimeout(resolve, 1000));
         return { 
           result: 'Protozoa', 
           emoji: '🔬', 
@@ -851,6 +857,8 @@ const LLMAlchemy = () => {
         };
       }
       if (sortedNames === 'Microbe+Mud' || sortedNames === 'Compost+Microbe') {
+        // Add 1-second delay to simulate LLM processing
+        await new Promise(resolve => setTimeout(resolve, 1000));
         return { 
           result: 'Fungi', 
           emoji: '🍄', 
