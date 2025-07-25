@@ -1,5 +1,5 @@
 // Mark a challenge as completed for the current user
-import { createClient } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase';
 import { NextResponse } from 'next/server';
 import { elementMatchesCategory } from '@/lib/challenge-elements';
 
@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
-    const supabase = createClient();
+    const supabase = await createServerSupabaseClient();
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();

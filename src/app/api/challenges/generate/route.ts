@@ -1,5 +1,5 @@
 // Challenge generation endpoint - called by Vercel Cron daily at midnight Copenhagen time
-import { createClient } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase';
 import { getRandomDailyCategories, getRandomWeeklyElement } from '@/lib/challenge-elements';
 import { NextResponse } from 'next/server';
 
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const supabase = createClient();
+    const supabase = await createServerSupabaseClient();
     const now = new Date();
     
     // Get Copenhagen timezone midnight using proper timezone handling

@@ -1,12 +1,12 @@
 // Get current active challenges with user completion status
-import { createClient } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const supabase = createClient();
+    const supabase = await createServerSupabaseClient();
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
