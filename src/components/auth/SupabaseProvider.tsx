@@ -54,8 +54,11 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const signInAnonymously = useCallback(async () => {
     try {
       setLoading(true)
+      console.log('🔄 Attempting to create anonymous user...')
+      
       const dbUser = await getOrCreateAnonymousUser(supabase)
       if (dbUser) {
+        console.log('✅ Anonymous user created successfully')
         setDbUser(dbUser)
         
         // Get the session to get the user ID for daily count
@@ -64,9 +67,13 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
           const count = await getDailyCount(supabase, session.user.id)
           setDailyCount(count)
         }
+      } else {
+        console.log('⚠️ Failed to create anonymous user - user may need to try again')
+        // Don't throw error, just let user retry manually
       }
     } catch (error) {
       console.error('❌ Error signing in anonymously:', error)
+      // Don't retry automatically to prevent loops
     } finally {
       setLoading(false)
     }

@@ -94,9 +94,29 @@ export async function signInWithGoogle(supabase: any): Promise<{ error: any }> {
   }
 }
 
+// Prevent multiple simultaneous signup attempts
+let isCreatingUser = false;
+let lastAttemptTime = 0;
+const MIN_RETRY_INTERVAL = 5000; // 5 seconds between attempts
+
 // Helper functions for common database operations
 export async function getOrCreateAnonymousUser(supabase: any): Promise<User | null> {
   try {
+    // Prevent multiple simultaneous calls
+    if (isCreatingUser) {
+      console.log('Anonymous user creation already in progress, waiting...');
+      return null;
+    }
+    
+    // Rate limiting: prevent rapid retry attempts
+    const now = Date.now();
+    if (now - lastAttemptTime < MIN_RETRY_INTERVAL) {
+      console.log('Too soon to retry anonymous user creation');
+      return null;
+    }
+    
+    lastAttemptTime = now;
+
     // First check for existing session to prevent duplicate signups
     const { data: { session } } = await supabase.auth.getSession()
     
@@ -113,20 +133,19 @@ export async function getOrCreateAnonymousUser(supabase: any): Promise<User | nu
       }
     }
 
+    isCreatingUser = true;
+
     // Create anonymous user with Turnstile protection and timeout fallback
     let captchaToken: string | undefined;
     
-    // Get Turnstile token with race condition to prevent hanging
+    // Get Turnstile token with shorter timeout for better UX
     try {
       const { getTurnstileToken, waitForTurnstile } = await import('./turnstile');
-      const turnstileReady = await waitForTurnstile(2000); // Wait up to 2 seconds
+      const turnstileReady = await waitForTurnstile(3000); // 3 seconds to load
       
       if (turnstileReady) {
-        // Race the Turnstile token against a 3-second timeout
-        captchaToken = await Promise.race([
-          getTurnstileToken(),
-          new Promise<undefined>(resolve => setTimeout(() => resolve(undefined), 3000))
-        ]) || undefined;
+        // Get Turnstile token with 5 second timeout (matches the function's internal timeout)
+        captchaToken = await getTurnstileToken() || undefined;
       }
     } catch (error) {
       console.warn('Turnstile not available, proceeding without captcha:', error);
@@ -138,6 +157,10 @@ export async function getOrCreateAnonymousUser(supabase: any): Promise<User | nu
     
     if (error) {
       console.error('Error creating anonymous user:', error)
+      // If it's a captcha error, don't retry immediately
+      if (error.message?.includes('captcha')) {
+        lastAttemptTime = now + MIN_RETRY_INTERVAL; // Force longer wait
+      }
       return null
     }
 
@@ -171,6 +194,8 @@ export async function getOrCreateAnonymousUser(supabase: any): Promise<User | nu
   } catch (error) {
     console.error('Error in getOrCreateAnonymousUser:', error)
     return null
+  } finally {
+    isCreatingUser = false;
   }
 }
 

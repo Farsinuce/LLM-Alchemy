@@ -18,7 +18,7 @@ declare global {
 }
 
 /**
- * Generate a Turnstile token using managed mode (more reliable on mobile)
+ * Generate a Turnstile token using invisible mode
  * Includes timeout fallback to prevent indefinite hanging
  */
 export async function getTurnstileToken(): Promise<string | null> {
@@ -37,28 +37,31 @@ export async function getTurnstileToken(): Promise<string | null> {
   return new Promise((resolve) => {
     let resolved = false;
     
-    // 3 second timeout to prevent hanging
+    // 5 second timeout for invisible mode (needs more time than managed)
     const timeout = setTimeout(() => {
       if (!resolved) {
         resolved = true;
         console.warn('Turnstile timeout - proceeding without token');
         resolve(null);
       }
-    }, 3000);
+    }, 5000);
 
     try {
-      // Create a temporary container
+      // Create a temporary container for invisible widget
       const container = document.createElement('div');
       container.style.position = 'fixed';
       container.style.top = '-9999px';
       container.style.left = '-9999px';
       container.style.visibility = 'hidden';
+      container.style.width = '0px';
+      container.style.height = '0px';
       document.body.appendChild(container);
 
-      // Render managed widget (more reliable than invisible)
+      // Render invisible widget (correct mode for hidden captcha)
       const widgetId = window.turnstile!.render(container, {
         sitekey: siteKey,
-        size: 'normal', // Changed from invisible to normal (managed mode)
+        size: 'invisible', // Back to invisible mode for programmatic use
+        theme: 'light',
         callback: (token: string) => {
           if (!resolved) {
             resolved = true;
