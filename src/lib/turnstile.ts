@@ -179,11 +179,11 @@ export async function getTurnstileToken(): Promise<string | null> {
   return new Promise((resolve) => {
     pendingResolve = resolve;
 
-    // Timeout after 8 seconds
+    // Extended timeout for slow mobile networks (20 seconds)
     const timeout = setTimeout(() => {
       pendingResolve = null;
       resolve(null);
-    }, 8000);
+    }, 20000);
 
     try {
       if (!automatedWidgetId && automatedWidgetContainer) {

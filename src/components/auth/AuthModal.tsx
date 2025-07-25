@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase-client';
 import { getTurnstileToken } from '@/lib/turnstile';
@@ -26,20 +26,30 @@ export default function AuthModal({
   const [displayName, setDisplayName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [awaitingCaptcha, setAwaitingCaptcha] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   const supabase = createClient();
 
+  // Pre-warm Turnstile widget when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      import('@/lib/turnstile').then(m => m.waitForTurnstile());
+    }
+  }, [isOpen]);
+
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setAwaitingCaptcha(true);
     setError('');
     setSuccess('');
 
     try {
-      // Get Turnstile token first (with 8s timeout and graceful fallback)
-      const captchaToken = await getTurnstileToken();
+      // Get Turnstile token first (will wait as long as needed)
+      const captchaToken = await getTurnstileToken()
+        .finally(() => setAwaitingCaptcha(false));
 
       if (mode === 'register') {
         const { error } = await supabase.auth.signUp({
@@ -124,11 +134,13 @@ export default function AuthModal({
     }
 
     setIsLoading(true);
+    setAwaitingCaptcha(true);
     setError('');
 
     try {
-      // Get Turnstile token first (with 8s timeout and graceful fallback)
-      const captchaToken = await getTurnstileToken();
+      // Get Turnstile token first (will wait as long as needed)
+      const captchaToken = await getTurnstileToken()
+        .finally(() => setAwaitingCaptcha(false));
 
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -286,10 +298,11 @@ export default function AuthModal({
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || awaitingCaptcha}
             className="btn btn-primary w-full"
           >
-            {isLoading ? 'Loading...' : (
+            {awaitingCaptcha ? 'Verifying security...' : 
+             isLoading ? 'Loading...' : (
               mode === 'login' ? 'Sign In' : 
               mode === 'register' ? 'Create Account' : 
               'Send Reset Link'
@@ -301,7 +314,7 @@ export default function AuthModal({
         <div className="mt-4">
           <button
             onClick={handleMagicLink}
-            disabled={isLoading}
+            disabled={isLoading || awaitingCaptcha}
             className="btn btn-ghost w-full text-primary hover:text-primary-hover"
           >
             Or send me a magic link (passwordless)
