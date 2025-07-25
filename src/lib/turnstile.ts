@@ -165,15 +165,26 @@ export async function getTurnstileToken(): Promise<string | null> {
     return null;
   }
 
-  // Create container if it doesn't exist
+  // Try to use existing container in modal first, otherwise create one
   if (!automatedWidgetContainer) {
-    automatedWidgetContainer = document.createElement('div');
-    automatedWidgetContainer.id = 'turnstile-automated';
-    automatedWidgetContainer.style.position = 'fixed';
-    automatedWidgetContainer.style.bottom = '20px';
-    automatedWidgetContainer.style.right = '20px';
-    automatedWidgetContainer.style.zIndex = '9999';
-    document.body.appendChild(automatedWidgetContainer);
+    // Look for container inside the modal
+    automatedWidgetContainer = document.getElementById('turnstile-container');
+    
+    if (!automatedWidgetContainer) {
+      // Fallback: create floating container if modal isn't open
+      automatedWidgetContainer = document.createElement('div');
+      automatedWidgetContainer.id = 'turnstile-automated';
+      automatedWidgetContainer.style.position = 'fixed';
+      automatedWidgetContainer.style.bottom = '20px';
+      automatedWidgetContainer.style.right = '20px';
+      automatedWidgetContainer.style.zIndex = '9999';
+      document.body.appendChild(automatedWidgetContainer);
+    }
+  }
+  
+  // Show the container before executing
+  if (automatedWidgetContainer) {
+    automatedWidgetContainer.style.display = '';
   }
 
   return new Promise((resolve) => {
@@ -198,6 +209,14 @@ export async function getTurnstileToken(): Promise<string | null> {
             if (pendingResolve) {
               pendingResolve(token);
               pendingResolve = null;
+            }
+            // Clean up both iframe and container
+            if (automatedWidgetId && window.turnstile) {
+              window.turnstile.remove(automatedWidgetId);
+              automatedWidgetId = null;
+            }
+            if (automatedWidgetContainer) {
+              automatedWidgetContainer.style.display = 'none';
             }
           },
           'error-callback': () => {

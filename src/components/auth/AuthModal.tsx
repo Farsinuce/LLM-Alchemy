@@ -39,6 +39,23 @@ export default function AuthModal({
     }
   }, [isOpen]);
 
+  // Helper function to retry Supabase auth calls on rate limit
+  const trySupabase = async <T extends { error: { message?: string } | null }>(
+    fn: () => Promise<T>
+  ): Promise<T> => {
+    const res = await fn();
+    
+    // Check if it's an auth response with rate limit error
+    if (res.error && res.error.message?.includes('8 seconds')) {
+      setError('Security cooldown - retrying in 8 seconds...');
+      await new Promise(resolve => setTimeout(resolve, 8500));
+      setError(''); // Clear the cooldown message
+      return await fn(); // Single retry
+    }
+    
+    return res;
+  };
+
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -52,27 +69,31 @@ export default function AuthModal({
         .finally(() => setAwaitingCaptcha(false));
 
       if (mode === 'register') {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              display_name: displayName || email.split('@')[0],
-            },
-            ...(captchaToken && { captchaToken })
-          }
-        });
+        const { error } = await trySupabase(() => 
+          supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                display_name: displayName || email.split('@')[0],
+              },
+              ...(captchaToken && { captchaToken })
+            }
+          })
+        );
 
         if (error) throw error;
 
         setSuccess('Please check your email for verification link!');
         setMode('login');
       } else if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-          ...(captchaToken && { options: { captchaToken } })
-        });
+        const { error } = await trySupabase(() =>
+          supabase.auth.signInWithPassword({
+            email,
+            password,
+            ...(captchaToken && { options: { captchaToken } })
+          })
+        );
 
         if (error) throw error;
 
@@ -80,10 +101,12 @@ export default function AuthModal({
         onSuccess?.();
         onClose();
       } else if (mode === 'forgot') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth/reset-password`,
-          ...(captchaToken && { captchaToken })
-        });
+        const { error } = await trySupabase(() =>
+          supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/auth/reset-password`,
+            ...(captchaToken && { captchaToken })
+          })
+        );
 
         if (error) throw error;
 
@@ -295,6 +318,9 @@ export default function AuthModal({
               </div>
             </div>
           )}
+
+          {/* Turnstile container - widget will render here when needed */}
+          <div id="turnstile-container"></div>
 
           <button
             type="submit"
