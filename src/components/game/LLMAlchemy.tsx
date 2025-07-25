@@ -1895,7 +1895,7 @@ const LLMAlchemy = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-gray-900 to-blue-900/20"></div>
       
       {/* Challenge Bar */}
-      <ChallengeBar />
+      <ChallengeBar isAnonymous={dbUser?.is_anonymous} />
       
       {/* Header */}
       <div className="relative z-10 bg-gray-800/80 backdrop-blur-sm p-4 shadow-lg">

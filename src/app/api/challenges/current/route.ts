@@ -11,7 +11,16 @@ export async function GET() {
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ challenges: [], completions: [] });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user is anonymous - only registered users can access challenges
+    const { data: dbUser } = await supabase.from('users').select('is_anonymous').eq('id', user.id).single();
+    if (dbUser?.is_anonymous) {
+      return NextResponse.json({ 
+        challenges: [],
+        message: 'Register to access challenges' 
+      }, { status: 403 });
     }
 
     const now = new Date();

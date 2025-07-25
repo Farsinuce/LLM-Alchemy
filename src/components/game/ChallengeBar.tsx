@@ -20,7 +20,11 @@ interface Challenge {
   } | null;
 }
 
-export function ChallengeBar() {
+interface ChallengeBarProps {
+  isAnonymous?: boolean;
+}
+
+export function ChallengeBar({ isAnonymous }: ChallengeBarProps) {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +51,19 @@ export function ChallengeBar() {
       setLoading(false);
     }
   };
+
+  // Show registration prompt for anonymous users
+  if (isAnonymous) {
+    return (
+      <div className="challenge-bar-container mb-4">
+        <div className="p-3 bg-surface-secondary rounded-lg border border-warning/30 text-center">
+          <p className="text-sm text-muted">
+            🔒 <span className="text-blue-400 underline cursor-pointer" onClick={() => window.location.href = '/'}>Register</span> to participate in challenges
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) return null;
   if (error) return null;

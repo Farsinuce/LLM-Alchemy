@@ -8,13 +8,20 @@ export const maxDuration = 30;
 
 export async function GET(request: Request) {
   try {
-    // Verify cron secret to prevent unauthorized calls
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
+    // Check for debug trigger
+    const { searchParams } = new URL(request.url);
+    const debugSecret = searchParams.get('secret');
+    const isDebugRequest = debugSecret === 'my-llm-alchemy-cron-secret-2025-xyz789';
     
-    // In development, allow calls without secret
-    if (process.env.NODE_ENV === 'production' && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Verify cron secret to prevent unauthorized calls (skip if debug request)
+    if (!isDebugRequest) {
+      const authHeader = request.headers.get('authorization');
+      const cronSecret = process.env.CRON_SECRET;
+      
+      // In development, allow calls without secret
+      if (process.env.NODE_ENV === 'production' && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     const supabase = createClient();

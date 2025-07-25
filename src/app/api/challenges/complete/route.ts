@@ -15,6 +15,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check if user is anonymous - only registered users can complete challenges
+    const { data: dbUser } = await supabase.from('users').select('is_anonymous').eq('id', user.id).single();
+    if (dbUser?.is_anonymous) {
+      return NextResponse.json({ 
+        error: 'Anonymous users cannot complete challenges' 
+      }, { status: 403 });
+    }
+
     // Get request body
     const body = await request.json();
     const { challengeId, elementDiscovered, gameMode } = body;

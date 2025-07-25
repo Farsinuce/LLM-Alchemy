@@ -15,10 +15,6 @@ import dynamic from 'next/dynamic';
 
 const AuthModal = dynamic(() => import('@/components/auth/AuthModal'), { ssr: false });
 import { 
-  shouldShowUpgradePrompt, 
-  shouldShowUpgradeButton, 
-  upgradeAnonymousAccount, 
-  upgradeAnonymousAccountWithGoogle,
   checkAndHandleUpgradeCallback
 } from '@/lib/auth-utils';
 import { GAME_CONFIG } from '@/lib/game-config';
@@ -37,6 +33,7 @@ export default function Home() {
   const [resetAchievements, setResetAchievements] = useState(false);
   const [selectedMode, setSelectedMode] = useState<'science' | 'creative'>('science');
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [todaysChallenges, setTodaysChallenges] = useState<{id: string, challenge_type: string, title: string, reward_tokens: number}[]>([]);
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
   const [tempApiKey, setTempApiKey] = useState<string>('');
@@ -48,7 +45,6 @@ export default function Home() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
   const [showUpgradeBenefits, setShowUpgradeBenefits] = useState(false);
-  const [isUpgrading, setIsUpgrading] = useState(false);
   
   // Payment state
   const [isCreatingPayment, setIsCreatingPayment] = useState(false);
@@ -136,19 +132,6 @@ export default function Home() {
     showToast('Welcome! You can now purchase tokens and subscriptions.');
   };
 
-  const handleUpgradeAccount = async () => {
-    if (!user || !dbUser) return;
-    
-    setIsUpgrading(true);
-    const result = await upgradeAnonymousAccountWithGoogle(user.id);
-    
-    if (result.success) {
-      showToast(result.message);
-    } else {
-      showToast(result.message);
-      setIsUpgrading(false);
-    }
-  };
 
   const handleShowAuth = (mode: 'login' | 'register' = 'login', showBenefits = false) => {
     setAuthModalMode(mode);
@@ -217,9 +200,6 @@ export default function Home() {
   const isRegistered = hasSession && !dbUser?.is_anonymous;
   const isAnonymous = hasSession && (dbUser?.is_anonymous || false);
   const isLoggedOut = !hasSession;
-  
-  const shouldShowUpgrade = shouldShowUpgradeButton(dailyCount, GAME_CONFIG.DAILY_FREE_COMBINATIONS, isAnonymous);
-  const shouldShowUpgradePromptNow = shouldShowUpgradePrompt(dailyCount, GAME_CONFIG.DAILY_FREE_COMBINATIONS, isAnonymous);
 
   // Save API key to localStorage when it changes
   useEffect(() => {
@@ -244,6 +224,27 @@ export default function Home() {
 
     loadProgress();
   }, [user]);
+
+  // Load challenges for registered users
+  useEffect(() => {
+    const loadChallenges = async () => {
+      if (isRegistered) {
+        try {
+          const response = await fetch('/api/challenges/current');
+          if (response.ok) {
+            const data = await response.json();
+            setTodaysChallenges(data.challenges || []);
+          }
+        } catch (error) {
+          console.error('Error loading challenges:', error);
+        }
+      } else {
+        setTodaysChallenges([]);
+      }
+    };
+
+    loadChallenges();
+  }, [isRegistered]);
 
   // Refresh progress when page becomes visible (returning from game)
   useEffect(() => {
@@ -378,6 +379,32 @@ export default function Home() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Challenges Preview */}
+        {isRegistered && todaysChallenges.length > 0 && (
+          <div className="bg-gray-800/50 rounded-lg p-4 mb-6 text-left">
+            <h3 className="text-sm font-semibold mb-3 text-center">Today's Challenges</h3>
+            <div className="space-y-2">
+              {todaysChallenges.slice(0, 3).map(challenge => (
+                <div key={challenge.id} className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span>{challenge.challenge_type === 'daily' ? '🌟' : '🏆'}</span>
+                    <span className="text-gray-300">{challenge.title}</span>
+                  </div>
+                  <span className="text-warning">+{challenge.reward_tokens}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 text-center">
+              <button
+                onClick={handleContinueGame}
+                className="text-xs text-blue-400 hover:text-blue-300 underline"
+              >
+                View all challenges →
+              </button>
             </div>
           </div>
         )}
@@ -642,7 +669,7 @@ export default function Home() {
                 </button>
                 <button
                   onClick={async () => {
-                    let validationPassed = true;
+                    const validationPassed = true;
                     
                     // Validate API key if provided
                     if (tempApiKey.trim()) {
