@@ -19,6 +19,7 @@ Players start with basic elements (Earth, Air, Fire, Water, [Energy|Life]) and c
 - **Backend**: Next.js API Routes
 - **Database**: Supabase (PostgreSQL with Row Level Security)
 - **Authentication**: Supabase Anonymous Auth, automatic user creation (needs to be expanding with dedicated user registration)
+- **Security**: Cloudflare Turnstile (bot protection for authentication)
 - **LLM Provider**: OpenRouter (Gemini Flash 2.5 and Pro 2.5)
 - **Hosting**: Vercel (automatic deployments from GitHub)
 - **Payments**: Mollie (planned integration), Important: We are pivoting from Mollie to Stripe (supports MobilePay)

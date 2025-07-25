@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { X, Mail, Lock, User, Eye, EyeOff, Shield } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase-client';
-import { initTurnstile, executeTurnstile } from '@/lib/turnstile';
+import { getTurnstileToken } from '@/lib/turnstile';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -12,9 +12,6 @@ interface AuthModalProps {
   initialMode?: 'login' | 'register';
   showUpgradeBenefits?: boolean;
 }
-
-// Feature flag for captcha - can be easily toggled via env variable
-const CAPTCHA_ENABLED = process.env.NEXT_PUBLIC_CAPTCHA_ENABLED !== 'false';
 
 export default function AuthModal({ 
   isOpen, 
@@ -31,63 +28,18 @@ export default function AuthModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [captchaState, setCaptchaState] = useState<'idle' | 'checking' | 'failed' | 'success'>('idle');
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  
-  const turnstileRef = useRef<HTMLDivElement>(null);
-  const resetTurnstileRef = useRef<(() => void) | null>(null);
 
   const supabase = createClient();
 
-  // Initialize Turnstile widget when modal opens
-  useEffect(() => {
-    if (isOpen && CAPTCHA_ENABLED && turnstileRef.current) {
-      initTurnstile(turnstileRef.current, (token) => {
-        if (token) {
-          setCaptchaToken(token);
-          setCaptchaState('success');
-          // Auto-submit form if we have pending submission
-          if (captchaState === 'checking') {
-            handleEmailAuthWithToken(token);
-          }
-        } else {
-          setCaptchaState('failed');
-          setError('Security verification failed - please refresh and try again');
-        }
-      }).then((resetFn) => {
-        resetTurnstileRef.current = resetFn;
-      });
-    }
-
-    // Cleanup on unmount
-    return () => {
-      resetTurnstileRef.current?.();
-    };
-  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (CAPTCHA_ENABLED && mode !== 'forgot' && !captchaToken) {
-      // Execute Turnstile challenge
-      setCaptchaState('checking');
-      setError('');
-      if (turnstileRef.current) {
-        executeTurnstile(turnstileRef.current);
-      }
-      return; // Wait for callback
-    }
-
-    // Proceed with auth
-    await handleEmailAuthWithToken(captchaToken || undefined);
-  };
-
-  const handleEmailAuthWithToken = async (token?: string) => {
     setIsLoading(true);
     setError('');
     setSuccess('');
 
     try {
+      // Get Turnstile token first (with 8s timeout and graceful fallback)
+      const captchaToken = await getTurnstileToken();
 
       if (mode === 'register') {
         const { error } = await supabase.auth.signUp({
@@ -97,7 +49,7 @@ export default function AuthModal({
             data: {
               display_name: displayName || email.split('@')[0],
             },
-            ...(token && { captchaToken: token })
+            ...(captchaToken && { captchaToken })
           }
         });
 
@@ -109,7 +61,7 @@ export default function AuthModal({
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
-          ...(token && { options: { captchaToken: token } })
+          ...(captchaToken && { options: { captchaToken } })
         });
 
         if (error) throw error;
@@ -119,7 +71,8 @@ export default function AuthModal({
         onClose();
       } else if (mode === 'forgot') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth/reset-password`
+          redirectTo: `${window.location.origin}/auth/reset-password`,
+          ...(captchaToken && { captchaToken })
         });
 
         if (error) throw error;
@@ -133,7 +86,6 @@ export default function AuthModal({
       
       if (errorMessage.includes('captcha')) {
         setError('Security verification failed - please refresh and try again');
-        setCaptchaState('failed');
       } else if (errorMessage.includes('Invalid login credentials')) {
         setError('Invalid email or password');
       } else {
@@ -141,10 +93,6 @@ export default function AuthModal({
       }
     } finally {
       setIsLoading(false);
-      setCaptchaState('idle');
-      setCaptchaToken(null);
-      // Reset widget for next use
-      resetTurnstileRef.current?.();
     }
   };
 
@@ -175,20 +123,13 @@ export default function AuthModal({
       return;
     }
 
-    if (CAPTCHA_ENABLED && !captchaToken) {
-      // Execute Turnstile challenge
-      setCaptchaState('checking');
-      setError('');
-      if (turnstileRef.current) {
-        executeTurnstile(turnstileRef.current);
-      }
-      return; // Wait for callback
-    }
-
     setIsLoading(true);
     setError('');
 
     try {
+      // Get Turnstile token first (with 8s timeout and graceful fallback)
+      const captchaToken = await getTurnstileToken();
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
@@ -206,15 +147,11 @@ export default function AuthModal({
       
       if (errorMessage.includes('captcha')) {
         setError('Security verification failed - please refresh and try again');
-        setCaptchaState('failed');
       } else {
         setError(errorMessage);
       }
     } finally {
       setIsLoading(false);
-      setCaptchaState('idle');
-      setCaptchaToken(null);
-      resetTurnstileRef.current?.();
     }
   };
 
@@ -260,19 +197,6 @@ export default function AuthModal({
           <div className="mb-4 p-3 status-online rounded-lg">
             <p className="text-caption">{success}</p>
           </div>
-        )}
-
-        {/* Captcha status indicator */}
-        {captchaState === 'checking' && (
-          <div className="mb-4 p-3 bg-blue-900/50 rounded-lg flex items-center gap-2">
-            <Shield className="w-4 h-4 text-blue-400 animate-pulse" />
-            <p className="text-caption text-blue-400">Verifying security...</p>
-          </div>
-        )}
-
-        {/* Turnstile Container - Always present but invisible until needed */}
-        {CAPTCHA_ENABLED && mode !== 'forgot' && (
-          <div ref={turnstileRef} className="mb-4" />
         )}
 
         {/* Google Auth Button */}
@@ -365,9 +289,7 @@ export default function AuthModal({
             disabled={isLoading}
             className="btn btn-primary w-full"
           >
-            {isLoading ? (
-              captchaState === 'checking' ? 'Verifying security...' : 'Loading...'
-            ) : (
+            {isLoading ? 'Loading...' : (
               mode === 'login' ? 'Sign In' : 
               mode === 'register' ? 'Create Account' : 
               'Send Reset Link'
