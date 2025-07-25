@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, useMemo, useCallback } 
 import { createClient } from '@/lib/supabase-client'
 import { User } from '@supabase/supabase-js'
 import { User as DBUser, getOrCreateAnonymousUser, getDailyCount, getTokenBalance } from '@/lib/supabase-client'
+import { cleanupAutomatedWidget } from '@/lib/turnstile'
 
 interface SupabaseContextType {
   user: User | null
@@ -226,6 +227,8 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false
       subscription.unsubscribe()
+      // Clean up Turnstile automated widget on unmount
+      cleanupAutomatedWidget()
     }
   }, [supabase])
 

@@ -11,7 +11,9 @@ import {
   getLlmModelPreference, 
   updateLlmModelPreference 
 } from '@/lib/supabase-client';
-import AuthModal from '@/components/auth/AuthModal';
+import dynamic from 'next/dynamic';
+
+const AuthModal = dynamic(() => import('@/components/auth/AuthModal'), { ssr: false });
 import { 
   shouldShowUpgradePrompt, 
   shouldShowUpgradeButton, 

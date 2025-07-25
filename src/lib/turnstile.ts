@@ -147,9 +147,14 @@ export async function verifyTurnstileToken(token: string): Promise<boolean> {
   }
 }
 
+// Singleton widget for automated flows
+let automatedWidgetId: string | null = null;
+let automatedWidgetContainer: HTMLElement | null = null;
+let pendingResolve: ((value: string | null) => void) | null = null;
+
 /**
  * Get Turnstile token for automated flows (like anonymous user creation)
- * This creates a temporary widget, executes it, and returns the token
+ * Uses a singleton widget pattern to avoid conflicts
  * 
  * Note: For form submissions, use initTurnstile() instead
  */
@@ -160,52 +165,84 @@ export async function getTurnstileToken(): Promise<string | null> {
     return null;
   }
 
+  // Create container if it doesn't exist
+  if (!automatedWidgetContainer) {
+    automatedWidgetContainer = document.createElement('div');
+    automatedWidgetContainer.id = 'turnstile-automated';
+    automatedWidgetContainer.style.position = 'fixed';
+    automatedWidgetContainer.style.bottom = '20px';
+    automatedWidgetContainer.style.right = '20px';
+    automatedWidgetContainer.style.zIndex = '9999';
+    document.body.appendChild(automatedWidgetContainer);
+  }
+
   return new Promise((resolve) => {
-    // Create temporary container
-    const container = document.createElement('div');
-    container.style.position = 'fixed';
-    container.style.bottom = '20px';
-    container.style.right = '20px';
-    container.style.zIndex = '9999';
-    document.body.appendChild(container);
+    pendingResolve = resolve;
 
-    let resolved = false;
-    const cleanup = () => {
-      if (!resolved) {
-        resolved = true;
-        try {
-          document.body.removeChild(container);
-        } catch {}
-      }
-    };
-
-    // Timeout after 5 seconds
+    // Timeout after 8 seconds
     const timeout = setTimeout(() => {
-      cleanup();
+      pendingResolve = null;
       resolve(null);
-    }, 5000);
+    }, 8000);
 
     try {
-      window.turnstile!.render(container, {
-        sitekey: siteKey,
-        execution: 'render', // Auto-execute on render for automated flows
-        appearance: 'interaction-only',
-        theme: 'dark',
-        callback: (token: string) => {
-          clearTimeout(timeout);
-          cleanup();
-          resolve(token);
-        },
-        'error-callback': () => {
-          clearTimeout(timeout);
-          cleanup();
-          resolve(null);
+      if (!automatedWidgetId && automatedWidgetContainer) {
+        // First time - create widget
+        automatedWidgetId = window.turnstile!.render(automatedWidgetContainer, {
+          sitekey: siteKey,
+          execution: 'execute', // Use explicit mode for better control
+          appearance: 'interaction-only',
+          theme: 'dark',
+          callback: (token: string) => {
+            clearTimeout(timeout);
+            if (pendingResolve) {
+              pendingResolve(token);
+              pendingResolve = null;
+            }
+          },
+          'error-callback': () => {
+            clearTimeout(timeout);
+            if (pendingResolve) {
+              pendingResolve(null);
+              pendingResolve = null;
+            }
+          }
+        });
+      } else if (automatedWidgetId) {
+        // Reset existing widget for fresh token
+        window.turnstile!.reset(automatedWidgetId);
+      }
+
+      // Wait for next frame to ensure widget is ready
+      requestAnimationFrame(() => {
+        if (automatedWidgetId && window.turnstile) {
+          window.turnstile.execute(automatedWidgetId);
         }
       });
     } catch {
       clearTimeout(timeout);
-      cleanup();
       resolve(null);
     }
   });
+}
+
+/**
+ * Cleanup automated widget (call on page unload or route change)
+ */
+export function cleanupAutomatedWidget(): void {
+  if (automatedWidgetId && window.turnstile) {
+    try {
+      window.turnstile.remove(automatedWidgetId);
+    } catch {}
+    automatedWidgetId = null;
+  }
+  
+  if (automatedWidgetContainer) {
+    try {
+      document.body.removeChild(automatedWidgetContainer);
+    } catch {}
+    automatedWidgetContainer = null;
+  }
+  
+  pendingResolve = null;
 }
