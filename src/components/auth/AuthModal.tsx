@@ -30,21 +30,6 @@ export default function AuthModal({
 
   const supabase = createClient();
 
-  // Helper function to get Turnstile token
-  const getTurnstileTokenSafely = async (): Promise<string | undefined> => {
-    try {
-      const { getTurnstileToken, waitForTurnstile } = await import('@/lib/turnstile');
-      const turnstileReady = await waitForTurnstile(2000); // Wait up to 2 seconds
-      
-      if (turnstileReady) {
-        return await getTurnstileToken() || undefined;
-      }
-    } catch (error) {
-      console.warn('Turnstile not available, proceeding without captcha:', error);
-    }
-    return undefined;
-  };
-
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -52,34 +37,25 @@ export default function AuthModal({
     setSuccess('');
 
     try {
-      // Get Turnstile token for all auth operations
-      const captchaToken = await getTurnstileTokenSafely();
       if (mode === 'register') {
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               display_name: displayName || email.split('@')[0],
-            },
-            captchaToken
+            }
           }
         });
 
         if (error) throw error;
 
-        if (data.user && !data.user.email_confirmed_at) {
-          setSuccess('Please check your email for verification link!');
-          setMode('login');
-        } else {
-          setSuccess('Account created successfully!');
-          onSuccess?.();
-        }
+        setSuccess('Please check your email for verification link!');
+        setMode('login');
       } else if (mode === 'login') {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
           email,
-          password,
-          options: captchaToken ? { captchaToken } : undefined
+          password
         });
 
         if (error) throw error;
@@ -89,8 +65,7 @@ export default function AuthModal({
         onClose();
       } else if (mode === 'forgot') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth/reset-password`,
-          captchaToken
+          redirectTo: `${window.location.origin}/auth/reset-password`
         });
 
         if (error) throw error;
@@ -135,14 +110,10 @@ export default function AuthModal({
     setError('');
 
     try {
-      // Get Turnstile token for magic link
-      const captchaToken = await getTurnstileTokenSafely();
-      
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-          captchaToken
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
 
