@@ -115,7 +115,7 @@ INVALID TYPES:
 
 TECHNOLOGY: Prefer natural outcomes. Guide toward biology, geology, chemistry over modern technology.
 
-LIFE PROGRESSION: Build complexity gradually. If no simple organisms exist yet, start with foundational life (Bacteria from energised wet soil + gas), e.g. "Energised mud + air". Progress step-by-step: Bacteria → Protozoa → Algae → Plants. Avoid too miniscule and too large evolutionary leaps.
+LIFE PROGRESSION: Build complexity gradually. If no simple organisms exist yet, start with foundational life (Microbe from any energised wet soil + gas), e.g. "Mud + Energy + Air". Progress step-by-step: Microbe → Protozoa → Algae → Plants. Avoid too miniscule and too large evolutionary leaps.
 
 END ELEMENTS
 • Evolutionary dead-ends (Extremophile)

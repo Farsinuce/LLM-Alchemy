@@ -6,6 +6,7 @@ import { createClient, incrementDailyCount, decrementDailyCount, saveGameState, 
 import { buildSharedSections, buildSciencePrompt, buildCreativePrompt } from '@/lib/llm-prompts';
 import { Achievement, checkAchievements, updateAchievementsWithProgress } from '@/lib/achievements';
 import { GAME_CONFIG } from '@/lib/game-config';
+import { ChallengeBar } from '@/components/game/ChallengeBar';
 
 // Type definitions
 interface Element {
@@ -103,7 +104,7 @@ const isTouchDevice =
 
 
 const LLMAlchemy = () => {
-  const { user, dbUser, dailyCount, tokenBalance, loading, refreshDailyCount, refreshTokenBalance } = useSupabase();
+  const { user, dbUser, dailyCount, tokenBalance, refreshDailyCount, refreshTokenBalance } = useSupabase();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [gameMode, setGameMode] = useState<'science' | 'creative'>('science');
@@ -164,6 +165,20 @@ const LLMAlchemy = () => {
   const [isPlayingLoadAnimation, setIsPlayingLoadAnimation] = useState<boolean>(false);
   const [animatedElements, setAnimatedElements] = useState<Set<string>>(new Set());
   
+  // Challenge-related state
+  interface Challenge {
+    id: string;
+    challenge_type: 'daily' | 'weekly';
+    title: string;
+    target_element?: string;
+    target_category?: string;
+    reward_tokens: number;
+    start_date: string;
+    end_date: string;
+    isCompleted: boolean;
+  }
+  const [currentChallenges, setCurrentChallenges] = useState<Challenge[]>([]);
+  
   // Load API key from localStorage on mount (optional - for convenience)
   useEffect(() => {
     const savedApiKey = localStorage.getItem('llm-alchemy-api-key');
@@ -177,6 +192,85 @@ const LLMAlchemy = () => {
       }
     }
   }, []);
+  
+  // Fetch current challenges
+  useEffect(() => {
+    const fetchChallenges = async () => {
+      try {
+        const response = await fetch('/api/challenges/current');
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentChallenges(data.challenges || []);
+        }
+      } catch (error) {
+        console.error('Error fetching challenges:', error);
+      }
+    };
+
+    fetchChallenges();
+    // Refresh challenges every minute
+    const interval = setInterval(fetchChallenges, 60000);
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Check if a newly discovered element completes any challenges
+  const checkChallengeCompletion = async (element: Element) => {
+    if (!user || currentChallenges.length === 0) return;
+    
+    for (const challenge of currentChallenges) {
+      // Skip if already completed
+      if (challenge.isCompleted) continue;
+      
+      let isCompleted = false;
+      
+      // Check if element matches the challenge criteria
+      if (challenge.target_element) {
+        // Weekly challenge - specific element
+        isCompleted = element.name.toLowerCase() === challenge.target_element.toLowerCase();
+      } else if (challenge.target_category && element.tags) {
+        // Daily challenge - category (server will validate with proper tag matching)
+        isCompleted = element.tags.includes(challenge.target_category);
+      }
+      
+      if (isCompleted) {
+        try {
+          const response = await fetch('/api/challenges/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              challengeId: challenge.id,
+              elementDiscovered: element.name,
+              elementTags: element.tags || [],
+              gameMode
+            })
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            
+            // Update challenge state
+            setCurrentChallenges(prev => 
+              prev.map(c => c.id === challenge.id ? { ...c, isCompleted: true } : c)
+            );
+            
+            // Show completion toast
+            if (result.tokensAwarded > 0) {
+              showToast(`🎉 Challenge completed! +${result.tokensAwarded} tokens`);
+              // Refresh token balance
+              await refreshTokenBalance();
+            } else {
+              showToast(`🎉 Challenge completed!`);
+            }
+            
+            // Play reward sound
+            playSound('reward');
+          }
+        } catch (error) {
+          console.error('Error completing challenge:', error);
+        }
+      }
+    }
+  };
 
   // Load model preference from Supabase for non-API-key users
   useEffect(() => {
@@ -1387,6 +1481,9 @@ const LLMAlchemy = () => {
           });
         }
         
+        // Check if this new element completes any challenges
+        await checkChallengeCompletion(newElement);
+        
         setShowUnlock({ 
           ...newElement, 
           isNew: true,
@@ -1796,6 +1893,9 @@ const LLMAlchemy = () => {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col relative overflow-hidden select-none" style={{ touchAction: touchDragging || isDraggingDivider ? 'none' : 'auto' }}>
       <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-gray-900 to-blue-900/20"></div>
+      
+      {/* Challenge Bar */}
+      <ChallengeBar />
       
       {/* Header */}
       <div className="relative z-10 bg-gray-800/80 backdrop-blur-sm p-4 shadow-lg">
