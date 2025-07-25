@@ -31,6 +31,22 @@
 - [x] Tests server-side verification
 - [x] Shows debug info (user agent, viewport)
 
+## ✅ Phase 5: Clean Architecture Implementation (COMPLETED)
+
+- [x] Refactored `turnstile.ts` to implement proper explicit+execute pattern
+- [x] Created `initTurnstile()` helper for forms - one pattern for everything
+- [x] Removed complex timeout/retry logic and hidden containers
+- [x] Updated `AuthModal.tsx` to use explicit+execute pattern correctly
+- [x] Fixed the widget positioning - now inline in forms, visible when needed
+- [x] Kept `getTurnstileToken()` for automated flows (anonymous user creation)
+- [x] Updated test page to demonstrate both patterns clearly
+
+### Key Architecture Changes:
+- **No more hidden divs at `-9999px`** - widgets are rendered where users can interact
+- **Single-use tokens handled properly** - reset widget after each use
+- **Explicit+Execute pattern** - render once, execute on form submit
+- **Visible fallback built-in** - if interaction needed, widget appears inline
+
 ## 📋 Manual Test Checklist
 
 ### Desktop Testing:
@@ -45,9 +61,10 @@
 ### Mobile Testing:
 - [ ] Test on iOS Safari
 - [ ] Test on Android Chrome
-- [ ] Invisible captcha works
-- [ ] Visible fallback works if needed
+- [ ] Automated flow shows widget bottom-right if needed
+- [ ] Form submission shows widget inline if needed
 - [ ] No more 10+ second hangs
+- [ ] No more "401 PAT" errors
 - [ ] Clear error messages shown
 
 ## 🔧 Environment Variables Needed
@@ -79,17 +96,19 @@ If issues occur, quickly disable captcha:
 - No infinite loops or hangs
 - Clear error messages for users
 - Auth success rate > 95%
+- No "401 PAT" errors in console
+- Tokens successfully refresh between attempts
 
-## 🐛 Known Issues to Monitor
+## 🐛 Fixed Issues
 
-1. Turnstile API changes (we're now version locked)
-2. Mobile browsers with strict security settings
-3. Users with ad blockers (fail gracefully)
-4. Network timeouts in poor connectivity
+1. ✅ Hidden widget at `-9999px` preventing mobile interaction
+2. ✅ Single-use token errors on page refresh
+3. ✅ Complex timeout/retry logic causing race conditions
+4. ✅ Multiple widget instances without cleanup
 
 ## 💡 Future Improvements (Not Urgent)
 
-- Add captcha retry button in UI
-- Implement visible captcha fallback in AuthModal
-- Add analytics for captcha success rates
+- Add retry button directly in the captcha error state
+- Add analytics for captcha interaction rates
 - Consider implementing rate limiting as backup
+- Add E2E tests with Playwright for mobile viewport

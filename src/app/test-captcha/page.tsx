@@ -1,19 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Shield, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
-import { getTurnstileToken, getTurnstileTokenWithStatus, createVisibleTurnstile, executeTurnstile, isTurnstileReady } from '@/lib/turnstile';
+import { initTurnstile, executeTurnstile, isTurnstileReady, getTurnstileToken } from '@/lib/turnstile';
 
 export default function TestCaptchaPage() {
   const [testResults, setTestResults] = useState<{
-    invisible?: { success: boolean; message: string; token?: string };
-    visible?: { success: boolean; message: string; token?: string };
+    automated?: { success: boolean; message: string; token?: string };
+    explicitExecute?: { success: boolean; message: string; token?: string };
     serverVerify?: { success: boolean; message: string };
   }>({});
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [turnstileLoaded, setTurnstileLoaded] = useState(false);
-  const [visibleWidgetId, setVisibleWidgetId] = useState<string | null>(null);
+  
+  const explicitWidgetRef = useRef<HTMLDivElement>(null);
+  const explicitResetRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     // Check if Turnstile is loaded
@@ -27,35 +29,64 @@ export default function TestCaptchaPage() {
     return () => clearInterval(checkInterval);
   }, []);
 
-  const testInvisibleCaptcha = async () => {
-    setIsLoading('invisible');
-    setTestResults(prev => ({ ...prev, invisible: undefined }));
+  // Initialize explicit widget when component mounts
+  useEffect(() => {
+    if (turnstileLoaded && explicitWidgetRef.current && !explicitResetRef.current) {
+      initTurnstile(explicitWidgetRef.current, (token) => {
+        if (token) {
+          setTestResults(prev => ({
+            ...prev,
+            explicitExecute: {
+              success: true,
+              message: 'Explicit+Execute captcha successful!',
+              token: token.substring(0, 20) + '...'
+            }
+          }));
+        } else {
+          setTestResults(prev => ({
+            ...prev,
+            explicitExecute: {
+              success: false,
+              message: 'Captcha verification failed'
+            }
+          }));
+        }
+        setIsLoading(null);
+      }).then((resetFn) => {
+        explicitResetRef.current = resetFn;
+      });
+    }
+  }, [turnstileLoaded]);
+
+  const testAutomatedFlow = async () => {
+    setIsLoading('automated');
+    setTestResults(prev => ({ ...prev, automated: undefined }));
 
     try {
-      const result = await getTurnstileTokenWithStatus();
+      const token = await getTurnstileToken();
       
-      if (result.success && result.token) {
+      if (token) {
         setTestResults(prev => ({
           ...prev,
-          invisible: {
+          automated: {
             success: true,
-            message: 'Invisible captcha successful!',
-            token: result.token!.substring(0, 20) + '...'
+            message: 'Automated flow successful!',
+            token: token.substring(0, 20) + '...'
           }
         }));
       } else {
         setTestResults(prev => ({
           ...prev,
-          invisible: {
+          automated: {
             success: false,
-            message: result.message || 'Failed to get token'
+            message: 'Failed to get token (timeout or error)'
           }
         }));
       }
     } catch (error) {
       setTestResults(prev => ({
         ...prev,
-        invisible: {
+        automated: {
           success: false,
           message: error instanceof Error ? error.message : 'Unknown error'
         }
@@ -65,52 +96,12 @@ export default function TestCaptchaPage() {
     }
   };
 
-  const testVisibleCaptcha = async () => {
-    if (visibleWidgetId) {
-      // Execute existing widget
-      executeTurnstile('visible-turnstile');
-    } else {
-      // Create new widget
-      setIsLoading('visible');
-      setTestResults(prev => ({ ...prev, visible: undefined }));
-
-      const widgetId = await createVisibleTurnstile(
-        'visible-turnstile',
-        (token) => {
-          setTestResults(prev => ({
-            ...prev,
-            visible: {
-              success: true,
-              message: 'Visible captcha successful!',
-              token: token.substring(0, 20) + '...'
-            }
-          }));
-          setIsLoading(null);
-        },
-        () => {
-          setTestResults(prev => ({
-            ...prev,
-            visible: {
-              success: false,
-              message: 'Visible captcha failed or expired'
-            }
-          }));
-          setIsLoading(null);
-        }
-      );
-
-      if (widgetId) {
-        setVisibleWidgetId(widgetId);
-      } else {
-        setTestResults(prev => ({
-          ...prev,
-          visible: {
-            success: false,
-            message: 'Failed to create visible widget'
-          }
-        }));
-        setIsLoading(null);
-      }
+  const testExplicitExecute = () => {
+    setIsLoading('explicitExecute');
+    setTestResults(prev => ({ ...prev, explicitExecute: undefined }));
+    
+    if (explicitWidgetRef.current) {
+      executeTurnstile(explicitWidgetRef.current);
     }
   };
 
@@ -209,70 +200,71 @@ export default function TestCaptchaPage() {
 
         {/* Test Sections */}
         <div className="space-y-6">
-          {/* Invisible/Interaction-Only Test */}
+          {/* Automated Flow Test (for anonymous user creation) */}
           <div className="card">
-            <h3 className="text-subheading mb-2">Invisible / Interaction-Only Mode</h3>
+            <h3 className="text-subheading mb-2">Automated Flow (Anonymous User)</h3>
             <p className="text-caption text-gray-400 mb-4">
-              Tests the invisible captcha that only shows UI when interaction is needed
+              Tests the automated captcha flow used for anonymous user creation.
+              Widget appears in bottom-right corner if interaction is needed.
             </p>
             <button
-              onClick={testInvisibleCaptcha}
-              disabled={!turnstileLoaded || isLoading === 'invisible'}
+              onClick={testAutomatedFlow}
+              disabled={!turnstileLoaded || isLoading === 'automated'}
               className="btn btn-primary"
             >
-              {isLoading === 'invisible' ? 'Testing...' : 'Test Invisible Captcha'}
+              {isLoading === 'automated' ? 'Testing...' : 'Test Automated Flow'}
             </button>
-            {testResults.invisible && (
-              <div className={`mt-4 p-3 rounded-lg ${testResults.invisible.success ? 'bg-green-900/50' : 'bg-red-900/50'}`}>
+            {testResults.automated && (
+              <div className={`mt-4 p-3 rounded-lg ${testResults.automated.success ? 'bg-green-900/50' : 'bg-red-900/50'}`}>
                 <div className="flex items-center gap-2">
-                  {testResults.invisible.success ? (
+                  {testResults.automated.success ? (
                     <CheckCircle className="w-5 h-5 text-green-400" />
                   ) : (
                     <XCircle className="w-5 h-5 text-red-400" />
                   )}
-                  <span className={testResults.invisible.success ? 'text-green-400' : 'text-red-400'}>
-                    {testResults.invisible.message}
+                  <span className={testResults.automated.success ? 'text-green-400' : 'text-red-400'}>
+                    {testResults.automated.message}
                   </span>
                 </div>
-                {testResults.invisible.token && (
+                {testResults.automated.token && (
                   <div className="text-caption text-gray-400 mt-1">
-                    Token: {testResults.invisible.token}
+                    Token: {testResults.automated.token}
                   </div>
                 )}
               </div>
             )}
           </div>
 
-          {/* Visible Test */}
+          {/* Explicit + Execute Test (for forms) */}
           <div className="card">
-            <h3 className="text-subheading mb-2">Visible Mode</h3>
+            <h3 className="text-subheading mb-2">Explicit + Execute Pattern (Forms)</h3>
             <p className="text-caption text-gray-400 mb-4">
-              Tests the visible captcha widget (fallback for when invisible fails)
+              Tests the recommended pattern for forms. Widget is rendered here, 
+              executed on button click. If interaction is needed, it appears inline.
             </p>
-            <div id="visible-turnstile" className="mb-4"></div>
+            <div ref={explicitWidgetRef} className="mb-4"></div>
             <button
-              onClick={testVisibleCaptcha}
-              disabled={!turnstileLoaded || isLoading === 'visible'}
+              onClick={testExplicitExecute}
+              disabled={!turnstileLoaded || isLoading === 'explicitExecute'}
               className="btn btn-primary"
             >
-              {isLoading === 'visible' ? 'Creating Widget...' : 
-               visibleWidgetId ? 'Execute Visible Captcha' : 'Create Visible Widget'}
+              {isLoading === 'explicitExecute' ? 'Executing...' : 'Execute Captcha'}
             </button>
-            {testResults.visible && (
-              <div className={`mt-4 p-3 rounded-lg ${testResults.visible.success ? 'bg-green-900/50' : 'bg-red-900/50'}`}>
+            {testResults.explicitExecute && (
+              <div className={`mt-4 p-3 rounded-lg ${testResults.explicitExecute.success ? 'bg-green-900/50' : 'bg-red-900/50'}`}>
                 <div className="flex items-center gap-2">
-                  {testResults.visible.success ? (
+                  {testResults.explicitExecute.success ? (
                     <CheckCircle className="w-5 h-5 text-green-400" />
                   ) : (
                     <XCircle className="w-5 h-5 text-red-400" />
                   )}
-                  <span className={testResults.visible.success ? 'text-green-400' : 'text-red-400'}>
-                    {testResults.visible.message}
+                  <span className={testResults.explicitExecute.success ? 'text-green-400' : 'text-red-400'}>
+                    {testResults.explicitExecute.message}
                   </span>
                 </div>
-                {testResults.visible.token && (
+                {testResults.explicitExecute.token && (
                   <div className="text-caption text-gray-400 mt-1">
-                    Token: {testResults.visible.token}
+                    Token: {testResults.explicitExecute.token}
                   </div>
                 )}
               </div>

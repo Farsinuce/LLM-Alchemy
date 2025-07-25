@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Mail, Lock, User, Eye, EyeOff, Shield } from 'lucide-react';
 import { createClient } from '@/lib/supabase-client';
-import { getTurnstileTokenWithStatus } from '@/lib/turnstile';
+import { initTurnstile, executeTurnstile } from '@/lib/turnstile';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -32,34 +32,62 @@ export default function AuthModal({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [captchaState, setCaptchaState] = useState<'idle' | 'checking' | 'failed' | 'success'>('idle');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  
+  const turnstileRef = useRef<HTMLDivElement>(null);
+  const resetTurnstileRef = useRef<(() => void) | null>(null);
 
   const supabase = createClient();
 
+  // Initialize Turnstile widget when modal opens
+  useEffect(() => {
+    if (isOpen && CAPTCHA_ENABLED && turnstileRef.current) {
+      initTurnstile(turnstileRef.current, (token) => {
+        if (token) {
+          setCaptchaToken(token);
+          setCaptchaState('success');
+          // Auto-submit form if we have pending submission
+          if (captchaState === 'checking') {
+            handleEmailAuthWithToken(token);
+          }
+        } else {
+          setCaptchaState('failed');
+          setError('Security verification failed - please refresh and try again');
+        }
+      }).then((resetFn) => {
+        resetTurnstileRef.current = resetFn;
+      });
+    }
+
+    // Cleanup on unmount
+    return () => {
+      resetTurnstileRef.current?.();
+    };
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (CAPTCHA_ENABLED && mode !== 'forgot' && !captchaToken) {
+      // Execute Turnstile challenge
+      setCaptchaState('checking');
+      setError('');
+      if (turnstileRef.current) {
+        executeTurnstile(turnstileRef.current);
+      }
+      return; // Wait for callback
+    }
+
+    // Proceed with auth
+    await handleEmailAuthWithToken(captchaToken || undefined);
+  };
+
+  const handleEmailAuthWithToken = async (token?: string) => {
     setIsLoading(true);
     setError('');
     setSuccess('');
-    setCaptchaState('idle');
 
     try {
-      // Get captcha token if enabled and not in forgot password mode
-      let captchaToken: string | undefined;
-      
-      if (CAPTCHA_ENABLED && mode !== 'forgot') {
-        setCaptchaState('checking');
-        const turnstileResult = await getTurnstileTokenWithStatus();
-        
-        if (!turnstileResult.success) {
-          setCaptchaState('failed');
-          setError(turnstileResult.message || 'Security verification failed - please try again');
-          setIsLoading(false);
-          return;
-        }
-        
-        captchaToken = turnstileResult.token;
-        setCaptchaState('success');
-      }
 
       if (mode === 'register') {
         const { error } = await supabase.auth.signUp({
@@ -69,7 +97,7 @@ export default function AuthModal({
             data: {
               display_name: displayName || email.split('@')[0],
             },
-            ...(captchaToken && { captchaToken })
+            ...(token && { captchaToken: token })
           }
         });
 
@@ -81,7 +109,7 @@ export default function AuthModal({
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
-          ...(captchaToken && { options: { captchaToken } })
+          ...(token && { options: { captchaToken: token } })
         });
 
         if (error) throw error;
@@ -113,9 +141,10 @@ export default function AuthModal({
       }
     } finally {
       setIsLoading(false);
-      if (captchaState === 'checking') {
-        setCaptchaState('idle');
-      }
+      setCaptchaState('idle');
+      setCaptchaToken(null);
+      // Reset widget for next use
+      resetTurnstileRef.current?.();
     }
   };
 
@@ -146,29 +175,20 @@ export default function AuthModal({
       return;
     }
 
+    if (CAPTCHA_ENABLED && !captchaToken) {
+      // Execute Turnstile challenge
+      setCaptchaState('checking');
+      setError('');
+      if (turnstileRef.current) {
+        executeTurnstile(turnstileRef.current);
+      }
+      return; // Wait for callback
+    }
+
     setIsLoading(true);
     setError('');
-    setCaptchaState('idle');
 
     try {
-      // Get captcha token if enabled
-      let captchaToken: string | undefined;
-      
-      if (CAPTCHA_ENABLED) {
-        setCaptchaState('checking');
-        const turnstileResult = await getTurnstileTokenWithStatus();
-        
-        if (!turnstileResult.success) {
-          setCaptchaState('failed');
-          setError(turnstileResult.message || 'Security verification failed - please try again');
-          setIsLoading(false);
-          return;
-        }
-        
-        captchaToken = turnstileResult.token;
-        setCaptchaState('success');
-      }
-
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
@@ -192,9 +212,9 @@ export default function AuthModal({
       }
     } finally {
       setIsLoading(false);
-      if (captchaState === 'checking') {
-        setCaptchaState('idle');
-      }
+      setCaptchaState('idle');
+      setCaptchaToken(null);
+      resetTurnstileRef.current?.();
     }
   };
 
@@ -248,6 +268,11 @@ export default function AuthModal({
             <Shield className="w-4 h-4 text-blue-400 animate-pulse" />
             <p className="text-caption text-blue-400">Verifying security...</p>
           </div>
+        )}
+
+        {/* Turnstile Container - Always present but invisible until needed */}
+        {CAPTCHA_ENABLED && mode !== 'forgot' && (
+          <div ref={turnstileRef} className="mb-4" />
         )}
 
         {/* Google Auth Button */}
