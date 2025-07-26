@@ -9,7 +9,9 @@ import {
   getGameProgress, 
   resetGameState, 
   getLlmModelPreference, 
-  updateLlmModelPreference 
+  updateLlmModelPreference,
+  getChallengePreference,
+  updateChallengePreference
 } from '@/lib/supabase-client';
 import dynamic from 'next/dynamic';
 
@@ -92,7 +94,7 @@ export default function Home() {
     }
   };
 
-  // Load API key from localStorage and model preference from Supabase on mount
+  // Load API key from localStorage and preferences from Supabase on mount
   useEffect(() => {
     const savedApiKey = localStorage.getItem('llm-alchemy-api-key');
     
@@ -104,25 +106,27 @@ export default function Home() {
         setSelectedModel(savedModel);
       }
     }
-    
-    // Load challenge preference from localStorage
-    const savedChallengePreference = localStorage.getItem('llm-alchemy-show-challenges');
-    if (savedChallengePreference !== null) {
-      setShowChallenges(savedChallengePreference === 'true');
-    }
   }, []);
 
-  // Load model preference from Supabase for non-API-key users
+  // Load model preference and challenge preference from Supabase
   useEffect(() => {
-    const loadModelPreference = async () => {
-      if (user && !userApiKey) {
+    const loadPreferences = async () => {
+      if (user) {
         const supabase = createClient();
-        const modelPreference = await getLlmModelPreference(supabase, user.id);
-        setSelectedModel(modelPreference);
+        
+        // Load model preference for non-API-key users
+        if (!userApiKey) {
+          const modelPreference = await getLlmModelPreference(supabase, user.id);
+          setSelectedModel(modelPreference);
+        }
+        
+        // Load challenge preference for all users
+        const challengePreference = await getChallengePreference(supabase, user.id);
+        setShowChallenges(challengePreference);
       }
     };
 
-    loadModelPreference();
+    loadPreferences();
   }, [user, userApiKey]);
 
   // Check for upgrade callback on mount
@@ -739,10 +743,13 @@ export default function Home() {
                       }
                     }
                     
-                    // Save challenge preference to localStorage
-                    if (tempShowChallenges !== showChallenges) {
-                      setShowChallenges(tempShowChallenges);
-                      localStorage.setItem('llm-alchemy-show-challenges', tempShowChallenges.toString());
+                    // Save challenge preference to Supabase
+                    if (user && tempShowChallenges !== showChallenges) {
+                      const supabase = createClient();
+                      const success = await updateChallengePreference(supabase, user.id, tempShowChallenges);
+                      if (success) {
+                        setShowChallenges(tempShowChallenges);
+                      }
                     }
                     
                     setShowApiKeyModal(false);

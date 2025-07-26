@@ -577,3 +577,43 @@ export async function updateLlmModelPreference(supabase: any, userId: string, mo
     return false
   }
 }
+
+// Challenge preference functions
+export async function getChallengePreference(supabase: any, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('show_challenges')
+      .eq('id', userId)
+      .single()
+
+    if (error) {
+      console.error('Error getting challenge preference:', error)
+      return true // Default to showing challenges
+    }
+
+    return data?.show_challenges ?? true
+  } catch (error) {
+    console.error('Error in getChallengePreference:', error)
+    return true
+  }
+}
+
+export async function updateChallengePreference(supabase: any, userId: string, showChallenges: boolean): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ show_challenges: showChallenges })
+      .eq('id', userId)
+
+    if (error) {
+      console.error('Error updating challenge preference:', error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error in updateChallengePreference:', error)
+    return false
+  }
+}

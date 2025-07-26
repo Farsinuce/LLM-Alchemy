@@ -28,6 +28,7 @@ export function ChallengeBar({ isAnonymous }: ChallengeBarProps) {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hiddenChallenges, setHiddenChallenges] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchChallenges();
@@ -52,6 +53,10 @@ export function ChallengeBar({ isAnonymous }: ChallengeBarProps) {
     }
   };
 
+  const hideChallenge = (challengeId: string) => {
+    setHiddenChallenges(prev => new Set([...prev, challengeId]));
+  };
+
   // Show registration prompt for anonymous users
   if (isAnonymous) {
     return (
@@ -69,9 +74,9 @@ export function ChallengeBar({ isAnonymous }: ChallengeBarProps) {
   if (error) return null;
   if (challenges.length === 0) return null;
 
-  // Separate daily and weekly challenges
-  const dailyChallenges = challenges.filter(c => c.challenge_type === 'daily');
-  const weeklyChallenges = challenges.filter(c => c.challenge_type === 'weekly');
+  // Separate daily and weekly challenges and filter out hidden ones
+  const dailyChallenges = challenges.filter(c => c.challenge_type === 'daily' && !hiddenChallenges.has(c.id));
+  const weeklyChallenges = challenges.filter(c => c.challenge_type === 'weekly' && !hiddenChallenges.has(c.id));
 
   return (
     <div className="challenge-bar-container mb-4">
@@ -80,10 +85,10 @@ export function ChallengeBar({ isAnonymous }: ChallengeBarProps) {
         {dailyChallenges.map((challenge) => (
           <div
             key={challenge.id}
-            className={`challenge-item transition-all duration-300 ${challenge.isCompleted ? 'opacity-75' : ''}`}
+            className="challenge-item transition-all duration-300"
           >
             <div className="flex items-center justify-between p-3 rounded-lg bg-surface-secondary border border-primary/20">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-1">
                 <span className="text-2xl">🌟</span>
                 <div>
                   <div className="flex items-center gap-2">
@@ -106,16 +111,25 @@ export function ChallengeBar({ isAnonymous }: ChallengeBarProps) {
                   <p className="text-body font-medium">{challenge.title}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="flex items-center gap-1">
-                  <span className="text-sm text-warning">+{challenge.reward_tokens}</span>
-                  <span className="text-xs text-muted">tokens</span>
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-warning">+{challenge.reward_tokens}</span>
+                    <span className="text-xs text-muted">tokens</span>
+                  </div>
+                  {challenge.isCompleted && challenge.completionDetails && (
+                    <p className="text-xs text-muted mt-1">
+                      Found: {challenge.completionDetails.element_discovered}
+                    </p>
+                  )}
                 </div>
-                {challenge.isCompleted && challenge.completionDetails && (
-                  <p className="text-xs text-muted mt-1">
-                    Found: {challenge.completionDetails.element_discovered}
-                  </p>
-                )}
+                <button
+                  onClick={() => hideChallenge(challenge.id)}
+                  className="text-gray-400 hover:text-gray-300 transition-colors p-1"
+                  title="Hide challenge"
+                >
+                  ✕
+                </button>
               </div>
             </div>
           </div>
@@ -125,10 +139,10 @@ export function ChallengeBar({ isAnonymous }: ChallengeBarProps) {
         {weeklyChallenges.map((challenge) => (
           <div
             key={challenge.id}
-            className={`challenge-item transition-all duration-300 ${challenge.isCompleted ? 'opacity-75' : ''}`}
+            className="challenge-item transition-all duration-300"
           >
             <div className="flex items-center justify-between p-3 rounded-lg bg-surface-secondary border border-warning/30">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-1">
                 <span className="text-2xl">🏆</span>
                 <div>
                   <div className="flex items-center gap-2">
@@ -151,16 +165,25 @@ export function ChallengeBar({ isAnonymous }: ChallengeBarProps) {
                   <p className="text-body font-medium">{challenge.title}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="flex items-center gap-1">
-                  <span className="text-sm text-warning">+{challenge.reward_tokens}</span>
-                  <span className="text-xs text-muted">tokens</span>
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-warning">+{challenge.reward_tokens}</span>
+                    <span className="text-xs text-muted">tokens</span>
+                  </div>
+                  {challenge.isCompleted && challenge.completionDetails && (
+                    <p className="text-xs text-muted mt-1">
+                      Mode: {challenge.completionDetails.game_mode}
+                    </p>
+                  )}
                 </div>
-                {challenge.isCompleted && challenge.completionDetails && (
-                  <p className="text-xs text-muted mt-1">
-                    Mode: {challenge.completionDetails.game_mode}
-                  </p>
-                )}
+                <button
+                  onClick={() => hideChallenge(challenge.id)}
+                  className="text-gray-400 hover:text-gray-300 transition-colors p-1"
+                  title="Hide challenge"
+                >
+                  ✕
+                </button>
               </div>
             </div>
           </div>
