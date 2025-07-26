@@ -34,36 +34,33 @@ export async function GET(request: Request) {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    // Check if daily challenges already exist for today
-    const { data: existingDaily } = await supabase
+    // Always delete existing daily challenges for today first
+    await supabase
       .from('challenges')
-      .select('id')
+      .delete()
       .eq('challenge_type', 'daily')
       .gte('start_date', today.toISOString())
       .lt('start_date', tomorrow.toISOString());
     
-    // Generate 2 daily challenges if none exist
-    if (!existingDaily || existingDaily.length === 0) {
-      // Generate challenges for different game modes
-      const scienceCategories = getRandomDailyCategories('science', 1);
-      const creativeCategories = getRandomDailyCategories('creative', 1);
-      const allCategories = [...scienceCategories, ...creativeCategories];
-      
-      for (const category of allCategories) {
-        const gameMode = scienceCategories.includes(category) ? 'science' : 'creative';
-        await supabase.from('challenges').insert({
-          challenge_type: 'daily',
-          title: category.title,
-          target_category: category.category,
-          game_mode: gameMode,
-          reward_tokens: 5,
-          start_date: today.toISOString(),
-          end_date: tomorrow.toISOString()
-        });
-      }
-      
-      console.log(`Generated ${allCategories.length} daily challenges`);
+    // Generate 2 new daily challenges
+    const scienceCategories = getRandomDailyCategories('science', 1);
+    const creativeCategories = getRandomDailyCategories('creative', 1);
+    const allCategories = [...scienceCategories, ...creativeCategories];
+    
+    for (const category of allCategories) {
+      const gameMode = scienceCategories.includes(category) ? 'science' : 'creative';
+      await supabase.from('challenges').insert({
+        challenge_type: 'daily',
+        title: category.title,
+        target_category: category.category,
+        game_mode: gameMode,
+        reward_tokens: 5,
+        start_date: today.toISOString(),
+        end_date: tomorrow.toISOString()
+      });
     }
+    
+    console.log(`Generated ${allCategories.length} daily challenges (replaced existing)`);
     
     // Generate weekly challenge on Mondays
     const dayOfWeek = today.getUTCDay();

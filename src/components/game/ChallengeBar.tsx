@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSupabase } from '@/components/auth/SupabaseProvider';
+import { createClient, getChallengePreference } from '@/lib/supabase-client';
 
 interface Challenge {
   id: string;
@@ -25,10 +27,25 @@ interface ChallengeBarProps {
 }
 
 export function ChallengeBar({ isAnonymous }: ChallengeBarProps) {
+  const { user } = useSupabase();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hiddenChallenges, setHiddenChallenges] = useState<Set<string>>(new Set());
+  const [showChallenges, setShowChallenges] = useState<boolean>(true);
+
+  // Load challenge preference for authenticated users
+  useEffect(() => {
+    const loadChallengePreference = async () => {
+      if (user && !isAnonymous) {
+        const supabase = createClient();
+        const preference = await getChallengePreference(supabase, user.id);
+        setShowChallenges(preference);
+      }
+    };
+
+    loadChallengePreference();
+  }, [user, isAnonymous]);
 
   useEffect(() => {
     fetchChallenges();
@@ -70,6 +87,9 @@ export function ChallengeBar({ isAnonymous }: ChallengeBarProps) {
     );
   }
 
+  // Don't show challenges if user has disabled them
+  if (!showChallenges) return null;
+
   if (loading) return null;
   if (error) return null;
   if (challenges.length === 0) return null;
@@ -79,7 +99,7 @@ export function ChallengeBar({ isAnonymous }: ChallengeBarProps) {
   const weeklyChallenges = challenges.filter(c => c.challenge_type === 'weekly' && !hiddenChallenges.has(c.id));
 
   return (
-    <div className="challenge-bar-container mb-4">
+    <div className="challenge-bar-container mb-4 relative z-50">
       <div className="grid gap-2">
         {/* Daily Challenges */}
         {dailyChallenges.map((challenge) => (
