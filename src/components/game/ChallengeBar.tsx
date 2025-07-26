@@ -24,9 +24,10 @@ interface Challenge {
 
 interface ChallengeBarProps {
   isAnonymous?: boolean;
+  currentGameMode?: 'science' | 'creative';
 }
 
-export function ChallengeBar({ isAnonymous }: ChallengeBarProps) {
+export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps) {
   const { user } = useSupabase();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,9 +95,19 @@ export function ChallengeBar({ isAnonymous }: ChallengeBarProps) {
   if (error) return null;
   if (challenges.length === 0) return null;
 
-  // Separate daily and weekly challenges and filter out hidden ones
-  const dailyChallenges = challenges.filter(c => c.challenge_type === 'daily' && !hiddenChallenges.has(c.id));
-  const weeklyChallenges = challenges.filter(c => c.challenge_type === 'weekly' && !hiddenChallenges.has(c.id));
+  // Filter challenges by game mode and hidden status
+  const filterChallengesByMode = (challenge: Challenge) => {
+    if (hiddenChallenges.has(challenge.id)) return false;
+    
+    // If no currentGameMode provided, show all challenges (main menu case)
+    if (!currentGameMode) return true;
+    
+    // Show "any" mode challenges or challenges matching current game mode
+    return challenge.game_mode === 'any' || challenge.game_mode === currentGameMode;
+  };
+
+  const dailyChallenges = challenges.filter(c => c.challenge_type === 'daily' && filterChallengesByMode(c));
+  const weeklyChallenges = challenges.filter(c => c.challenge_type === 'weekly' && filterChallengesByMode(c));
 
   return (
     <div className="challenge-bar-container mb-4 relative z-50">

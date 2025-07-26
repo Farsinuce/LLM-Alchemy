@@ -2709,7 +2709,7 @@ const LLMAlchemy = () => {
 
 
       {/* Challenge Bar - Moved to Bottom */}
-      <ChallengeBar isAnonymous={dbUser?.is_anonymous} />
+      <ChallengeBar isAnonymous={dbUser?.is_anonymous} currentGameMode={gameMode} />
 
       {/* Toast */}
       {toast && (

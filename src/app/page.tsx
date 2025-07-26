@@ -55,6 +55,11 @@ export default function Home() {
   
   // Challenge preferences
   const [showChallenges, setShowChallenges] = useState(true);
+  
+  // Completed challenges modal
+  const [showCompletedChallenges, setShowCompletedChallenges] = useState(false);
+  const [completedChallenges, setCompletedChallenges] = useState<any[]>([]);
+  const [loadingCompleted, setLoadingCompleted] = useState(false);
 
   // Show toast function
   const showToast = (message: string) => {
@@ -322,6 +327,37 @@ export default function Home() {
     }
   };
 
+  // Load completed challenges function
+  const loadCompletedChallenges = async () => {
+    if (!isRegistered) return;
+    
+    setLoadingCompleted(true);
+    try {
+      const response = await fetch('/api/challenges/completed');
+      if (response.ok) {
+        const data = await response.json();
+        setCompletedChallenges(data.completedChallenges || []);
+      } else {
+        showToast('Failed to load completed challenges');
+      }
+    } catch (error) {
+      console.error('Error loading completed challenges:', error);
+      showToast('Error loading completed challenges');
+    } finally {
+      setLoadingCompleted(false);
+    }
+  };
+
+  const handleViewAllChallenges = async () => {
+    if (!isRegistered) {
+      showToast('Please register to view challenges');
+      return;
+    }
+    
+    await loadCompletedChallenges();
+    setShowCompletedChallenges(true);
+  };
+
   const formatElementCount = (count: number) => {
     return count === 0 ? 'None' : `${count} element${count === 1 ? '' : 's'}`;
   };
@@ -562,7 +598,7 @@ export default function Home() {
             </div>
             <div className="mt-3 text-center">
               <button
-                onClick={handleContinueGame}
+                onClick={handleViewAllChallenges}
                 className="text-xs text-blue-400 hover:text-blue-300 underline"
               >
                 View all challenges →
@@ -805,6 +841,113 @@ export default function Home() {
                 className="btn btn-danger"
               >
                 Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Completed Challenges Modal */}
+      {showCompletedChallenges && (
+        <div 
+          className="modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowCompletedChallenges(false);
+            }
+          }}
+        >
+          <div className="modal-content max-w-2xl max-h-[80vh]">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-heading">Completed Challenges</h3>
+              <button
+                onClick={() => setShowCompletedChallenges(false)}
+                className="btn-ghost p-2 rounded-full"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            {loadingCompleted ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-purple-500 border-t-transparent mx-auto mb-2"></div>
+                  <div className="text-sm text-gray-400">Loading challenges...</div>
+                </div>
+              </div>
+            ) : completedChallenges.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-400 text-lg mb-2">🎯</div>
+                <div className="text-gray-400">No completed challenges yet</div>
+                <div className="text-gray-500 text-sm mt-1">Complete challenges in-game to see them here</div>
+              </div>
+            ) : (
+              <div className="space-y-4 overflow-y-auto max-h-96">
+                {completedChallenges.map((completion) => (
+                  <div key={completion.id} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">
+                          {completion.challenges?.challenge_type === 'daily' ? '🌟' : '🏆'}
+                        </span>
+                        <div>
+                          <div className="font-medium text-white">
+                            {completion.challenges?.title || 'Challenge'}
+                          </div>
+                          <div className="text-sm text-gray-400">
+                            {completion.challenges?.challenge_type === 'daily' ? 'Daily Challenge' : 'Weekly Challenge'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-green-400 font-medium">
+                          +{completion.tokens_awarded || completion.challenges?.reward_tokens || 0} tokens
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {new Date(completion.completed_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-gray-400">Discovered:</span>
+                      <span className="text-blue-400 font-medium">{completion.element_discovered}</span>
+                      {completion.game_mode && (
+                        <>
+                          <span className="text-gray-500">•</span>
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            completion.game_mode === 'science' 
+                              ? 'bg-blue-600/20 text-blue-400' 
+                              : 'bg-purple-600/20 text-purple-400'
+                          }`}>
+                            {completion.game_mode}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    
+                    {completion.challenges?.target_element && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Target: {completion.challenges.target_element}
+                      </div>
+                    )}
+                    
+                    {completion.challenges?.target_category && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Category: {completion.challenges.target_category}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => setShowCompletedChallenges(false)}
+                className="btn btn-surface"
+              >
+                Close
               </button>
             </div>
           </div>
