@@ -725,17 +725,23 @@ export default function Home() {
                 <label className="block text-sm font-medium mb-3">
                   Gameplay Options
                 </label>
-                <label className="flex items-center gap-3 cursor-pointer">
+                <label className={`flex items-center gap-3 ${isAnonymous ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                   <input
                     type="checkbox"
-                    checked={!tempShowChallenges}
-                    onChange={(e) => setTempShowChallenges(!e.target.checked)}
-                    className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500 focus:ring-2"
+                    checked={isAnonymous ? true : !tempShowChallenges}
+                    onChange={(e) => !isAnonymous && setTempShowChallenges(!e.target.checked)}
+                    disabled={isAnonymous}
+                    className={`w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500 focus:ring-2 ${isAnonymous ? 'opacity-50 cursor-not-allowed' : ''}`}
                   />
-                  <span className="text-sm text-gray-300">Disable challenges</span>
+                  <span className={`text-sm ${isAnonymous ? 'text-gray-500' : 'text-gray-300'}`}>
+                    Disable challenges
+                  </span>
                 </label>
                 <p className="text-xs text-gray-400 mt-2">
-                  When enabled, you won't receive challenge rewards or notifications
+                  {isAnonymous 
+                    ? 'Challenges are only available for registered users'
+                    : 'When enabled, you won\'t receive challenge rewards or notifications'
+                  }
                 </p>
               </div>
               
@@ -779,8 +785,8 @@ export default function Home() {
                       }
                     }
                     
-                    // Save challenge preference to Supabase
-                    if (user && tempShowChallenges !== showChallenges) {
+                    // Save challenge preference to Supabase (only for registered users)
+                    if (user && !isAnonymous && tempShowChallenges !== showChallenges) {
                       const supabase = createClient();
                       const success = await updateChallengePreference(supabase, user.id, tempShowChallenges);
                       if (success) {
