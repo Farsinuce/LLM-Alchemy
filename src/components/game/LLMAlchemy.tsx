@@ -1894,9 +1894,6 @@ const LLMAlchemy = () => {
     <div className="min-h-screen bg-gray-900 text-white flex flex-col relative overflow-hidden select-none" style={{ touchAction: touchDragging || isDraggingDivider ? 'none' : 'auto' }}>
       <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-gray-900 to-blue-900/20"></div>
       
-      {/* Challenge Bar */}
-      <ChallengeBar isAnonymous={dbUser?.is_anonymous} />
-      
       {/* Header */}
       <div className="relative z-10 bg-gray-800/80 backdrop-blur-sm p-4 shadow-lg">
         <div className="flex justify-between items-start mb-3">
@@ -2710,6 +2707,9 @@ const LLMAlchemy = () => {
         );
       })()}
 
+
+      {/* Challenge Bar - Moved to Bottom */}
+      <ChallengeBar isAnonymous={dbUser?.is_anonymous} />
 
       {/* Toast */}
       {toast && (

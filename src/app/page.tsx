@@ -383,32 +383,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Challenges Preview */}
-        {isRegistered && todaysChallenges.length > 0 && (
-          <div className="bg-gray-800/50 rounded-lg p-4 mb-6 text-left">
-            <h3 className="text-sm font-semibold mb-3 text-center">Today's Challenges</h3>
-            <div className="space-y-2">
-              {todaysChallenges.slice(0, 3).map(challenge => (
-                <div key={challenge.id} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span>{challenge.challenge_type === 'daily' ? '🌟' : '🏆'}</span>
-                    <span className="text-gray-300">{challenge.title}</span>
-                  </div>
-                  <span className="text-warning">+{challenge.reward_tokens}</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 text-center">
-              <button
-                onClick={handleContinueGame}
-                className="text-xs text-blue-400 hover:text-blue-300 underline"
-              >
-                View all challenges →
-              </button>
-            </div>
-          </div>
-        )}
-        
         {/* Single Action Button */}
         <div className="space-y-4">
           <button 
@@ -545,6 +519,32 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        {/* Challenges Preview - Moved to Bottom */}
+        {isRegistered && todaysChallenges.length > 0 && (
+          <div className="bg-gray-800/50 rounded-lg p-4 mt-6 text-left">
+            <h3 className="text-sm font-semibold mb-3 text-center">Today's Challenges</h3>
+            <div className="space-y-2">
+              {todaysChallenges.slice(0, 3).map(challenge => (
+                <div key={challenge.id} className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span>{challenge.challenge_type === 'daily' ? '🌟' : '🏆'}</span>
+                    <span className="text-gray-300">{challenge.title}</span>
+                  </div>
+                  <span className="text-warning">+{challenge.reward_tokens}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 text-center">
+              <button
+                onClick={handleContinueGame}
+                className="text-xs text-blue-400 hover:text-blue-300 underline"
+              >
+                View all challenges →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* LLM Options Modal */}

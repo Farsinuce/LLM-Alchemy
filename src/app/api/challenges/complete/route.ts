@@ -5,6 +5,19 @@ import { elementMatchesCategory } from '@/lib/challenge-elements';
 
 export const dynamic = 'force-dynamic';
 
+// Element type from game state
+interface SavedElement {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  unlockOrder: number;
+  rarity?: string;
+  reasoning?: string;
+  tags?: string[];
+  isEndElement?: boolean;
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
@@ -67,30 +80,44 @@ export async function POST(request: Request) {
     let challengeMet = false;
     
     if (challenge.challenge_type === 'daily' && challenge.target_category) {
-      // For daily challenges, verify the user actually discovered this element and get server-side tags
-      const { data: userElement, error: elementError } = await supabase
-        .from('user_elements')
-        .select('element_name, tags')
+      // For daily challenges, get the user's game state to verify they discovered the element
+      const { data: gameState, error: gameStateError } = await supabase
+        .from('game_states')
+        .select('elements')
         .eq('user_id', user.id)
-        .ilike('element_name', elementDiscovered)
+        .eq('game_mode', gameMode || 'science')
         .single();
       
-      if (!elementError && userElement && userElement.tags) {
-        // Use server-side tags instead of trusting client
-        const serverTags = Array.isArray(userElement.tags) ? userElement.tags : [];
-        challengeMet = elementMatchesCategory(serverTags, challenge.target_category);
+      if (!gameStateError && gameState && gameState.elements) {
+        // Find the discovered element in the user's game state
+        const discoveredElement = (gameState.elements as SavedElement[]).find((el: SavedElement) => 
+          el.name.toLowerCase() === elementDiscovered.toLowerCase()
+        );
+        
+        if (discoveredElement && discoveredElement.tags) {
+          // Use server-side tags from the user's saved game state
+          const serverTags = Array.isArray(discoveredElement.tags) ? discoveredElement.tags : [];
+          challengeMet = elementMatchesCategory(serverTags, challenge.target_category);
+        }
       }
     } else if (challenge.challenge_type === 'weekly' && challenge.target_element) {
-      // For weekly challenges, verify the user actually discovered this element
-      const { data: userElement, error: elementError } = await supabase
-        .from('user_elements')
-        .select('element_name')
+      // For weekly challenges, get the user's game state to verify they discovered the element
+      const { data: gameState, error: gameStateError } = await supabase
+        .from('game_states')
+        .select('elements')
         .eq('user_id', user.id)
-        .ilike('element_name', elementDiscovered)
+        .eq('game_mode', gameMode || 'science')
         .single();
       
-      if (!elementError && userElement) {
-        challengeMet = elementDiscovered.toLowerCase() === challenge.target_element.toLowerCase();
+      if (!gameStateError && gameState && gameState.elements) {
+        // Check if the user has discovered the target element
+        const discoveredElement = (gameState.elements as SavedElement[]).find((el: SavedElement) => 
+          el.name.toLowerCase() === challenge.target_element.toLowerCase()
+        );
+        
+        if (discoveredElement) {
+          challengeMet = elementDiscovered.toLowerCase() === challenge.target_element.toLowerCase();
+        }
       }
     }
     
