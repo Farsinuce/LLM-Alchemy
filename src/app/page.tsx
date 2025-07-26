@@ -33,11 +33,12 @@ export default function Home() {
   const [resetAchievements, setResetAchievements] = useState(false);
   const [selectedMode, setSelectedMode] = useState<'science' | 'creative'>('science');
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [todaysChallenges, setTodaysChallenges] = useState<{id: string, challenge_type: string, title: string, reward_tokens: number}[]>([]);
+  const [todaysChallenges, setTodaysChallenges] = useState<{id: string, challenge_type: string, title: string, reward_tokens: number, isCompleted: boolean, completionDetails: any}[]>([]);
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
   const [tempApiKey, setTempApiKey] = useState<string>('');
   const [tempSelectedModel, setTempSelectedModel] = useState<'flash' | 'pro'>('flash');
+  const [tempShowChallenges, setTempShowChallenges] = useState<boolean>(true);
   const [isValidatingKey, setIsValidatingKey] = useState<boolean>(false);
   const [toast, setToast] = useState<string>('');
   
@@ -49,6 +50,9 @@ export default function Home() {
   // Payment state
   const [isCreatingPayment, setIsCreatingPayment] = useState(false);
   const [showPaymentSection, setShowPaymentSection] = useState(false);
+  
+  // Challenge preferences
+  const [showChallenges, setShowChallenges] = useState(true);
 
   // Show toast function
   const showToast = (message: string) => {
@@ -99,6 +103,12 @@ export default function Home() {
       if (savedModel && (savedModel === 'flash' || savedModel === 'pro')) {
         setSelectedModel(savedModel);
       }
+    }
+    
+    // Load challenge preference from localStorage
+    const savedChallengePreference = localStorage.getItem('llm-alchemy-show-challenges');
+    if (savedChallengePreference !== null) {
+      setShowChallenges(savedChallengePreference === 'true');
     }
   }, []);
 
@@ -419,6 +429,7 @@ export default function Home() {
                   onClick={() => {
                     setTempApiKey(userApiKey);
                     setTempSelectedModel(selectedModel);
+                    setTempShowChallenges(showChallenges);
                     setShowApiKeyModal(true);
                   }}
                   className="btn btn-surface btn-sm"
@@ -447,6 +458,7 @@ export default function Home() {
                     onClick={() => {
                       setTempApiKey(userApiKey);
                       setTempSelectedModel(selectedModel);
+                      setTempShowChallenges(showChallenges);
                       setShowApiKeyModal(true);
                     }}
                     className="btn btn-surface btn-sm"
@@ -521,7 +533,7 @@ export default function Home() {
         </div>
 
         {/* Challenges Preview - Moved to Bottom */}
-        {isRegistered && todaysChallenges.length > 0 && (
+        {isRegistered && showChallenges && todaysChallenges.length > 0 && (
           <div className="bg-gray-800/50 rounded-lg p-4 mt-6 text-left">
             <h3 className="text-sm font-semibold mb-3 text-center">Today's Challenges</h3>
             <div className="space-y-2">
@@ -529,9 +541,18 @@ export default function Home() {
                 <div key={challenge.id} className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     <span>{challenge.challenge_type === 'daily' ? '🌟' : '🏆'}</span>
-                    <span className="text-gray-300">{challenge.title}</span>
+                    <span className={`${challenge.isCompleted ? 'line-through text-green-400' : 'text-gray-300'}`}>
+                      {challenge.title}
+                    </span>
+                    {challenge.isCompleted && challenge.completionDetails?.element_discovered && (
+                      <span className="text-green-400 text-xs">
+                        ✓ {challenge.completionDetails.element_discovered}
+                      </span>
+                    )}
                   </div>
-                  <span className="text-warning">+{challenge.reward_tokens}</span>
+                  <span className={`${challenge.isCompleted ? 'text-green-400' : 'text-warning'}`}>
+                    {challenge.isCompleted ? '✓' : `+${challenge.reward_tokens}`}
+                  </span>
                 </div>
               ))}
             </div>
@@ -656,6 +677,28 @@ export default function Home() {
                 </div>
               </div>
               
+              {/* Separator */}
+              <div className="border-t border-gray-600"></div>
+              
+              {/* Section 3: Challenge Toggle */}
+              <div>
+                <label className="block text-sm font-medium mb-3">
+                  Gameplay Options
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={tempShowChallenges}
+                    onChange={(e) => setTempShowChallenges(e.target.checked)}
+                    className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500 focus:ring-2"
+                  />
+                  <span className="text-sm text-gray-300">Show challenges</span>
+                </label>
+                <p className="text-xs text-gray-400 mt-2">
+                  Display daily and weekly challenges for registered users
+                </p>
+              </div>
+              
               <div className="flex gap-3 justify-end mt-6">
                 <button
                   onClick={() => {
@@ -694,6 +737,12 @@ export default function Home() {
                       if (success) {
                         setSelectedModel(tempSelectedModel);
                       }
+                    }
+                    
+                    // Save challenge preference to localStorage
+                    if (tempShowChallenges !== showChallenges) {
+                      setShowChallenges(tempShowChallenges);
+                      localStorage.setItem('llm-alchemy-show-challenges', tempShowChallenges.toString());
                     }
                     
                     setShowApiKeyModal(false);
