@@ -34,15 +34,14 @@ export async function GET(request: Request) {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    // Always delete existing daily challenges for today first
+    // DELETE ALL active daily challenges (not just ones starting today)
     await supabase
       .from('challenges')
       .delete()
       .eq('challenge_type', 'daily')
-      .gte('start_date', today.toISOString())
-      .lt('start_date', tomorrow.toISOString());
+      .gte('end_date', today.toISOString()); // Delete all daily challenges that haven't ended yet
     
-    // Generate 2 new daily challenges
+    // Generate exactly 2 new daily challenges
     const scienceCategories = getRandomDailyCategories('science', 1);
     const creativeCategories = getRandomDailyCategories('creative', 1);
     const allCategories = [...scienceCategories, ...creativeCategories];
@@ -60,51 +59,48 @@ export async function GET(request: Request) {
       });
     }
     
-    console.log(`Generated ${allCategories.length} daily challenges (replaced existing)`);
+    console.log(`Deleted all active daily challenges and generated ${allCategories.length} new ones`);
     
-    // Generate weekly challenge on Mondays
+    // Generate weekly challenge on Mondays (or every day for manual testing)
     const dayOfWeek = today.getUTCDay();
-    if (dayOfWeek === 1) { // Monday
+    if (dayOfWeek === 1 || isDebugRequest) { // Monday or manual debug request
       const weekEnd = new Date(today);
       weekEnd.setDate(weekEnd.getDate() + 7);
       
-      // Check if weekly challenge already exists
-      const { data: existingWeekly } = await supabase
+      // DELETE ALL active weekly challenges (not just check if one exists)
+      await supabase
         .from('challenges')
-        .select('id')
+        .delete()
         .eq('challenge_type', 'weekly')
-        .gte('start_date', today.toISOString())
-        .lt('start_date', tomorrow.toISOString());
+        .gte('end_date', today.toISOString()); // Delete all weekly challenges that haven't ended yet
       
-      if (!existingWeekly || existingWeekly.length === 0) {
-        // Get recent weekly challenges to avoid repeats
-        const fourWeeksAgo = new Date(today);
-        fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
-        
-        const { data: recentChallenges } = await supabase
-          .from('challenges')
-          .select('target_element')
-          .eq('challenge_type', 'weekly')
-          .gte('start_date', fourWeeksAgo.toISOString())
-          .not('target_element', 'is', null);
-        
-        const recentElements = recentChallenges?.map(c => c.target_element).filter(Boolean) || [];
-        // Randomly choose game mode for weekly challenge
-        const gameMode = Math.random() < 0.5 ? 'science' : 'creative';
-        const weeklyElement = getRandomWeeklyElement(gameMode, recentElements);
-        
-        await supabase.from('challenges').insert({
-          challenge_type: 'weekly',
-          title: `Discover ${weeklyElement}`,
-          target_element: weeklyElement,
-          game_mode: gameMode,
-          reward_tokens: 25,
-          start_date: today.toISOString(),
-          end_date: weekEnd.toISOString()
-        });
-        
-        console.log(`Generated weekly challenge: ${weeklyElement}`);
-      }
+      // Get recent weekly challenges to avoid repeats
+      const fourWeeksAgo = new Date(today);
+      fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+      
+      const { data: recentChallenges } = await supabase
+        .from('challenges')
+        .select('target_element')
+        .eq('challenge_type', 'weekly')
+        .gte('start_date', fourWeeksAgo.toISOString())
+        .not('target_element', 'is', null);
+      
+      const recentElements = recentChallenges?.map(c => c.target_element).filter(Boolean) || [];
+      // Randomly choose game mode for weekly challenge
+      const gameMode = Math.random() < 0.5 ? 'science' : 'creative';
+      const weeklyElement = getRandomWeeklyElement(gameMode, recentElements);
+      
+      await supabase.from('challenges').insert({
+        challenge_type: 'weekly',
+        title: `Discover ${weeklyElement}`,
+        target_element: weeklyElement,
+        game_mode: gameMode,
+        reward_tokens: 25,
+        start_date: today.toISOString(),
+        end_date: weekEnd.toISOString()
+      });
+      
+      console.log(`Deleted all active weekly challenges and generated new one: ${weeklyElement}`);
     }
     
     // Mark expired challenges as inactive (optional, for future use)
