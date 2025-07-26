@@ -217,6 +217,14 @@ const LLMAlchemy = () => {
   const checkChallengeCompletion = async (element: Element) => {
     if (!user || currentChallenges.length === 0) return;
     
+    // Skip challenge completion check if user has disabled challenges
+    if (dbUser && !dbUser.is_anonymous) {
+      const supabase = createClient();
+      const { getChallengePreference } = await import('@/lib/supabase-client');
+      const challengesEnabled = await getChallengePreference(supabase, user.id);
+      if (!challengesEnabled) return;
+    }
+    
     for (const challenge of currentChallenges) {
       // Skip if already completed
       if (challenge.isCompleted) continue;

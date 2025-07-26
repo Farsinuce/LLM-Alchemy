@@ -75,17 +75,9 @@ export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps
     setHiddenChallenges(prev => new Set([...prev, challengeId]));
   };
 
-  // Show registration prompt for anonymous users
+  // Don't show anything for anonymous users - challenges are for registered users only
   if (isAnonymous) {
-    return (
-      <div className="challenge-bar-container mb-4">
-        <div className="p-3 bg-surface-secondary rounded-lg border border-warning/30 text-center">
-          <p className="text-sm text-muted">
-            🔒 <span className="text-blue-400 underline cursor-pointer" onClick={() => window.location.href = '/'}>Register</span> to participate in challenges
-          </p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   // Don't show challenges if user has disabled them

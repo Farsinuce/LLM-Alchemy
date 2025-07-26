@@ -53,7 +53,7 @@ export default function Home() {
   const [isCreatingPayment, setIsCreatingPayment] = useState(false);
   const [showPaymentSection, setShowPaymentSection] = useState(false);
   
-  // Challenge preferences
+  // Challenge preferences - note: we show "Disable challenges" in UI but store as show_challenges in DB
   const [showChallenges, setShowChallenges] = useState(true);
   
   // Completed challenges modal
@@ -728,14 +728,14 @@ export default function Home() {
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={tempShowChallenges}
-                    onChange={(e) => setTempShowChallenges(e.target.checked)}
+                    checked={!tempShowChallenges}
+                    onChange={(e) => setTempShowChallenges(!e.target.checked)}
                     className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500 focus:ring-2"
                   />
-                  <span className="text-sm text-gray-300">Show challenges</span>
+                  <span className="text-sm text-gray-300">Disable challenges</span>
                 </label>
                 <p className="text-xs text-gray-400 mt-2">
-                  Display daily and weekly challenges for registered users
+                  When enabled, you won't receive challenge rewards or notifications
                 </p>
               </div>
               

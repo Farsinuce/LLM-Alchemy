@@ -1,6 +1,7 @@
 schema_name,table_name,policy_name,command,type,using_expression,check_expression
 public,challenge_completions,user_completions_insert,INSERT,PERMISSIVE,null,(user_id = auth.uid())
 public,challenge_completions,user_completions_select,SELECT,PERMISSIVE,(user_id = auth.uid()),null
+public,challenges,authenticated_insert,INSERT,PERMISSIVE,null,(auth.uid() IS NOT NULL)
 public,challenges,public_read,SELECT,PERMISSIVE,true,null
 public,discovered_elements,Allow all operations on discovered_elements,ALL,PERMISSIVE,true,null
 public,game_states,game_states_delete_optimized,DELETE,PERMISSIVE,(( SELECT auth.uid() AS uid) = user_id),null

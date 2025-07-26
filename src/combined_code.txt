@@ -1,90 +1,3 @@
-===== START: C:\ai\LLM-Alchemy\src\consolidate-files.bat ===== 
-@echo off
-setlocal enabledelayedexpansion
-
-:: Prompt user for search pattern
-echo File Consolidator - Combines multiple files into one text file
-echo.
-set /p "pattern=Enter file pattern (e.g., *.txt, *.java, main.*, *.*): "
-
-:: Ask whether to exclude media files (only for wildcard patterns)
-set "excludeMedia=false"
-echo.
-if "%pattern%"=="*.*" (
-    set /p "choice=Do you want to exclude common media files (jpg, png, mp3, etc)? [Y/N]: "
-    if /I "!choice!"=="Y" set "excludeMedia=true"
-) else (
-    :: Check if pattern ends with .* (but not *.*)
-    set "checkPattern=%pattern%"
-    if "!checkPattern:~-2!"==".*" (
-        set /p "choice=Do you want to exclude common media files? [Y/N]: "
-        if /I "!choice!"=="Y" set "excludeMedia=true"
-    )
-)
-
-:: Define media extensions to exclude
-set "mediaExt=.png .jpg .jpeg .gif .ico .bmp .tiff .tif .svg .webp"
-set "mediaExt=!mediaExt! .mp4 .mp3 .wav .avi .mkv .mov .flac .ogg .m4a .wma"
-set "mediaExt=!mediaExt! .zip .rar .7z .tar .gz .exe .dll .bin .iso"
-set "mediaExt=!mediaExt! .pdf .doc .docx .xls .xlsx .ppt .pptx"
-
-:: Output filename
-set "outputFile=combined_output.txt"
-
-:: Remove existing output file
-if exist "%outputFile%" del "%outputFile%"
-
-:: Count files
-set "fileCount=0"
-set "skippedCount=0"
-
-echo.
-echo Processing files matching pattern: %pattern%
-echo.
-
-:: Process matching files
-for /R %%F in (%pattern%) do (
-    set "ext=%%~xF"
-    set "includeFile=true"
-    
-    :: Skip if it's the output file itself
-    if /I "%%~nxF"=="%outputFile%" set "includeFile=false"
-    
-    :: Check if we should exclude this file type
-    if /I "!excludeMedia!"=="true" if "!includeFile!"=="true" (
-        for %%M in (%mediaExt%) do (
-            if /I "%%~xF"=="%%M" (
-                set "includeFile=false"
-                set /a skippedCount+=1
-            )
-        )
-    )
-    
-    :: Add file to output
-    if "!includeFile!"=="true" (
-        echo Processing: %%~nxF
-        echo ===== START: %%F ===== >> "%outputFile%"
-        type "%%F" >> "%outputFile%" 2>nul
-        echo. >> "%outputFile%"
-        echo ===== END: %%F ===== >> "%outputFile%"
-        echo. >> "%outputFile%"
-        echo. >> "%outputFile%"
-        set /a fileCount+=1
-    )
-)
-
-:: Summary
-echo.
-echo ========================================
-echo Done! Results saved to: %outputFile%
-echo Files processed: !fileCount!
-if !skippedCount! GTR 0 echo Files skipped (media/binary): !skippedCount!
-echo ========================================
-echo.
-pause 
-===== END: C:\ai\LLM-Alchemy\src\consolidate-files.bat ===== 
- 
- 
 ===== START: C:\ai\LLM-Alchemy\src\app\globals.css ===== 
 @import "tailwindcss";
 
@@ -494,16 +407,14 @@ import {
   getGameProgress, 
   resetGameState, 
   getLlmModelPreference, 
-  updateLlmModelPreference 
+  updateLlmModelPreference,
+  getChallengePreference,
+  updateChallengePreference
 } from '@/lib/supabase-client';
 import dynamic from 'next/dynamic';
 
 const AuthModal = dynamic(() => import('@/components/auth/AuthModal'), { ssr: false });
 import { 
-  shouldShowUpgradePrompt, 
-  shouldShowUpgradeButton, 
-  upgradeAnonymousAccount, 
-  upgradeAnonymousAccountWithGoogle,
   checkAndHandleUpgradeCallback
 } from '@/lib/auth-utils';
 import { GAME_CONFIG } from '@/lib/game-config';
@@ -522,10 +433,12 @@ export default function Home() {
   const [resetAchievements, setResetAchievements] = useState(false);
   const [selectedMode, setSelectedMode] = useState<'science' | 'creative'>('science');
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [todaysChallenges, setTodaysChallenges] = useState<{id: string, challenge_type: string, title: string, reward_tokens: number, isCompleted: boolean, completionDetails: any}[]>([]);
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
   const [tempApiKey, setTempApiKey] = useState<string>('');
   const [tempSelectedModel, setTempSelectedModel] = useState<'flash' | 'pro'>('flash');
+  const [tempShowChallenges, setTempShowChallenges] = useState<boolean>(true);
   const [isValidatingKey, setIsValidatingKey] = useState<boolean>(false);
   const [toast, setToast] = useState<string>('');
   
@@ -533,10 +446,18 @@ export default function Home() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
   const [showUpgradeBenefits, setShowUpgradeBenefits] = useState(false);
-  const [isUpgrading, setIsUpgrading] = useState(false);
   
   // Payment state
   const [isCreatingPayment, setIsCreatingPayment] = useState(false);
+  const [showPaymentSection, setShowPaymentSection] = useState(false);
+  
+  // Challenge preferences
+  const [showChallenges, setShowChallenges] = useState(true);
+  
+  // Completed challenges modal
+  const [showCompletedChallenges, setShowCompletedChallenges] = useState(false);
+  const [completedChallenges, setCompletedChallenges] = useState<any[]>([]);
+  const [loadingCompleted, setLoadingCompleted] = useState(false);
 
   // Show toast function
   const showToast = (message: string) => {
@@ -576,7 +497,7 @@ export default function Home() {
     }
   };
 
-  // Load API key from localStorage and model preference from Supabase on mount
+  // Load API key from localStorage and preferences from Supabase on mount
   useEffect(() => {
     const savedApiKey = localStorage.getItem('llm-alchemy-api-key');
     
@@ -590,17 +511,25 @@ export default function Home() {
     }
   }, []);
 
-  // Load model preference from Supabase for non-API-key users
+  // Load model preference and challenge preference from Supabase
   useEffect(() => {
-    const loadModelPreference = async () => {
-      if (user && !userApiKey) {
+    const loadPreferences = async () => {
+      if (user) {
         const supabase = createClient();
-        const modelPreference = await getLlmModelPreference(supabase, user.id);
-        setSelectedModel(modelPreference);
+        
+        // Load model preference for non-API-key users
+        if (!userApiKey) {
+          const modelPreference = await getLlmModelPreference(supabase, user.id);
+          setSelectedModel(modelPreference);
+        }
+        
+        // Load challenge preference for all users
+        const challengePreference = await getChallengePreference(supabase, user.id);
+        setShowChallenges(challengePreference);
       }
     };
 
-    loadModelPreference();
+    loadPreferences();
   }, [user, userApiKey]);
 
   // Check for upgrade callback on mount
@@ -621,19 +550,6 @@ export default function Home() {
     showToast('Welcome! You can now purchase tokens and subscriptions.');
   };
 
-  const handleUpgradeAccount = async () => {
-    if (!user || !dbUser) return;
-    
-    setIsUpgrading(true);
-    const result = await upgradeAnonymousAccountWithGoogle(user.id);
-    
-    if (result.success) {
-      showToast(result.message);
-    } else {
-      showToast(result.message);
-      setIsUpgrading(false);
-    }
-  };
 
   const handleShowAuth = (mode: 'login' | 'register' = 'login', showBenefits = false) => {
     setAuthModalMode(mode);
@@ -702,9 +618,6 @@ export default function Home() {
   const isRegistered = hasSession && !dbUser?.is_anonymous;
   const isAnonymous = hasSession && (dbUser?.is_anonymous || false);
   const isLoggedOut = !hasSession;
-  
-  const shouldShowUpgrade = shouldShowUpgradeButton(dailyCount, GAME_CONFIG.DAILY_FREE_COMBINATIONS, isAnonymous);
-  const shouldShowUpgradePromptNow = shouldShowUpgradePrompt(dailyCount, GAME_CONFIG.DAILY_FREE_COMBINATIONS, isAnonymous);
 
   // Save API key to localStorage when it changes
   useEffect(() => {
@@ -729,6 +642,27 @@ export default function Home() {
 
     loadProgress();
   }, [user]);
+
+  // Load challenges for registered users
+  useEffect(() => {
+    const loadChallenges = async () => {
+      if (isRegistered) {
+        try {
+          const response = await fetch('/api/challenges/current');
+          if (response.ok) {
+            const data = await response.json();
+            setTodaysChallenges(data.challenges || []);
+          }
+        } catch (error) {
+          console.error('Error loading challenges:', error);
+        }
+      } else {
+        setTodaysChallenges([]);
+      }
+    };
+
+    loadChallenges();
+  }, [isRegistered]);
 
   // Refresh progress when page becomes visible (returning from game)
   useEffect(() => {
@@ -789,6 +723,37 @@ export default function Home() {
       const gameProgress = await getGameProgress(supabase, user.id);
       setProgress(gameProgress);
     }
+  };
+
+  // Load completed challenges function
+  const loadCompletedChallenges = async () => {
+    if (!isRegistered) return;
+    
+    setLoadingCompleted(true);
+    try {
+      const response = await fetch('/api/challenges/completed');
+      if (response.ok) {
+        const data = await response.json();
+        setCompletedChallenges(data.completedChallenges || []);
+      } else {
+        showToast('Failed to load completed challenges');
+      }
+    } catch (error) {
+      console.error('Error loading completed challenges:', error);
+      showToast('Error loading completed challenges');
+    } finally {
+      setLoadingCompleted(false);
+    }
+  };
+
+  const handleViewAllChallenges = async () => {
+    if (!isRegistered) {
+      showToast('Please register to view challenges');
+      return;
+    }
+    
+    await loadCompletedChallenges();
+    setShowCompletedChallenges(true);
   };
 
   const formatElementCount = (count: number) => {
@@ -866,7 +831,7 @@ export default function Home() {
             </div>
           </div>
         )}
-        
+
         {/* Single Action Button */}
         <div className="space-y-4">
           <button 
@@ -902,6 +867,7 @@ export default function Home() {
                   onClick={() => {
                     setTempApiKey(userApiKey);
                     setTempSelectedModel(selectedModel);
+                    setTempShowChallenges(showChallenges);
                     setShowApiKeyModal(true);
                   }}
                   className="btn btn-surface btn-sm"
@@ -930,6 +896,7 @@ export default function Home() {
                     onClick={() => {
                       setTempApiKey(userApiKey);
                       setTempSelectedModel(selectedModel);
+                      setTempShowChallenges(showChallenges);
                       setShowApiKeyModal(true);
                     }}
                     className="btn btn-surface btn-sm"
@@ -946,18 +913,17 @@ export default function Home() {
           {isRegistered && dbUser?.subscription_status === 'free' && (
             <div className="flex justify-center mt-4">
               <button
-                onClick={() => handleStripePayment('subscription_monthly')}
-                disabled={isCreatingPayment}
+                onClick={() => setShowPaymentSection(!showPaymentSection)}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-lg transition-colors text-sm text-white font-medium"
               >
                 <span>⭐</span>
-                <span>{isCreatingPayment ? 'Processing...' : 'Upgrade'}</span>
+                <span>{showPaymentSection ? 'Hide Options' : 'Upgrade'}</span>
               </button>
             </div>
           )}
           
           {/* Payment Buttons for Authenticated Users */}
-          {!isAnonymous && dbUser && (
+          {!isAnonymous && dbUser && showPaymentSection && (
             <div className="mt-6 p-4 bg-gray-800/50 rounded-lg">
               <h3 className="text-lg font-semibold mb-4 text-center">Get More Tokens</h3>
               <div className="grid grid-cols-2 gap-3 mb-4">
@@ -1003,6 +969,41 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        {/* Challenges Preview - Moved to Bottom */}
+        {isRegistered && showChallenges && todaysChallenges.length > 0 && (
+          <div className="bg-gray-800/50 rounded-lg p-4 mt-6 text-left">
+            <h3 className="text-sm font-semibold mb-3 text-center">Today's Challenges</h3>
+            <div className="space-y-2">
+              {todaysChallenges.slice(0, 3).map(challenge => (
+                <div key={challenge.id} className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span>{challenge.challenge_type === 'daily' ? '🌟' : '🏆'}</span>
+                    <span className={`${challenge.isCompleted ? 'line-through text-green-400' : 'text-gray-300'}`}>
+                      {challenge.title}
+                    </span>
+                    {challenge.isCompleted && challenge.completionDetails?.element_discovered && (
+                      <span className="text-green-400 text-xs">
+                        ✓ {challenge.completionDetails.element_discovered}
+                      </span>
+                    )}
+                  </div>
+                  <span className={`${challenge.isCompleted ? 'text-green-400' : 'text-warning'}`}>
+                    {challenge.isCompleted ? '✓' : `+${challenge.reward_tokens}`}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 text-center">
+              <button
+                onClick={handleViewAllChallenges}
+                className="text-xs text-blue-400 hover:text-blue-300 underline"
+              >
+                View all challenges →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* LLM Options Modal */}
@@ -1114,6 +1115,28 @@ export default function Home() {
                 </div>
               </div>
               
+              {/* Separator */}
+              <div className="border-t border-gray-600"></div>
+              
+              {/* Section 3: Challenge Toggle */}
+              <div>
+                <label className="block text-sm font-medium mb-3">
+                  Gameplay Options
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={tempShowChallenges}
+                    onChange={(e) => setTempShowChallenges(e.target.checked)}
+                    className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500 focus:ring-2"
+                  />
+                  <span className="text-sm text-gray-300">Show challenges</span>
+                </label>
+                <p className="text-xs text-gray-400 mt-2">
+                  Display daily and weekly challenges for registered users
+                </p>
+              </div>
+              
               <div className="flex gap-3 justify-end mt-6">
                 <button
                   onClick={() => {
@@ -1127,7 +1150,7 @@ export default function Home() {
                 </button>
                 <button
                   onClick={async () => {
-                    let validationPassed = true;
+                    const validationPassed = true;
                     
                     // Validate API key if provided
                     if (tempApiKey.trim()) {
@@ -1151,6 +1174,15 @@ export default function Home() {
                       const success = await updateLlmModelPreference(supabase, user.id, tempSelectedModel);
                       if (success) {
                         setSelectedModel(tempSelectedModel);
+                      }
+                    }
+                    
+                    // Save challenge preference to Supabase
+                    if (user && tempShowChallenges !== showChallenges) {
+                      const supabase = createClient();
+                      const success = await updateChallengePreference(supabase, user.id, tempShowChallenges);
+                      if (success) {
+                        setShowChallenges(tempShowChallenges);
                       }
                     }
                     
@@ -1213,6 +1245,113 @@ export default function Home() {
         </div>
       )}
 
+      {/* Completed Challenges Modal */}
+      {showCompletedChallenges && (
+        <div 
+          className="modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowCompletedChallenges(false);
+            }
+          }}
+        >
+          <div className="modal-content max-w-2xl max-h-[80vh]">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-heading">Completed Challenges</h3>
+              <button
+                onClick={() => setShowCompletedChallenges(false)}
+                className="btn-ghost p-2 rounded-full"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            {loadingCompleted ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-purple-500 border-t-transparent mx-auto mb-2"></div>
+                  <div className="text-sm text-gray-400">Loading challenges...</div>
+                </div>
+              </div>
+            ) : completedChallenges.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-400 text-lg mb-2">🎯</div>
+                <div className="text-gray-400">No completed challenges yet</div>
+                <div className="text-gray-500 text-sm mt-1">Complete challenges in-game to see them here</div>
+              </div>
+            ) : (
+              <div className="space-y-4 overflow-y-auto max-h-96">
+                {completedChallenges.map((completion) => (
+                  <div key={completion.id} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">
+                          {completion.challenges?.challenge_type === 'daily' ? '🌟' : '🏆'}
+                        </span>
+                        <div>
+                          <div className="font-medium text-white">
+                            {completion.challenges?.title || 'Challenge'}
+                          </div>
+                          <div className="text-sm text-gray-400">
+                            {completion.challenges?.challenge_type === 'daily' ? 'Daily Challenge' : 'Weekly Challenge'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-green-400 font-medium">
+                          +{completion.tokens_awarded || completion.challenges?.reward_tokens || 0} tokens
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {new Date(completion.completed_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-gray-400">Discovered:</span>
+                      <span className="text-blue-400 font-medium">{completion.element_discovered}</span>
+                      {completion.game_mode && (
+                        <>
+                          <span className="text-gray-500">•</span>
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            completion.game_mode === 'science' 
+                              ? 'bg-blue-600/20 text-blue-400' 
+                              : 'bg-purple-600/20 text-purple-400'
+                          }`}>
+                            {completion.game_mode}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    
+                    {completion.challenges?.target_element && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Target: {completion.challenges.target_element}
+                      </div>
+                    )}
+                    
+                    {completion.challenges?.target_category && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Category: {completion.challenges.target_category}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => setShowCompletedChallenges(false)}
+                className="btn btn-surface"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* AuthModal */}
       <AuthModal
         isOpen={showAuthModal}
@@ -1237,15 +1376,28 @@ export default function Home() {
  
 ===== START: C:\ai\LLM-Alchemy\src\app\api\challenges\complete\route.ts ===== 
 // Mark a challenge as completed for the current user
-import { createClient } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase';
 import { NextResponse } from 'next/server';
 import { elementMatchesCategory } from '@/lib/challenge-elements';
 
 export const dynamic = 'force-dynamic';
 
+// Element type from game state
+interface SavedElement {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  unlockOrder: number;
+  rarity?: string;
+  reasoning?: string;
+  tags?: string[];
+  isEndElement?: boolean;
+}
+
 export async function POST(request: Request) {
   try {
-    const supabase = createClient();
+    const supabase = await createServerSupabaseClient();
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -1253,9 +1405,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check if user is anonymous - only registered users can complete challenges
+    const { data: dbUser } = await supabase.from('users').select('is_anonymous').eq('id', user.id).single();
+    if (dbUser?.is_anonymous) {
+      return NextResponse.json({ 
+        error: 'Anonymous users cannot complete challenges' 
+      }, { status: 403 });
+    }
+
     // Get request body
     const body = await request.json();
-    const { challengeId, elementDiscovered, elementTags, gameMode } = body;
+    const { challengeId, elementDiscovered, gameMode } = body;
     
     if (!challengeId || !elementDiscovered) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -1297,11 +1457,45 @@ export async function POST(request: Request) {
     let challengeMet = false;
     
     if (challenge.challenge_type === 'daily' && challenge.target_category) {
-      // For daily challenges, check if element matches the category
-      challengeMet = elementTags ? elementMatchesCategory(elementTags, challenge.target_category) : false;
+      // For daily challenges, get the user's game state to verify they discovered the element
+      const { data: gameState, error: gameStateError } = await supabase
+        .from('game_states')
+        .select('elements')
+        .eq('user_id', user.id)
+        .eq('game_mode', gameMode || 'science')
+        .single();
+      
+      if (!gameStateError && gameState && gameState.elements) {
+        // Find the discovered element in the user's game state
+        const discoveredElement = (gameState.elements as SavedElement[]).find((el: SavedElement) => 
+          el.name.toLowerCase() === elementDiscovered.toLowerCase()
+        );
+        
+        if (discoveredElement && discoveredElement.tags) {
+          // Use server-side tags from the user's saved game state
+          const serverTags = Array.isArray(discoveredElement.tags) ? discoveredElement.tags : [];
+          challengeMet = elementMatchesCategory(serverTags, challenge.target_category);
+        }
+      }
     } else if (challenge.challenge_type === 'weekly' && challenge.target_element) {
-      // For weekly challenges, check exact element match (case insensitive)
-      challengeMet = elementDiscovered.toLowerCase() === challenge.target_element.toLowerCase();
+      // For weekly challenges, get the user's game state to verify they discovered the element
+      const { data: gameState, error: gameStateError } = await supabase
+        .from('game_states')
+        .select('elements')
+        .eq('user_id', user.id)
+        .eq('game_mode', gameMode || 'science')
+        .single();
+      
+      if (!gameStateError && gameState && gameState.elements) {
+        // Check if the user has discovered the target element
+        const discoveredElement = (gameState.elements as SavedElement[]).find((el: SavedElement) => 
+          el.name.toLowerCase() === challenge.target_element.toLowerCase()
+        );
+        
+        if (discoveredElement) {
+          challengeMet = elementDiscovered.toLowerCase() === challenge.target_element.toLowerCase();
+        }
+      }
     }
     
     if (!challengeMet) {
@@ -1333,26 +1527,28 @@ export async function POST(request: Request) {
     
     // Award tokens to user if the challenge has a reward
     if (challenge.reward_tokens > 0) {
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('token_balance')
-        .eq('id', user.id)
-        .single();
+      const { data: newBalance, error: tokenError } = await supabase
+        .rpc('increment_user_tokens', {
+          p_user_id: user.id,
+          p_amount: challenge.reward_tokens
+        });
       
-      if (!userError && userData) {
-        const newBalance = (userData.token_balance || 0) + challenge.reward_tokens;
-        
-        await supabase
-          .from('users')
-          .update({ token_balance: newBalance })
-          .eq('id', user.id);
-        
+      if (!tokenError) {
         // Return the new token balance so the frontend can update
         return NextResponse.json({ 
           success: true,
           completion,
           tokensAwarded: challenge.reward_tokens,
           newTokenBalance: newBalance
+        });
+      } else {
+        console.error('Error awarding tokens:', tokenError);
+        // Still return success for completion, just warn about tokens
+        return NextResponse.json({ 
+          success: true,
+          completion,
+          tokensAwarded: 0,
+          warning: 'Challenge completed but tokens could not be awarded'
         });
       }
     }
@@ -1375,21 +1571,92 @@ export async function POST(request: Request) {
 ===== END: C:\ai\LLM-Alchemy\src\app\api\challenges\complete\route.ts ===== 
  
  
+===== START: C:\ai\LLM-Alchemy\src\app\api\challenges\completed\route.ts ===== 
+import { createServerSupabaseClient } from '@/lib/supabase';
+import { NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
+
+export async function GET() {
+  try {
+    const supabase = await createServerSupabaseClient();
+    
+    // Get the current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Fetch all completed challenges for the user
+    const { data: completedChallenges, error } = await supabase
+      .from('challenge_completions')
+      .select(`
+        id,
+        challenge_id,
+        element_discovered,
+        game_mode,
+        completed_at,
+        tokens_awarded,
+        challenges (
+          challenge_type,
+          title,
+          target_element,
+          target_category,
+          reward_tokens,
+          start_date,
+          end_date
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('completed_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching completed challenges:', error);
+      return NextResponse.json({ error: 'Failed to fetch completed challenges' }, { status: 500 });
+    }
+
+    return NextResponse.json({ 
+      completedChallenges: completedChallenges || []
+    });
+    
+  } catch (error) {
+    console.error('Error in completed challenges API:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+ 
+===== END: C:\ai\LLM-Alchemy\src\app\api\challenges\completed\route.ts ===== 
+ 
+ 
 ===== START: C:\ai\LLM-Alchemy\src\app\api\challenges\current\route.ts ===== 
 // Get current active challenges with user completion status
-import { createClient } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const supabase = createClient();
+    const supabase = await createServerSupabaseClient();
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ challenges: [], completions: [] });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user is anonymous - only registered users can access challenges
+    const { data: dbUser } = await supabase.from('users').select('is_anonymous').eq('id', user.id).single();
+    if (dbUser?.is_anonymous) {
+      return NextResponse.json({ 
+        challenges: [],
+        message: 'Register to access challenges' 
+      }, { status: 403 });
     }
 
     const now = new Date();
@@ -1442,7 +1709,7 @@ export async function GET() {
  
 ===== START: C:\ai\LLM-Alchemy\src\app\api\challenges\generate\route.ts ===== 
 // Challenge generation endpoint - called by Vercel Cron daily at midnight Copenhagen time
-import { createClient } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase';
 import { getRandomDailyCategories, getRandomWeeklyElement } from '@/lib/challenge-elements';
 import { NextResponse } from 'next/server';
 
@@ -1451,100 +1718,99 @@ export const maxDuration = 30;
 
 export async function GET(request: Request) {
   try {
-    // Verify cron secret to prevent unauthorized calls
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
+    // Check for debug trigger
+    const { searchParams } = new URL(request.url);
+    const debugSecret = searchParams.get('secret');
+    const isDebugRequest = debugSecret === 'my-llm-alchemy-cron-secret-2025-xyz789';
     
-    // In development, allow calls without secret
-    if (process.env.NODE_ENV === 'production' && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Verify cron secret to prevent unauthorized calls (skip if debug request)
+    if (!isDebugRequest) {
+      const authHeader = request.headers.get('authorization');
+      const cronSecret = process.env.CRON_SECRET;
+      
+      // In development, allow calls without secret
+      if (process.env.NODE_ENV === 'production' && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
-    const supabase = createClient();
+    const supabase = await createServerSupabaseClient();
     const now = new Date();
     
-    // Set to Copenhagen timezone midnight
-    const copenhagenOffset = 2; // UTC+2 (adjust for DST if needed)
-    const today = new Date(now);
-    today.setUTCHours(-copenhagenOffset, 0, 0, 0);
+    // Get Copenhagen timezone midnight using proper timezone handling
+    const copenhagenNow = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Copenhagen"}));
+    const today = new Date(copenhagenNow.getFullYear(), copenhagenNow.getMonth(), copenhagenNow.getDate());
     
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    // Check if daily challenges already exist for today
-    const { data: existingDaily } = await supabase
+    // DELETE ALL active daily challenges (not just ones starting today)
+    await supabase
       .from('challenges')
-      .select('id')
+      .delete()
       .eq('challenge_type', 'daily')
-      .gte('start_date', today.toISOString())
-      .lt('start_date', tomorrow.toISOString());
+      .gte('end_date', today.toISOString()); // Delete all daily challenges that haven't ended yet
     
-    // Generate 2 daily challenges if none exist
-    if (!existingDaily || existingDaily.length === 0) {
-      // Generate challenges for different game modes
-      const scienceCategories = getRandomDailyCategories('science', 1);
-      const creativeCategories = getRandomDailyCategories('creative', 1);
-      const allCategories = [...scienceCategories, ...creativeCategories];
-      
-      for (const category of allCategories) {
-        const gameMode = scienceCategories.includes(category) ? 'science' : 'creative';
-        await supabase.from('challenges').insert({
-          challenge_type: 'daily',
-          title: category.title,
-          target_category: category.category,
-          game_mode: gameMode,
-          reward_tokens: 5,
-          start_date: today.toISOString(),
-          end_date: tomorrow.toISOString()
-        });
-      }
-      
-      console.log(`Generated ${allCategories.length} daily challenges`);
+    // Generate exactly 2 new daily challenges
+    const scienceCategories = getRandomDailyCategories('science', 1);
+    const creativeCategories = getRandomDailyCategories('creative', 1);
+    const allCategories = [...scienceCategories, ...creativeCategories];
+    
+    for (const category of allCategories) {
+      const gameMode = scienceCategories.includes(category) ? 'science' : 'creative';
+      await supabase.from('challenges').insert({
+        challenge_type: 'daily',
+        title: category.title,
+        target_category: category.category,
+        game_mode: gameMode,
+        reward_tokens: 5,
+        start_date: today.toISOString(),
+        end_date: tomorrow.toISOString()
+      });
     }
     
-    // Generate weekly challenge on Mondays
+    console.log(`Deleted all active daily challenges and generated ${allCategories.length} new ones`);
+    
+    // Generate weekly challenge on Mondays (or every day for manual testing)
     const dayOfWeek = today.getUTCDay();
-    if (dayOfWeek === 1) { // Monday
+    if (dayOfWeek === 1 || isDebugRequest) { // Monday or manual debug request
       const weekEnd = new Date(today);
       weekEnd.setDate(weekEnd.getDate() + 7);
       
-      // Check if weekly challenge already exists
-      const { data: existingWeekly } = await supabase
+      // DELETE ALL active weekly challenges (not just check if one exists)
+      await supabase
         .from('challenges')
-        .select('id')
+        .delete()
         .eq('challenge_type', 'weekly')
-        .gte('start_date', today.toISOString())
-        .lt('start_date', tomorrow.toISOString());
+        .gte('end_date', today.toISOString()); // Delete all weekly challenges that haven't ended yet
       
-      if (!existingWeekly || existingWeekly.length === 0) {
-        // Get recent weekly challenges to avoid repeats
-        const fourWeeksAgo = new Date(today);
-        fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
-        
-        const { data: recentChallenges } = await supabase
-          .from('challenges')
-          .select('target_element')
-          .eq('challenge_type', 'weekly')
-          .gte('start_date', fourWeeksAgo.toISOString())
-          .not('target_element', 'is', null);
-        
-        const recentElements = recentChallenges?.map(c => c.target_element).filter(Boolean) || [];
-        // Randomly choose game mode for weekly challenge
-        const gameMode = Math.random() < 0.5 ? 'science' : 'creative';
-        const weeklyElement = getRandomWeeklyElement(gameMode, recentElements);
-        
-        await supabase.from('challenges').insert({
-          challenge_type: 'weekly',
-          title: `Discover ${weeklyElement}`,
-          target_element: weeklyElement,
-          game_mode: gameMode,
-          reward_tokens: 25,
-          start_date: today.toISOString(),
-          end_date: weekEnd.toISOString()
-        });
-        
-        console.log(`Generated weekly challenge: ${weeklyElement}`);
-      }
+      // Get recent weekly challenges to avoid repeats
+      const fourWeeksAgo = new Date(today);
+      fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+      
+      const { data: recentChallenges } = await supabase
+        .from('challenges')
+        .select('target_element')
+        .eq('challenge_type', 'weekly')
+        .gte('start_date', fourWeeksAgo.toISOString())
+        .not('target_element', 'is', null);
+      
+      const recentElements = recentChallenges?.map(c => c.target_element).filter(Boolean) || [];
+      // Randomly choose game mode for weekly challenge
+      const gameMode = Math.random() < 0.5 ? 'science' : 'creative';
+      const weeklyElement = getRandomWeeklyElement(gameMode, recentElements);
+      
+      await supabase.from('challenges').insert({
+        challenge_type: 'weekly',
+        title: `Discover ${weeklyElement}`,
+        target_element: weeklyElement,
+        game_mode: gameMode,
+        reward_tokens: 25,
+        start_date: today.toISOString(),
+        end_date: weekEnd.toISOString()
+      });
+      
+      console.log(`Deleted all active weekly challenges and generated new one: ${weeklyElement}`);
     }
     
     // Mark expired challenges as inactive (optional, for future use)
@@ -3614,6 +3880,8 @@ export function useSupabase() {
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSupabase } from '@/components/auth/SupabaseProvider';
+import { createClient, getChallengePreference } from '@/lib/supabase-client';
 
 interface Challenge {
   id: string;
@@ -3633,10 +3901,31 @@ interface Challenge {
   } | null;
 }
 
-export function ChallengeBar() {
+interface ChallengeBarProps {
+  isAnonymous?: boolean;
+  currentGameMode?: 'science' | 'creative';
+}
+
+export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps) {
+  const { user } = useSupabase();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hiddenChallenges, setHiddenChallenges] = useState<Set<string>>(new Set());
+  const [showChallenges, setShowChallenges] = useState<boolean>(true);
+
+  // Load challenge preference for authenticated users
+  useEffect(() => {
+    const loadChallengePreference = async () => {
+      if (user && !isAnonymous) {
+        const supabase = createClient();
+        const preference = await getChallengePreference(supabase, user.id);
+        setShowChallenges(preference);
+      }
+    };
+
+    loadChallengePreference();
+  }, [user, isAnonymous]);
 
   useEffect(() => {
     fetchChallenges();
@@ -3661,25 +3950,55 @@ export function ChallengeBar() {
     }
   };
 
+  const hideChallenge = (challengeId: string) => {
+    setHiddenChallenges(prev => new Set([...prev, challengeId]));
+  };
+
+  // Show registration prompt for anonymous users
+  if (isAnonymous) {
+    return (
+      <div className="challenge-bar-container mb-4">
+        <div className="p-3 bg-surface-secondary rounded-lg border border-warning/30 text-center">
+          <p className="text-sm text-muted">
+            🔒 <span className="text-blue-400 underline cursor-pointer" onClick={() => window.location.href = '/'}>Register</span> to participate in challenges
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't show challenges if user has disabled them
+  if (!showChallenges) return null;
+
   if (loading) return null;
   if (error) return null;
   if (challenges.length === 0) return null;
 
-  // Separate daily and weekly challenges
-  const dailyChallenges = challenges.filter(c => c.challenge_type === 'daily');
-  const weeklyChallenges = challenges.filter(c => c.challenge_type === 'weekly');
+  // Filter challenges by game mode and hidden status
+  const filterChallengesByMode = (challenge: Challenge) => {
+    if (hiddenChallenges.has(challenge.id)) return false;
+    
+    // If no currentGameMode provided, show all challenges (main menu case)
+    if (!currentGameMode) return true;
+    
+    // Show "any" mode challenges or challenges matching current game mode
+    return challenge.game_mode === 'any' || challenge.game_mode === currentGameMode;
+  };
+
+  const dailyChallenges = challenges.filter(c => c.challenge_type === 'daily' && filterChallengesByMode(c));
+  const weeklyChallenges = challenges.filter(c => c.challenge_type === 'weekly' && filterChallengesByMode(c));
 
   return (
-    <div className="challenge-bar-container mb-4">
+    <div className="challenge-bar-container mb-4 relative z-50">
       <div className="grid gap-2">
         {/* Daily Challenges */}
         {dailyChallenges.map((challenge) => (
           <div
             key={challenge.id}
-            className={`challenge-item transition-all duration-300 ${challenge.isCompleted ? 'opacity-75' : ''}`}
+            className="challenge-item transition-all duration-300"
           >
             <div className="flex items-center justify-between p-3 rounded-lg bg-surface-secondary border border-primary/20">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-1">
                 <span className="text-2xl">🌟</span>
                 <div>
                   <div className="flex items-center gap-2">
@@ -3702,16 +4021,25 @@ export function ChallengeBar() {
                   <p className="text-body font-medium">{challenge.title}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="flex items-center gap-1">
-                  <span className="text-sm text-warning">+{challenge.reward_tokens}</span>
-                  <span className="text-xs text-muted">tokens</span>
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-warning">+{challenge.reward_tokens}</span>
+                    <span className="text-xs text-muted">tokens</span>
+                  </div>
+                  {challenge.isCompleted && challenge.completionDetails && (
+                    <p className="text-xs text-muted mt-1">
+                      Found: {challenge.completionDetails.element_discovered}
+                    </p>
+                  )}
                 </div>
-                {challenge.isCompleted && challenge.completionDetails && (
-                  <p className="text-xs text-muted mt-1">
-                    Found: {challenge.completionDetails.element_discovered}
-                  </p>
-                )}
+                <button
+                  onClick={() => hideChallenge(challenge.id)}
+                  className="text-gray-400 hover:text-gray-300 transition-colors p-1"
+                  title="Hide challenge"
+                >
+                  ✕
+                </button>
               </div>
             </div>
           </div>
@@ -3721,10 +4049,10 @@ export function ChallengeBar() {
         {weeklyChallenges.map((challenge) => (
           <div
             key={challenge.id}
-            className={`challenge-item transition-all duration-300 ${challenge.isCompleted ? 'opacity-75' : ''}`}
+            className="challenge-item transition-all duration-300"
           >
             <div className="flex items-center justify-between p-3 rounded-lg bg-surface-secondary border border-warning/30">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-1">
                 <span className="text-2xl">🏆</span>
                 <div>
                   <div className="flex items-center gap-2">
@@ -3747,16 +4075,25 @@ export function ChallengeBar() {
                   <p className="text-body font-medium">{challenge.title}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="flex items-center gap-1">
-                  <span className="text-sm text-warning">+{challenge.reward_tokens}</span>
-                  <span className="text-xs text-muted">tokens</span>
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-warning">+{challenge.reward_tokens}</span>
+                    <span className="text-xs text-muted">tokens</span>
+                  </div>
+                  {challenge.isCompleted && challenge.completionDetails && (
+                    <p className="text-xs text-muted mt-1">
+                      Mode: {challenge.completionDetails.game_mode}
+                    </p>
+                  )}
                 </div>
-                {challenge.isCompleted && challenge.completionDetails && (
-                  <p className="text-xs text-muted mt-1">
-                    Mode: {challenge.completionDetails.game_mode}
-                  </p>
-                )}
+                <button
+                  onClick={() => hideChallenge(challenge.id)}
+                  className="text-gray-400 hover:text-gray-300 transition-colors p-1"
+                  title="Hide challenge"
+                >
+                  ✕
+                </button>
               </div>
             </div>
           </div>
@@ -5666,9 +6003,6 @@ const LLMAlchemy = () => {
     <div className="min-h-screen bg-gray-900 text-white flex flex-col relative overflow-hidden select-none" style={{ touchAction: touchDragging || isDraggingDivider ? 'none' : 'auto' }}>
       <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-gray-900 to-blue-900/20"></div>
       
-      {/* Challenge Bar */}
-      <ChallengeBar />
-      
       {/* Header */}
       <div className="relative z-10 bg-gray-800/80 backdrop-blur-sm p-4 shadow-lg">
         <div className="flex justify-between items-start mb-3">
@@ -6482,6 +6816,9 @@ const LLMAlchemy = () => {
         );
       })()}
 
+
+      {/* Challenge Bar - Moved to Bottom */}
+      <ChallengeBar isAnonymous={dbUser?.is_anonymous} currentGameMode={gameMode} />
 
       {/* Toast */}
       {toast && (
@@ -8397,6 +8734,46 @@ export async function updateLlmModelPreference(supabase: any, userId: string, mo
     return true
   } catch (error) {
     console.error('Error in updateLlmModelPreference:', error)
+    return false
+  }
+}
+
+// Challenge preference functions
+export async function getChallengePreference(supabase: any, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('show_challenges')
+      .eq('id', userId)
+      .single()
+
+    if (error) {
+      console.error('Error getting challenge preference:', error)
+      return true // Default to showing challenges
+    }
+
+    return data?.show_challenges ?? true
+  } catch (error) {
+    console.error('Error in getChallengePreference:', error)
+    return true
+  }
+}
+
+export async function updateChallengePreference(supabase: any, userId: string, showChallenges: boolean): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ show_challenges: showChallenges })
+      .eq('id', userId)
+
+    if (error) {
+      console.error('Error updating challenge preference:', error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error in updateChallengePreference:', error)
     return false
   }
 }
