@@ -48,6 +48,7 @@ export default function Home() {
   
   // Payment state
   const [isCreatingPayment, setIsCreatingPayment] = useState(false);
+  const [showPaymentSection, setShowPaymentSection] = useState(false);
 
   // Show toast function
   const showToast = (message: string) => {
@@ -462,18 +463,17 @@ export default function Home() {
           {isRegistered && dbUser?.subscription_status === 'free' && (
             <div className="flex justify-center mt-4">
               <button
-                onClick={() => handleStripePayment('subscription_monthly')}
-                disabled={isCreatingPayment}
+                onClick={() => setShowPaymentSection(!showPaymentSection)}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-lg transition-colors text-sm text-white font-medium"
               >
                 <span>⭐</span>
-                <span>{isCreatingPayment ? 'Processing...' : 'Upgrade'}</span>
+                <span>{showPaymentSection ? 'Hide Options' : 'Upgrade'}</span>
               </button>
             </div>
           )}
           
           {/* Payment Buttons for Authenticated Users */}
-          {!isAnonymous && dbUser && (
+          {!isAnonymous && dbUser && showPaymentSection && (
             <div className="mt-6 p-4 bg-gray-800/50 rounded-lg">
               <h3 className="text-lg font-semibold mb-4 text-center">Get More Tokens</h3>
               <div className="grid grid-cols-2 gap-3 mb-4">
