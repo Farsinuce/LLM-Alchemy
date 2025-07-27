@@ -70,8 +70,8 @@ export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps
 
   useEffect(() => {
     fetchChallenges();
-    // Refresh challenges every 30 seconds
-    const interval = setInterval(fetchChallenges, 30000);
+    // Refresh challenges every 10 minutes (challenges only update daily/weekly)
+    const interval = setInterval(fetchChallenges, 600000);
     return () => clearInterval(interval);
   }, []);
 

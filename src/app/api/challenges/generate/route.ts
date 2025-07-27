@@ -1,5 +1,5 @@
 // Challenge generation endpoint - called by Vercel Cron daily at midnight Copenhagen time
-import { createServerSupabaseClient } from '@/lib/supabase';
+import { createServiceRoleClient } from '@/lib/supabase';
 import { getRandomDailyCategories, getRandomWeeklyElement } from '@/lib/challenge-elements';
 import { NextResponse } from 'next/server';
 
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createServiceRoleClient();
     const now = new Date();
     
     // Get Copenhagen timezone midnight using proper timezone handling
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
     
     for (const category of allCategories) {
       const gameMode = scienceCategories.includes(category) ? 'science' : 'creative';
-      await supabase.from('challenges').insert({
+      const { data, error } = await supabase.from('challenges').insert({
         challenge_type: 'daily',
         title: category.title,
         target_category: category.category,
@@ -56,7 +56,14 @@ export async function GET(request: Request) {
         reward_tokens: 5,
         start_date: today.toISOString(),
         end_date: tomorrow.toISOString()
-      });
+      }).select();
+      
+      if (error) {
+        console.error('Failed to insert daily challenge:', error);
+        throw new Error(`Failed to insert daily challenge: ${error.message}`);
+      }
+      
+      console.log('Successfully inserted daily challenge:', data);
     }
     
     console.log(`Deleted all active daily challenges and generated ${allCategories.length} new ones`);
@@ -90,7 +97,7 @@ export async function GET(request: Request) {
       const gameMode = Math.random() < 0.5 ? 'science' : 'creative';
       const weeklyElement = getRandomWeeklyElement(gameMode, recentElements);
       
-      await supabase.from('challenges').insert({
+      const { data: weeklyData, error: weeklyError } = await supabase.from('challenges').insert({
         challenge_type: 'weekly',
         title: `Discover ${weeklyElement}`,
         target_element: weeklyElement,
@@ -98,8 +105,14 @@ export async function GET(request: Request) {
         reward_tokens: 25,
         start_date: today.toISOString(),
         end_date: weekEnd.toISOString()
-      });
+      }).select();
       
+      if (weeklyError) {
+        console.error('Failed to insert weekly challenge:', weeklyError);
+        throw new Error(`Failed to insert weekly challenge: ${weeklyError.message}`);
+      }
+      
+      console.log('Successfully inserted weekly challenge:', weeklyData);
       console.log(`Deleted all active weekly challenges and generated new one: ${weeklyElement}`);
     }
     
