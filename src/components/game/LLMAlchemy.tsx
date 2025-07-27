@@ -7,6 +7,7 @@ import { buildSharedSections, buildSciencePrompt, buildCreativePrompt } from '@/
 import { Achievement, checkAchievements, updateAchievementsWithProgress } from '@/lib/achievements';
 import { GAME_CONFIG } from '@/lib/game-config';
 import { ChallengeBar } from '@/components/game/ChallengeBar';
+import { elementMatchesCategory } from '@/lib/challenge-elements';
 
 // Type definitions
 interface Element {
@@ -152,6 +153,9 @@ const LLMAlchemy = () => {
   // Failed combinations tracking for improved LLM context
   const [failedCombinations, setFailedCombinations] = useState<string[]>([]);
   
+  // State restoration tracking to prevent race conditions during mode switching
+  const [isStateRestored, setIsStateRestored] = useState<boolean>(false);
+  
   // Element dimming for drag feedback
   const [dimmedElements, setDimmedElements] = useState<Set<string>>(new Set());
   
@@ -236,8 +240,8 @@ const LLMAlchemy = () => {
         // Weekly challenge - specific element
         isCompleted = element.name.toLowerCase() === challenge.target_element.toLowerCase();
       } else if (challenge.target_category && element.tags) {
-        // Daily challenge - category (server will validate with proper tag matching)
-        isCompleted = element.tags.includes(challenge.target_category);
+        // Daily challenge - category (use proper tag matching with synonyms)
+        isCompleted = elementMatchesCategory(element.tags, challenge.target_category);
       }
       
       if (isCompleted) {
@@ -312,6 +316,7 @@ const LLMAlchemy = () => {
     const loadSavedState = async () => {
       if (user && gameMode) {
         console.log(`[GAME_STATE_DEBUG] 🔄 Loading saved state for user ${user.id} in ${gameMode} mode...`);
+        setIsStateRestored(false); // Mark as loading
         
         try {
           const supabase = createClient();
@@ -378,6 +383,8 @@ const LLMAlchemy = () => {
           }
         } catch (error) {
           console.error('[GAME_STATE_DEBUG] ❌ Error loading game state:', error);
+        } finally {
+          setIsStateRestored(true); // Mark as restored even if loading failed
         }
       }
     };
@@ -387,26 +394,39 @@ const LLMAlchemy = () => {
 
   // Auto-save game state when elements, endElements, combinations, achievements, or failed combinations change
   useEffect(() => {
+    // Skip auto-save if state is still being restored to prevent race conditions
+    if (!isStateRestored) return;
+
+    // Capture current values to avoid reference issues during poor connectivity
+    const snapshot = {
+      mode: gameMode,
+      elems: [...elements],
+      ends: [...endElements], 
+      comb: { ...combinations },
+      ach: [...achievements],
+      fails: [...failedCombinations]
+    };
+
     const saveState = async () => {
-      if (user && gameMode && (elements.length > 5 || endElements.length > 0 || Object.keys(combinations).length > 0)) {
-        console.log(`[GAME_STATE_DEBUG] 💾 Auto-saving state for user ${user.id} in ${gameMode} mode...`, {
-          elements: elements.length,
-          end_elements: endElements.length,
-          combinations: Object.keys(combinations).length,
-          achievements: achievements.length,
-          failed_combinations: failedCombinations.length,
+      if (user && snapshot.mode && (snapshot.elems.length > 5 || snapshot.ends.length > 0 || Object.keys(snapshot.comb).length > 0)) {
+        console.log(`[GAME_STATE_DEBUG] 💾 Auto-saving state for user ${user.id} in ${snapshot.mode} mode...`, {
+          elements: snapshot.elems.length,
+          end_elements: snapshot.ends.length,
+          combinations: Object.keys(snapshot.comb).length,
+          achievements: snapshot.ach.length,
+          failed_combinations: snapshot.fails.length,
           trigger: 'auto-save-debounced'
         });
         
         try {
           const supabase = createClient();
           await saveGameState(supabase, user.id, {
-            game_mode: gameMode,
-            elements: elements,
-            end_elements: endElements,
-            combinations: combinations,
-            achievements: achievements,
-            failed_combinations: failedCombinations
+            game_mode: snapshot.mode,
+            elements: snapshot.elems,
+            end_elements: snapshot.ends,
+            combinations: snapshot.comb,
+            achievements: snapshot.ach,
+            failed_combinations: snapshot.fails
           });
           console.log(`[GAME_STATE_DEBUG] ✅ Auto-save completed successfully`);
         } catch (error) {
@@ -415,11 +435,11 @@ const LLMAlchemy = () => {
       } else {
         console.log(`[GAME_STATE_DEBUG] ⏭️ Skipping auto-save:`, {
           hasUser: !!user,
-          hasGameMode: !!gameMode,
-          elementsCount: elements.length,
-          endElementsCount: endElements.length,
-          combinationsCount: Object.keys(combinations).length,
-          reason: !user ? 'no user' : !gameMode ? 'no game mode' : 'not enough progress'
+          hasGameMode: !!snapshot.mode,
+          elementsCount: snapshot.elems.length,
+          endElementsCount: snapshot.ends.length,
+          combinationsCount: Object.keys(snapshot.comb).length,
+          reason: !user ? 'no user' : !snapshot.mode ? 'no game mode' : 'not enough progress'
         });
       }
     };
@@ -427,7 +447,7 @@ const LLMAlchemy = () => {
     // Use debounce for background saves but immediate save is handled in performMix
     const timeoutId = setTimeout(saveState, 2000);
     return () => clearTimeout(timeoutId);
-  }, [user, gameMode, elements, endElements, combinations, achievements, failedCombinations]);
+  }, [user, gameMode, elements, endElements, combinations, achievements, failedCombinations, isStateRestored]);
 
   // Handle back to home
   const handleBackToHome = () => {
