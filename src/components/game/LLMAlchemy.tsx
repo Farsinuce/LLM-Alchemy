@@ -1770,7 +1770,7 @@ const LLMAlchemy = () => {
       window.history.replaceState({}, '', url);
       
       setGameMode(newMode);
-      showToast(`Switched to ${newMode} mode!`);
+      // showToast(`Switched to ${newMode} mode!`);
     }
   };
 

@@ -35,6 +35,26 @@ export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps
   const [hiddenChallenges, setHiddenChallenges] = useState<Set<string>>(new Set());
   const [showChallenges, setShowChallenges] = useState<boolean>(true);
 
+  // Load hidden challenges from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('llm-alchemy-hidden-challenges');
+    if (saved) {
+      try {
+        const hiddenIds = JSON.parse(saved);
+        setHiddenChallenges(new Set(hiddenIds));
+      } catch (error) {
+        console.error('Error loading hidden challenges:', error);
+      }
+    }
+  }, []);
+
+  // Save hidden challenges to localStorage whenever it changes
+  useEffect(() => {
+    if (hiddenChallenges.size > 0) {
+      localStorage.setItem('llm-alchemy-hidden-challenges', JSON.stringify([...hiddenChallenges]));
+    }
+  }, [hiddenChallenges]);
+
   // Load challenge preference for authenticated users
   useEffect(() => {
     const loadChallengePreference = async () => {
@@ -54,6 +74,25 @@ export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps
     const interval = setInterval(fetchChallenges, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Auto-hide completed challenges after 3 seconds
+  useEffect(() => {
+    const completedIds = challenges
+      .filter(c => c.isCompleted)
+      .map(c => c.id);
+
+    if (completedIds.length > 0) {
+      const timer = setTimeout(() => {
+        setHiddenChallenges(prev => {
+          const newSet = new Set(prev);
+          completedIds.forEach(id => newSet.add(id));
+          return newSet;
+        });
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [challenges]);
 
   const fetchChallenges = async () => {
     try {
@@ -103,12 +142,12 @@ export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps
 
   return (
     <div className="challenge-bar-container mb-4 relative z-50">
-      <div className="grid gap-2">
+      <div className="flex flex-wrap gap-3">
         {/* Daily Challenges */}
         {dailyChallenges.map((challenge) => (
           <div
             key={challenge.id}
-            className="challenge-item transition-all duration-300"
+            className="challenge-item transition-all duration-300 flex-1 min-w-0 max-w-md"
           >
             <div className="flex items-center justify-between p-3 rounded-lg bg-surface-secondary border border-primary/20">
               <div className="flex items-center gap-3 flex-1">
