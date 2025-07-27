@@ -1,0 +1,101 @@
+detail,error_severity,event_message,hint,id,identifier,timestamp
+null,LOG,"connection authorized: user=supabase_admin database=postgres application_name=undefined SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",null,26c6a0ce-8101-4efe-ba33-756eee96916b,dpdskrcslgqbmtidcotw,1753607379238000
+null,LOG,"connection authenticated: identity=""supabase_admin"" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",null,6c748be8-5b96-4576-9189-3c87043093c6,dpdskrcslgqbmtidcotw,1753607379238000
+null,LOG,connection received: host=2a05:d018:1e14:200:e968:9111:722:d227 port=38152,null,02e1c1b2-d191-4778-9c79-b00154445b03,dpdskrcslgqbmtidcotw,1753607378978000
+null,LOG,"connection authenticated: identity=""supabase_admin"" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",null,eebf2fe0-b373-4b99-9a02-d399e44b8283,dpdskrcslgqbmtidcotw,1753607334933000
+null,LOG,"connection authorized: user=supabase_admin database=postgres application_name=undefined SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",null,6dceec9a-3deb-4061-933d-bd9620a7240b,dpdskrcslgqbmtidcotw,1753607334933000
+null,LOG,"connection authenticated: identity=""supabase_admin"" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",null,a0a79924-576f-4caa-a69c-a9337cbb28ca,dpdskrcslgqbmtidcotw,1753607334917000
+null,LOG,"connection authorized: user=supabase_admin database=postgres application_name=undefined SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",null,9b0685ae-b2b4-44bd-b36a-e8bbdd29d8d9,dpdskrcslgqbmtidcotw,1753607334917000
+null,LOG,connection received: host=2a05:d018:1e14:200:e968:9111:722:d227 port=44622,null,29773502-9699-4242-aa6b-391d0f00e44c,dpdskrcslgqbmtidcotw,1753607334747000
+null,LOG,connection received: host=2600:1f18:2a66:6e00:39cd:d4c4:fdca:2d81 port=34698,null,c1109562-85ed-49c7-8dcc-b25a2914085b,dpdskrcslgqbmtidcotw,1753607334464000
+null,LOG,"connection authorized: user=supabase_admin database=postgres application_name=undefined SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",null,a5623e5f-ff19-44f0-95f1-b65134c17dd6,dpdskrcslgqbmtidcotw,1753607334160000
+null,LOG,"connection authenticated: identity=""supabase_admin"" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",null,ce3e3c8a-7cfa-4cdf-9168-31bc4ef3c5fb,dpdskrcslgqbmtidcotw,1753607334160000
+null,LOG,"connection authorized: user=supabase_admin database=postgres application_name=undefined SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",null,2aa6f6ac-3e17-4f7f-9a72-ec763330da1f,dpdskrcslgqbmtidcotw,1753607334131000
+null,LOG,"connection authenticated: identity=""supabase_admin"" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",null,0b52434f-18e0-4bf5-bbf7-fd0a4f3fcbe4,dpdskrcslgqbmtidcotw,1753607334131000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,dd4d76fb-6b11-4a92-ae51-17e4a26989ec,dpdskrcslgqbmtidcotw,1753607332193000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,82d4e1cc-5225-45ad-9ce6-633110d6b21b,dpdskrcslgqbmtidcotw,1753607332193000
+null,LOG,connection received: host=::1 port=54811,null,b075e245-8e0f-4b8d-8278-1a1a01e931f8,dpdskrcslgqbmtidcotw,1753607332192000
+null,LOG,"connection authorized: user=supabase_admin database=postgres application_name=undefined SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",null,7dce26eb-0c40-493a-b7af-77029d2fffd5,dpdskrcslgqbmtidcotw,1753607327512000
+null,LOG,"connection authenticated: identity=""supabase_admin"" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",null,3c72de14-ce6d-4261-b063-9a09dcaebaa5,dpdskrcslgqbmtidcotw,1753607327512000
+null,LOG,"connection authenticated: identity=""supabase_admin"" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",null,5d1353d8-9c60-4cf2-9b03-582a7cb3ca6d,dpdskrcslgqbmtidcotw,1753607327511000
+null,LOG,"connection authorized: user=supabase_admin database=postgres application_name=undefined SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",null,90fe458e-928f-4739-8358-3e2d463e58eb,dpdskrcslgqbmtidcotw,1753607327511000
+null,LOG,connection received: host=2a05:d018:1e14:201:42c5:ce1:bbb:7025 port=45780,null,5ba71614-8562-4282-bf47-f1549e2480f4,dpdskrcslgqbmtidcotw,1753607327370000
+null,LOG,connection received: host=2a05:d018:1e14:200:54ee:f902:6683:cb0e port=47360,null,9852d1c8-68a9-4d8b-b07f-f26904cc7918,dpdskrcslgqbmtidcotw,1753607327369000
+null,ERROR,column challenge_completions.tokens_awarded does not exist,null,6ece35cd-3d72-4915-bf6a-d3d55b7fc0a3,dpdskrcslgqbmtidcotw,1753607318493000
+null,LOG,"checkpoint complete: wrote 20 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.909 s, sync=0.004 s, total=1.921 s; sync files=18, longest=0.003 s, average=0.001 s; distance=96 kB, estimate=1315 kB; lsn=0/17C19B48, redo lsn=0/17C17FB0",null,2a8a0e98-13c4-4df0-ab3d-38105102094e,dpdskrcslgqbmtidcotw,1753607286976000
+null,LOG,checkpoint starting: time,null,0e2fb88b-ba3f-434a-a0ff-f44ac61d7ec3,dpdskrcslgqbmtidcotw,1753607285055000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,56b03908-37b6-48ae-bbf3-56893d8870e8,dpdskrcslgqbmtidcotw,1753607272196000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,97ac1841-bbbd-4f20-98b3-7ae700f8ed30,dpdskrcslgqbmtidcotw,1753607272196000
+null,LOG,connection received: host=::1 port=51227,null,6b883d3e-6785-4fe5-93c4-27b6d3101ab0,dpdskrcslgqbmtidcotw,1753607272195000
+null,ERROR,"duplicate key value violates unique constraint ""users_pkey""",null,fdd1ae46-8b4b-4a3b-bf4e-5693c9bdc419,dpdskrcslgqbmtidcotw,1753607264902000
+null,LOG,"connection authenticated: user=""authenticator"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,f3a6cb51-148b-4c4d-ac4d-40ef295d9f1f,dpdskrcslgqbmtidcotw,1753607263952000
+null,LOG,"connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",null,6b00fc43-eb4d-4db1-bbd3-6f292c3f2608,dpdskrcslgqbmtidcotw,1753607263952000
+null,LOG,connection received: host=::1 port=33235,null,7c37b77a-17ca-4f33-bb65-e9a029e9170d,dpdskrcslgqbmtidcotw,1753607263944000
+null,LOG,"connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",null,f4d2cb1e-9bb9-4f14-b4a6-147f39ed4967,dpdskrcslgqbmtidcotw,1753607226442000
+null,LOG,"connection authenticated: user=""authenticator"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,1b80326c-c18f-417c-a9cb-b65121683437,dpdskrcslgqbmtidcotw,1753607226442000
+null,LOG,"connection authenticated: user=""supabase_auth_admin"" method=trust (/etc/postgresql/pg_hba.conf:84)",null,8c604085-73d0-4dfa-8e3a-458ecbf84724,dpdskrcslgqbmtidcotw,1753607225782000
+null,LOG,connection authorized: user=supabase_auth_admin database=postgres,null,e5fc2803-2115-4389-b0ac-2f58f0bb80ae,dpdskrcslgqbmtidcotw,1753607225782000
+null,LOG,connection received: host=127.0.0.1 port=13499,null,ffbefd95-586b-4801-af7b-4a5633a19581,dpdskrcslgqbmtidcotw,1753607225781000
+null,LOG,"connection authenticated: identity=""supabase_admin"" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",null,2e934690-78c9-4e47-a1da-af734c54a10c,dpdskrcslgqbmtidcotw,1753607218844000
+null,LOG,"connection authorized: user=supabase_admin database=postgres application_name=undefined SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",null,651c6039-dd6b-4fb2-ab10-f5bacdeaf61c,dpdskrcslgqbmtidcotw,1753607218844000
+null,LOG,connection received: host=2600:1f1c:778:2c01:e0ca:ac56:cbfb:4ac9 port=46234,null,0631997f-1f8d-479d-9f2a-82c05c0f4ecc,dpdskrcslgqbmtidcotw,1753607218075000
+null,LOG,"connection authorized: user=supabase_admin database=postgres application_name=undefined SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",null,e98020ad-d972-47ae-a6bd-31d459ac1a4d,dpdskrcslgqbmtidcotw,1753607216890000
+null,LOG,"connection authenticated: identity=""supabase_admin"" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",null,69fa74c0-0c06-41a2-b2eb-5949c263fb42,dpdskrcslgqbmtidcotw,1753607216890000
+null,LOG,"connection authenticated: identity=""supabase_admin"" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",null,5e2bd7a9-7801-4ed4-9a67-10c22e9e806a,dpdskrcslgqbmtidcotw,1753607215670000
+null,LOG,"connection authorized: user=supabase_admin database=postgres application_name=undefined SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",null,e58803fb-959e-43ff-a5a6-d8877671dd28,dpdskrcslgqbmtidcotw,1753607215670000
+null,LOG,"connection authenticated: identity=""supabase_admin"" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",null,e2eaeb9a-839c-4df8-8701-604f4e502ed8,dpdskrcslgqbmtidcotw,1753607215658000
+null,LOG,"connection authorized: user=supabase_admin database=postgres application_name=undefined SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",null,559184e0-a155-4920-9999-0a4123458385,dpdskrcslgqbmtidcotw,1753607215658000
+null,LOG,connection received: host=2a05:d018:1e14:200:54ee:f902:6683:cb0e port=34932,null,453403a6-f77c-4de7-8e0d-0c1b962a8df2,dpdskrcslgqbmtidcotw,1753607215527000
+null,LOG,connection received: host=2a05:d018:1e14:200:54ee:f902:6683:cb0e port=34924,null,f92e8d04-7200-4894-9f49-89aa94f17455,dpdskrcslgqbmtidcotw,1753607215515000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,87f5bd2e-a02d-4839-8c2d-23c15a1484fe,dpdskrcslgqbmtidcotw,1753607212193000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,37342441-732a-4064-854f-839ea7a07293,dpdskrcslgqbmtidcotw,1753607212193000
+null,LOG,connection received: host=::1 port=62175,null,54f267ce-83db-47d9-983a-da04c4c3c90c,dpdskrcslgqbmtidcotw,1753607212192000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,638f5045-b815-48b0-9562-5b1473e8d3b2,dpdskrcslgqbmtidcotw,1753607152193000
+null,LOG,connection received: host=::1 port=5023,null,3c696cf3-7c6b-4ee0-a974-f6b9a69d914b,dpdskrcslgqbmtidcotw,1753607152193000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,3cbd15ef-7c85-4068-ad72-92fa9bbd3463,dpdskrcslgqbmtidcotw,1753607152193000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,14d75cbd-099d-4ebf-b028-b44eee397ff5,dpdskrcslgqbmtidcotw,1753607092193000
+null,LOG,connection received: host=::1 port=29289,null,e7380644-6afc-4a0f-b0e1-ca8f8a1658ea,dpdskrcslgqbmtidcotw,1753607092193000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,4f6c9a46-9b39-45b2-8f18-23a3d09ca307,dpdskrcslgqbmtidcotw,1753607092193000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,4d5b31d7-495c-48a0-b23a-9ce6dd9e0a0f,dpdskrcslgqbmtidcotw,1753607032193000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,4e36c7c3-5db7-407d-bb05-1411b8a2256f,dpdskrcslgqbmtidcotw,1753607032193000
+null,LOG,connection received: host=::1 port=40063,null,e04371b3-f8e3-475a-a4e3-109de1a4db24,dpdskrcslgqbmtidcotw,1753607032192000
+null,LOG,"checkpoint complete: wrote 6 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.504 s, sync=0.004 s, total=0.517 s; sync files=6, longest=0.003 s, average=0.001 s; distance=4 kB, estimate=1450 kB; lsn=0/17BFFD28, redo lsn=0/17BFFCD0",null,5ebe51e4-bf27-4d3b-9730-6ebf52173ef1,dpdskrcslgqbmtidcotw,1753606984972000
+null,LOG,checkpoint starting: time,null,e4ba3a7c-670f-48a5-bf4e-24356aca6f84,dpdskrcslgqbmtidcotw,1753606984455000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,7a7fae45-3af9-4c29-aeb5-6dad294932e8,dpdskrcslgqbmtidcotw,1753606972193000
+null,LOG,connection received: host=::1 port=25751,null,7b0fd661-5b35-487d-b98d-a1262b504cf1,dpdskrcslgqbmtidcotw,1753606972193000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,38c93d22-d3de-47ce-9ad8-43bb9329eb9b,dpdskrcslgqbmtidcotw,1753606972193000
+null,LOG,connection received: host=::1 port=63089,null,02f4a584-55cf-45ef-9b3e-0f842efbc61c,dpdskrcslgqbmtidcotw,1753606912193000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,2bf76885-6f36-4be0-9140-eb613c6f16ab,dpdskrcslgqbmtidcotw,1753606912193000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,14afbb93-6623-4b7a-a608-b3dec4c5d9b6,dpdskrcslgqbmtidcotw,1753606912193000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,168954f8-e165-4e18-a956-77fb519c8b0c,dpdskrcslgqbmtidcotw,1753606852192000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,bcc9d1c6-747e-48bb-813d-04c767c0d806,dpdskrcslgqbmtidcotw,1753606852192000
+null,LOG,connection received: host=::1 port=15707,null,d20f3be2-53fc-4a54-9d81-93a8de5d3f89,dpdskrcslgqbmtidcotw,1753606852192000
+null,LOG,"connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",null,ad291abd-7d9d-4978-9284-491817b6838c,dpdskrcslgqbmtidcotw,1753606810781000
+null,LOG,"connection authenticated: user=""authenticator"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,8fc03dad-996b-40f9-8923-6adfb0ba030c,dpdskrcslgqbmtidcotw,1753606810781000
+null,LOG,connection received: host=::1 port=1525,null,d5f15a52-fc8d-4b4c-94d8-99caa6aac8bb,dpdskrcslgqbmtidcotw,1753606810774000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,df7aec2e-b193-4d17-b250-a0952f6b6570,dpdskrcslgqbmtidcotw,1753606792193000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,3e9a02fd-d400-4243-94f8-6e8b9f3122bc,dpdskrcslgqbmtidcotw,1753606792193000
+null,LOG,connection received: host=::1 port=10959,null,8c62e3dc-e52c-4bf1-bd6c-071c7ec45b03,dpdskrcslgqbmtidcotw,1753606792192000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,8242f092-3f03-4969-bc7a-344c016bc193,dpdskrcslgqbmtidcotw,1753606732193000
+null,LOG,connection received: host=::1 port=14499,null,8ca5bb07-cbf6-48d4-a1b4-99806762fd5d,dpdskrcslgqbmtidcotw,1753606732193000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,b402bee2-50a3-404a-95c9-02b797187c33,dpdskrcslgqbmtidcotw,1753606732193000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,f6b62904-8dc2-4cdd-8ed3-59833087dc81,dpdskrcslgqbmtidcotw,1753606672192000
+null,LOG,connection received: host=::1 port=52529,null,c1564f38-3f10-4e27-acbd-db09e9ece075,dpdskrcslgqbmtidcotw,1753606672192000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,98a01dee-d986-4a1f-b31d-f7d7ae5bffd5,dpdskrcslgqbmtidcotw,1753606672192000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,b6c4b0b8-f388-4a3e-8acc-627ca979b57b,dpdskrcslgqbmtidcotw,1753606612192000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,766a301b-6605-482a-8832-8821eaadb215,dpdskrcslgqbmtidcotw,1753606612192000
+null,LOG,connection received: host=::1 port=43187,null,6a2b2c06-ffa9-4336-a60d-ea33e55ca935,dpdskrcslgqbmtidcotw,1753606612192000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,30c64333-99af-4417-a730-6d89e87bb615,dpdskrcslgqbmtidcotw,1753606552193000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,8430ca1a-7131-4941-997c-fe45e8b6acb4,dpdskrcslgqbmtidcotw,1753606552193000
+null,LOG,connection received: host=::1 port=35289,null,6d4a7c44-df41-46fd-9359-4594f6e5a194,dpdskrcslgqbmtidcotw,1753606552192000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,b84a7a24-054f-4156-a736-42068c5432a7,dpdskrcslgqbmtidcotw,1753606492193000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,d2dd9676-f3c5-4a03-9eb7-4b78a2479bef,dpdskrcslgqbmtidcotw,1753606492193000
+null,LOG,connection received: host=::1 port=25935,null,3934e472-118c-4b9f-8075-98e02d9ae914,dpdskrcslgqbmtidcotw,1753606492193000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,43f3f1bd-4256-457a-849f-5c8cff65c088,dpdskrcslgqbmtidcotw,1753606432193000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,e1544aee-a01e-4c4e-9815-c4e289e0f595,dpdskrcslgqbmtidcotw,1753606432193000
+null,LOG,connection received: host=::1 port=30935,null,e302ca2a-ed88-4f01-be84-bab020449039,dpdskrcslgqbmtidcotw,1753606432192000
+null,LOG,connection received: host=::1 port=45815,null,99ac5245-9c18-40f6-ac74-9f324e7e31f9,dpdskrcslgqbmtidcotw,1753606372192000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,d1e62cf9-e3c1-40a4-a65d-94b82dc7db7f,dpdskrcslgqbmtidcotw,1753606372192000
+null,LOG,"connection authenticated: user=""supabase_admin"" method=trust (/etc/postgresql/pg_hba.conf:85)",null,e6ce2058-e1ac-4e95-be3c-b3bc8ca28c40,dpdskrcslgqbmtidcotw,1753606372192000
+null,LOG,connection authorized: user=supabase_admin database=postgres application_name=postgres_exporter,null,70d69381-81b8-44dc-b997-57a014b22e43,dpdskrcslgqbmtidcotw,1753606312193000
+null,LOG,connection received: host=::1 port=44439,null,98617f5e-0738-44db-900c-2eec98b88d49,dpdskrcslgqbmtidcotw,1753606312192000

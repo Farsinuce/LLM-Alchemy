@@ -24,7 +24,6 @@ export async function GET() {
         element_discovered,
         game_mode,
         completed_at,
-        tokens_awarded,
         challenges (
           challenge_type,
           title,

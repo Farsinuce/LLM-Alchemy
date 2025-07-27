@@ -168,7 +168,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
               
               // If no user record exists, create one for authenticated users
               if (!dbUser && session.user.email) {
-                const newUserRecord = {
+                const userRecord = {
                   id: session.user.id,
                   email: session.user.email,
                   display_name: session.user.user_metadata?.display_name || 
@@ -183,17 +183,17 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
                   updated_at: new Date().toISOString()
                 }
 
-                const { data: newUser, error: createError } = await supabase
+                const { data: upsertedUser, error: upsertError } = await supabase
                   .from('users')
-                  .insert([newUserRecord])
+                  .upsert([userRecord], { onConflict: 'id' })
                   .select()
                   .single()
 
-                if (!createError && newUser) {
-                  dbUser = newUser
-                  console.log('✅ Created user record for authenticated user:', session.user.id)
+                if (!upsertError && upsertedUser) {
+                  dbUser = upsertedUser
+                  console.log('✅ Created/updated user record for authenticated user:', session.user.id)
                 } else {
-                  console.error('Error creating authenticated user record:', createError)
+                  console.error('Error creating/updating authenticated user record:', upsertError)
                 }
               }
               
