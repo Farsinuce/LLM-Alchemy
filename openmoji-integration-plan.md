@@ -172,7 +172,7 @@ This allows:
 **Purpose**: Prevent nonsensical fuzzy matches like "Coal" → "collaboration" emoji
 
 ### Problem:
-- **Example**: User creates "Coal", expects ⚫ or 🪨, gets 🤝 collaboration emoji
+- **Example**: User creates "Coal", expects ⚫ or 🪨, gets 🤝 collaboration emoji; or user creates "Soil", expects 🌍 or 🪨 or 🌱, gets [solar cell].
 - **Cause**: Fuzzy search matching too broadly on partial strings ("co" prefix)
 - **Impact**: Breaks immersion with absurd emoji assignments
 

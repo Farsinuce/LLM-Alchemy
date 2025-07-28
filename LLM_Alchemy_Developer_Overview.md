@@ -1,6 +1,6 @@
 
 # LLM Alchemy – Developer Overview  
-*(Last updated 26 July 2025)*  
+*(Last updated 28 July 2025)*
 
 This condensed handbook explains **what each major file / folder does** and **how the whole Next‑js + Supabase + LLM game fits together**.  
 Share it with incoming developers or paste it into an LLM to give instant context.
@@ -11,14 +11,16 @@ Share it with incoming developers or paste it into an LLM to give instant contex
 
 ```
 /
+├── .github/workflows     # CI/CD pipeline (lint, build, type-gen)
 ├── src
-│   ├── app               # Next.js App‑Router pages, layouts & API routes
-│   ├── components        # Re‑usable React UI + game widgets
-│   ├── lib               # Pure TS helpers (Supabase, prompts, OpenMoji…)
-│   └── public            # Static assets (emoji, sounds, favicon…)
+│   ├── app               # Next.js App‑Router pages & API routes
+│   ├── components        # Re‑usable React UI widgets
+│   ├── lib               # Core application logic
+│   │   └── supabase      # Secure Supabase client/server modules
+│   └── public            # Static assets (emojis, etc.)
 ├── scripts               # Build-time scripts (e.g., copying assets)
 ├── supabase              # SQL migrations & RLS policies
-├── vercel.json           # Deploy‑ & cron configuration
+├── eslint.config.mjs     # ESLint flat config with security rules
 └── package.json          # Scripts & dependencies
 ```
 
@@ -26,18 +28,16 @@ Share it with incoming developers or paste it into an LLM to give instant contex
 
 ## 2 · How It All Works (end‑to‑end)
 
-1. **Frontend boot‑strap**  
-   *`src/app/layout.tsx`* sets fonts & injects **`<SupabaseProvider>`** so every component can query auth/database.fileciteturn0file0turn0file1  
+1. **Secure Supabase Clients & Auth**  
+   The app uses a strict separation of Supabase clients.
+   - **`src/lib/supabase/browser.ts`**: A client-side instance for UI components. It uses the `anon` key and is fully exposed to the browser.
+   - **`src/lib/supabase/server.ts`**: A server-side instance for API routes and Server Components. It can use the `service_role` key to bypass RLS for admin tasks.
+   - **`<SupabaseProvider>`**: Injects user auth state and database helpers into the React component tree.
 
-2. **Main menu**  
-   *`src/app/page.tsx`* fetches the user, daily usage and challenge status, then lets the player:  
-   • start/continue a game • reset progress • open auth / payment / LLM‑options modals.
-
-3. **Game runtime & Emoji Handling**  
+2. **Game Runtime & Emoji Handling**  
    *`src/components/game/LLMAlchemy.tsx`* holds the drag‑&‑drop board.  
-   - When two (or three) elements are mixed it first checks **hard‑coded combos**;  
-   - else it POSTs `/api/generate` → OpenRouter → Gemini Flash/Pro → JSON reply with `achievementTags` and `emojiTags`.
-   - The outcome is merged into React state then persisted (supabase).
+   - When elements are mixed, it POSTs to `/api/generate`, which securely calls the LLM (Gemini Flash/Pro) via OpenRouter.
+   - The outcome is merged into React state and persisted to the Supabase DB.
    - All emojis are rendered via `OpenMojiDisplay.tsx`, which uses `openmoji-service.ts` to resolve the correct SVG, ensuring visual consistency.
 
 4. **Challenge loop**  
@@ -74,9 +74,13 @@ Share it with incoming developers or paste it into an LLM to give instant contex
 | **src/components/game/LLMAlchemy.tsx** | Core game logic: drag‑drop grid, element state, animation loops, hard‑coded science combos. |
 | **src/components/game/ChallengeBar.tsx** | Banner that shows active challenges and rewards. |
 | **src/components/game/OpenMojiDisplay.tsx** | Renders all emojis as consistent SVGs using the OpenMoji library. |
-| **src/lib/supabase-client.ts** | Typed Supabase client for browser & server contexts. Contains helper functions for DB operations. |
+| **src/lib/supabase/browser.ts** | Creates a browser-safe Supabase client for use in UI components. |
+| **src/lib/supabase/server.ts** | Creates server-only Supabase clients (including `service_role`) for API routes. |
 | **src/lib/openmoji-service.ts**| Resolves the correct OpenMoji SVG for an element using direct mapping and fuzzy search. |
-| **src/lib/llm-prompts.ts** | Builds prompts for Science & Creative modes, defining the expected JSON structure with `achievementTags` and `emojiTags`. |
+| **src/lib/llm-prompts.ts** | Builds prompts for Science & Creative modes, defining the expected JSON structure. |
+| **eslint.config.mjs** | Flat ESLint config with strict rules, including `import/no-restricted-paths` to prevent illegal imports between client/server code. |
+| **.github/workflows/ci.yml** | GitHub Actions workflow that runs on every push/PR. Performs type generation, linting, type checking, and a production build to ensure code quality. |
+| **package.json** | Defines all project scripts, including `gen:types` for Supabase type generation and a `precommit` hook that runs quality checks. |
 | **src/lib/challenge-elements.ts** | Curated category & element lists used by the challenge generator. |
 | **scripts/copy-openmoji.js** | Build-time script that copies OpenMoji SVG assets into the `public` directory. |
 | **supabase/** *.sql* | Database schema, RLS rules, `increment_user_tokens()` etc. |
@@ -102,11 +106,13 @@ Tokens & subscriptions move through `/api/stripe/*` → Stripe → webhook → 
 
 ## 5 · Developer On‑Boarding Tips
 
-* `npm run dev` – local dev server  
-* `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY` must be set in `.env.local`.  
-* To run daily‑challenge cron locally: `curl http://localhost:3000/api/challenges/generate?secret=dev`  
-* Keep **globals.css** pattern when adding UI – design system guarantees consistency.  
-* Write new server code in **/api/**; it runs as Vercel Edge Functions.  
+* `npm run dev` – Starts the local development server.
+* `npm run gen:types` – Generates TypeScript types from your Supabase schema. Run this after any database changes.
+* **Pre-commit Hook**: On commit, the `precommit` script automatically runs `gen:types`, `lint`, and `typecheck` to ensure code quality before it enters the repository.
+* `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY` must be set in `.env.local`.
+* To run the daily challenge cron job locally: `curl http://localhost:3000/api/challenges/generate?secret=my-llm-alchemy-cron-secret-2025-xyz789`
+* Adhere to the design system in **globals.css** to maintain UI consistency.
+* New server-side logic should be placed in **/api/** routes.
 
 ---
 

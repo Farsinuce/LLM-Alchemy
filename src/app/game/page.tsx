@@ -1,12 +1,11 @@
 'use client';
 
 import { useSupabase } from '@/components/auth/SupabaseProvider';
-import { getOrCreateAnonymousUser } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 
 // Dynamic import to avoid SSR issues with browser-only APIs
-const LLMAlchemy = dynamic(() => import('@/components/game/LLMAlchemy'), {
+const LLMAlchemyWrapper = dynamic(() => import('@/components/game/LLMAlchemy/LLMAlchemyWrapper'), {
   ssr: false,
   loading: () => (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -56,5 +55,5 @@ export default function GamePage() {
     );
   }
 
-  return <LLMAlchemy />;
+  return <LLMAlchemyWrapper />;
 }
