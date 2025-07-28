@@ -165,6 +165,40 @@ This allows:
 - **Achievements**: Match "tool" or "kitchen" categories
 - **OpenMoji**: Search with detailed visual hints like "coffee grinder mill bean"
 
+## Phase 4: Search Quality Threshold
+
+**Status**: 📝 TODO - Critical Fix  
+**Issue Reported**: January 28, 2025 5:02 AM CET  
+**Purpose**: Prevent nonsensical fuzzy matches like "Coal" → "collaboration" emoji
+
+### Problem:
+- **Example**: User creates "Coal", expects ⚫ or 🪨, gets 🤝 collaboration emoji
+- **Cause**: Fuzzy search matching too broadly on partial strings ("co" prefix)
+- **Impact**: Breaks immersion with absurd emoji assignments
+
+### Proposed Fix:
+1. **Add minimum quality threshold** (e.g., reject if score > 0.5)
+2. **When fuzzy match is too poor**:
+   - Use the LLM's original Unicode emoji
+   - Render it in OpenMoji style for consistency
+3. **Update resolveEmoji logic**:
+   ```typescript
+   // Reject poor fuzzy matches
+   const useBest = bestHit && (
+     bestHit.item.hexcode.startsWith('E') ||
+     !direct ||
+     (direct && bestHit.score! < 0.35 && bestHit.score! < 0.5) // Add quality threshold
+   );
+   ```
+
+### Implementation Steps:
+1. Update `resolveEmoji` in `src/lib/openmoji-service.ts`
+2. Add score quality check (reject if > 0.5)
+3. Test with problematic elements: "Coal", "Ash", "Dust"
+4. Verify fallback to LLM Unicode maintains visual consistency
+
+**Priority**: HIGH - Affects game immersion and user experience
+
 ## Critical Fixes Completed (v2.0)
 
 ✅ **Copy Script Path** - Now uses `process.cwd()` with async batching  

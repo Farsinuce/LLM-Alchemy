@@ -1,5 +1,27 @@
 # LLM Alchemy - Recent Work History
 
+## 📅 January 28, 2025 (5:02 AM) - OPENMOJI SEARCH QUALITY ISSUE REPORTED
+
+Documented critical fuzzy search quality issue for future fix.
+
+### 🐛 Issue Identified:
+
+**Coal → Collaboration Bug**
+- **Problem**: Element "Coal" matched to "collaboration" emoji (completely wrong)
+- **Cause**: Fuzzy search matching too broadly on partial strings ("co" prefix)
+- **Impact**: Nonsensical emoji assignments that break immersion
+- **Example**: User creates "Coal", expects ⚫ or 🪨, gets 🤝 collaboration emoji
+
+**Proposed Solution**:
+- Add minimum quality threshold to fuzzy search (e.g., reject if score > 0.5)
+- When fuzzy match is too poor, use LLM's Unicode emoji in OpenMoji style
+- Preserves visual consistency while avoiding absurd matches
+
+**Implementation Plan**: See `openmoji-integration-plan.md` Phase 4
+**Status**: 📝 TODO - Critical fix needed
+
+---
+
 ## 📅 January 28, 2025 (4:35 AM - 4:51 AM) - OPENMOJI SEARCH OPTIMIZATION & BUILD FIXES
 
 Enhanced OpenMoji search algorithm and resolved deployment build issues.
