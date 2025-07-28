@@ -1,13 +1,13 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
-import { createClient } from '@/lib/supabase-client'
-import { User } from '@supabase/supabase-js'
-import { User as DBUser, getOrCreateAnonymousUser, getDailyCount, getTokenBalance } from '@/lib/supabase-client'
+import { createClient, getOrCreateAnonymousUser, getDailyCount, getTokenBalance } from '@/lib/supabase'
+import { User as AuthUser } from '@supabase/supabase-js'
+import { User as DBUser } from '@/types'
 import { cleanupAutomatedWidget } from '@/lib/turnstile'
 
 interface SupabaseContextType {
-  user: User | null
+  user: AuthUser | null
   dbUser: DBUser | null
   dailyCount: number
   tokenBalance: number
@@ -21,7 +21,7 @@ interface SupabaseContextType {
 const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined)
 
 export function SupabaseProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [dbUser, setDbUser] = useState<DBUser | null>(null)
   const [dailyCount, setDailyCount] = useState<number>(0)
   const [tokenBalance, setTokenBalance] = useState<number>(0)

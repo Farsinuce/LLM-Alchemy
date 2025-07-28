@@ -1,5 +1,27 @@
 # LLM Alchemy - Recent Work History
 
+## 📅 January 28, 2025 (4:00 PM) - PHASE 1.2 REFACTORING COMPLETED
+
+Completed Phase 1.2 "Centralize & Secure Type Definitions" from our refactoring plan.
+
+### ✅ Implementation Completed:
+
+**Type Structure Created**:
+- **`src/types/user.types.ts`**: User and UserSession interfaces
+- **`src/types/game.types.ts`**: GameElement, GameState, Achievement, DiscoveredElement, GameProgress  
+- **`src/types/challenge.types.ts`**: Challenge and ChallengeBarProps interfaces
+- **`src/types/index.ts`**: Barrel export file for centralized imports
+
+**Migration Results**:
+- **Updated Imports**: helpers.ts, ChallengeBar.tsx, SupabaseProvider.tsx now use '@/types'
+- **Backwards Compatibility**: Old types.ts shows deprecation warning and re-exports
+- **Domain Prefixing**: Maintained GameElement, GameState naming conventions
+- **ESLint Protection**: import/no-cycle rule already in place
+
+**Files Modified**: 8 total | **Status**: ✅ COMPLETE - Ready for Phase 2.1
+
+---
+
 ## 📅 January 28, 2025 (5:02 AM) - OPENMOJI SEARCH QUALITY ISSUE REPORTED
 
 Documented critical fuzzy search quality issue for future fix.
@@ -19,6 +41,9 @@ Documented critical fuzzy search quality issue for future fix.
 
 **Implementation Plan**: See `openmoji-integration-plan.md` Phase 4
 **Status**: 📝 TODO - Critical fix needed
+
+### 🐛 "Undo" bug:
+- If a player discovers an element in one gamemode (e.g. science), and he switches game mode, the undo button is bugged. Easy fix: Switching game mode should reset the undo button, so Undos won't "carry over", meaning that nothing can be undone immediately after switching gamemode.
 
 ---
 

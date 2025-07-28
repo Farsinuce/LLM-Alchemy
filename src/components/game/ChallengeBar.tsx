@@ -4,29 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
 import { createClient, getChallengePreference } from '@/lib/supabase-client';
 import { getStaticOpenMoji } from '@/lib/openmoji-service';
-
-interface Challenge {
-  id: string;
-  challenge_type: 'daily' | 'weekly';
-  title: string;
-  target_element?: string;
-  target_category?: string;
-  game_mode?: 'science' | 'creative' | 'any';
-  reward_tokens: number;
-  start_date: string;
-  end_date: string;
-  isCompleted: boolean;
-  completionDetails?: {
-    element_discovered: string;
-    game_mode: string;
-    completed_at: string;
-  } | null;
-}
-
-interface ChallengeBarProps {
-  isAnonymous?: boolean;
-  currentGameMode?: 'science' | 'creative';
-}
+import { Challenge, ChallengeBarProps } from '@/types';
 
 export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps) {
   const { user } = useSupabase();

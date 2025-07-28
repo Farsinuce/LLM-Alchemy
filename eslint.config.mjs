@@ -11,6 +11,28 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    rules: {
+      "import/no-restricted-paths": [
+        "error",
+        {
+          zones: [
+            {
+              target: "./src/components",
+              from: "./src/lib/supabase/server.ts",
+              message: "Server-only Supabase functions cannot be imported in client components. Use './src/lib/supabase' instead."
+            },
+            {
+              target: "./src/app",
+              from: "./src/lib/supabase/server.ts", 
+              message: "Server-only Supabase functions cannot be imported in client components. Use './src/lib/supabase' instead."
+            }
+          ]
+        }
+      ],
+      "import/no-cycle": "error"
+    }
+  }
 ];
 
 export default eslintConfig;

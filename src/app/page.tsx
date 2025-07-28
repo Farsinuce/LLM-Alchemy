@@ -12,7 +12,7 @@ import {
   updateLlmModelPreference,
   getChallengePreference,
   updateChallengePreference
-} from '@/lib/supabase-client';
+} from '@/lib/supabase';
 import { getStaticOpenMoji } from '@/lib/openmoji-service';
 import dynamic from 'next/dynamic';
 
