@@ -1,5 +1,42 @@
 # LLM Alchemy - Recent Work History
 
+## 📅 January 28, 2025 (4:35 AM - 4:51 AM) - OPENMOJI SEARCH OPTIMIZATION & BUILD FIXES
+
+Enhanced OpenMoji search algorithm and resolved deployment build issues.
+
+### ✅ Fixes & Improvements:
+
+**1. Two-Phase Search Implementation**
+- **Problem**: Element name "Narwhal" being overridden by emojiTags ["whale", "horn"]
+- **Solution**: Prioritize element name in Phase 1, fallback to name+tags in Phase 2
+- **Implementation**: 
+  ```typescript
+  // Phase 1: Search by name only
+  let searchResults = fuse.search(name);
+  // Phase 2: If no good match (score > 0.3), try with tags
+  if (!bestHit || bestHit.score! > 0.3) {
+    searchResults = fuse.search(`${name} ${tags.join(' ')}`);
+  }
+  ```
+- **Result**: "Narwhal" now finds narwhal emoji instead of falling back to whale
+
+**2. Build Issue Resolution**
+- **Problem**: Static generation failures due to incorrect `export const dynamic` placement
+- **Files Fixed**: `test-captcha/page.tsx`, `payment/success/page.tsx`
+- **Solution**: Moved dynamic exports after import statements, added to payment page
+- **Result**: Vercel deployment now succeeds without build errors
+
+**3. Enhanced Debug Logging**
+- **Feature**: Added `searchPhase` indicator ("name-only" vs "name-with-tags")
+- **Purpose**: Development debugging to verify search behavior
+- **TypeScript Fix**: Safe optional chaining with nullish coalescing
+
+**Files Modified**: `src/lib/openmoji-service.ts`, `src/app/test-captcha/page.tsx`, `src/app/payment/success/page.tsx`
+**Impact**: Better OpenMoji resolution accuracy + stable deployment pipeline
+**Status**: ✅ Deployed and live at https://llm-alchemy-beta2.vercel.app
+
+---
+
 ## 📅 January 28, 2025 (1:20 AM - 3:20 AM) - OPENMOJI INTEGRATION COMPLETED
 
 Successfully implemented complete OpenMoji emoji integration following the "Nothing fancy, always OpenMoji" principle without over-engineering.
