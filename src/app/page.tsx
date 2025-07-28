@@ -13,6 +13,7 @@ import {
   getChallengePreference,
   updateChallengePreference
 } from '@/lib/supabase-client';
+import { getStaticOpenMoji } from '@/lib/openmoji-service';
 import dynamic from 'next/dynamic';
 
 const AuthModal = dynamic(() => import('@/components/auth/AuthModal'), { ssr: false });
@@ -391,8 +392,9 @@ export default function Home() {
               {progress?.science && (
                 <div className="flex justify-between items-center py-2 px-3 bg-blue-600/20 rounded">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">
-                      <span className="hidden sm:inline">🧪 </span>Science
+                    <span className="font-medium flex items-center gap-1">
+                      <img src={getStaticOpenMoji('🧪')} alt="Science" className="w-4 h-4 hidden sm:inline" />
+                      Science
                     </span>
                     <span className="text-xs text-gray-400">|</span>
                     <span className="text-sm text-gray-300">
@@ -405,7 +407,7 @@ export default function Home() {
                     className="text-red-400 hover:text-red-300 transition-colors text-lg"
                     title="Reset Science Mode"
                   >
-                    ❌
+                    <img src={getStaticOpenMoji('❌')} alt="Reset" className="w-4 h-4" />
                   </button>
                 </div>
               )}
@@ -413,8 +415,9 @@ export default function Home() {
               {progress?.creative && (
                 <div className="flex justify-between items-center py-2 px-3 bg-purple-600/20 rounded">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">
-                      <span className="hidden sm:inline">🎨 </span>Creative
+                    <span className="font-medium flex items-center gap-1">
+                      <img src={getStaticOpenMoji('🎨')} alt="Creative" className="w-4 h-4 hidden sm:inline" />
+                      Creative
                     </span>
                     <span className="text-xs text-gray-400">|</span>
                     <span className="text-sm text-gray-300">
@@ -426,7 +429,7 @@ export default function Home() {
                     className="text-red-400 hover:text-red-300 transition-colors text-lg"
                     title="Reset Creative Mode"
                   >
-                    ❌
+                    <img src={getStaticOpenMoji('❌')} alt="Reset" className="w-4 h-4" />
                   </button>
                 </div>
               )}

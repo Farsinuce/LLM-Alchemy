@@ -1,8 +1,8 @@
 # OpenMoji Integration Plan for LLM Alchemy
 
 **Date**: January 28, 2025  
-**Version**: 2.0  
-**Status**: In Progress - Critical Fixes Identified
+**Version**: 2.1  
+**Status**: Phase 2 - Complete Coverage & Polish
 
 ## Executive Summary
 
@@ -15,15 +15,22 @@ This document outlines the integration of OpenMoji emojis into LLM Alchemy, repl
 - **No External Dependencies**: All assets served locally
 - **Performance Optimized**: Static files with browser caching
 
-## Critical Fixes Required (v2.0)
+## Phase 2 Tasks (v2.1)
 
-Based on production review, these issues must be addressed:
+Based on friend's comprehensive review, these improvements are needed:
 
-1. **Copy Script Path** - `__dirname` breaks on Vercel, use `process.cwd()`
-2. **Build Performance** - Synchronous copying can timeout (45s limit)
-3. **React Reconciliation** - `insertAdjacentHTML` breaks virtual DOM
-4. **Unicode Handling** - FE0F not stripped from middle positions
-5. **Reasoning Popup** - Parent emojis still using raw text
+1. **Debug Instrumentation** - Add logging to track search behavior and microbe issue
+2. **Centering Bug** - Add `mx-auto` to unlock modal OpenMojiDisplay 
+3. **Global Coverage** - Apply OpenMoji to achievements, UI icons, menu, toast messages
+4. **Search Quality** - Raise threshold to 0.35 + add alias table for known misses
+
+## Critical Fixes Completed (v2.0)
+
+✅ **Copy Script Path** - Now uses `process.cwd()` with async batching  
+✅ **Build Performance** - Asynchronous copying prevents timeouts  
+✅ **React Reconciliation** - Uses React state instead of `insertAdjacentHTML`  
+✅ **Unicode Handling** - FE0F stripped from all positions in sequence  
+✅ **Reasoning Popup** - Parent emojis now use OpenMojiDisplay components
 
 ## Technical Architecture
 
@@ -147,7 +154,7 @@ Update `package.json`:
 }
 ```
 
-### Step 3: Create OpenMoji Service (UPDATED)
+### Step 3: Create OpenMoji Service (v2.1 UPDATED)
 
 Create `src/lib/openmoji-service.ts`:
 
@@ -180,6 +187,13 @@ if (!globalCache.__openmojiResultCache) {
 }
 const resultCache = globalCache.__openmojiResultCache;
 
+// v2.1: Alias table for known mismatches
+const aliasHex: Record<string, string> = {
+  microbe: 'E011',        // Dedicated microbe emoji
+  'coffee grinder': 'E156', // Coffee grinder (if exists)
+  golem: 'E0BF'          // Golem (if exists)
+};
+
 interface ResolveEmojiParams {
   unicodeEmoji?: string;
   name: string;
@@ -195,6 +209,7 @@ interface ResolveEmojiResult {
 /**
  * Resolves the best OpenMoji for a given element
  * Always returns an OpenMoji (fallback to ❓ if nothing found)
+ * v2.1: Enhanced with debug logging and aliases
  */
 export function resolveEmoji({ 
   unicodeEmoji = '', 
@@ -207,6 +222,22 @@ export function resolveEmoji({
     return resultCache.get(cacheKey);
   }
   
+  // v2.1: Check aliases first
+  const alias = aliasHex[name.toLowerCase()];
+  if (alias) {
+    const datum = openmoji.openmojis.find(o => o.hexcode === alias);
+    if (datum) {
+      const result = wrap(datum);
+      resultCache.set(cacheKey, result);
+      
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('[OpenMoji] Alias match:', { name, alias, hexcode: datum.hexcode });
+      }
+      
+      return result;
+    }
+  }
+  
   // Get direct Unicode match if available
   const direct = unicodeEmoji ? unicodeMap.get(unicodeEmoji) : null;
   
@@ -215,39 +246,53 @@ export function resolveEmoji({
   const searchResults = fuse.search(searchQuery);
   const bestHit = searchResults[0];
 
-  // Decision logic for using search result vs direct match
+  // Decision logic for using search result vs direct match (v2.1: threshold 0.35)
   const useBest = bestHit && (
     // Use if it's a PUA emoji (extends beyond Unicode)
     bestHit.item.hexcode.startsWith('E') ||
     // Use if no direct match exists
     !direct ||
-    // Use if search result is significantly better (0.25 threshold)
-    (direct && bestHit.score! < 0.25) // Score closer to 0 is better
+    // Use if search result is significantly better (v2.1: 0.35 threshold)
+    (direct && bestHit.score! < 0.35) // Score closer to 0 is better
   );
 
-  const datum = useBest ? bestHit.item : direct;
-
-  // Fallback to question mark if nothing found
-  if (!datum) {
-    const fallback = unicodeMap.get('❓')!;
-    const result = {
-      hexcode: fallback.hexcode,
-      svgPath: `/openmoji/${fallback.hexcode}.svg`,
-      isExtra: false
-    };
-    resultCache.set(cacheKey, result);
-    return result;
+  // v2.1: Debug logging in development
+  if (process.env.NODE_ENV !== 'production') {
+    console.debug('[OpenMoji] Search result:', {
+      name,
+      tags,
+      unicodeEmoji,
+      direct: direct ? `${direct.emoji} (${direct.hexcode})` : null,
+      bestHit: bestHit ? `${bestHit.item.emoji || bestHit.item.hexcode} (score: ${bestHit.score?.toFixed(3)})` : null,
+      useBest,
+      decision: useBest ? 'fuzzy' : 'direct'
+    });
   }
 
-  const result = {
-    hexcode: datum.hexcode,
-    svgPath: `/openmoji/${datum.hexcode}.svg`,
-    isExtra: datum.hexcode.startsWith('E')
-  };
+  const datum = useBest ? bestHit.item : direct;
+  const result = wrap(datum);
   
   // Cache the result
   resultCache.set(cacheKey, result);
   return result;
+}
+
+// v2.1: Helper function for consistent result wrapping
+function wrap(datum?: any): ResolveEmojiResult {
+  if (!datum) {
+    const fallback = unicodeMap.get('❓')!;
+    return {
+      hexcode: fallback.hexcode,
+      svgPath: `/openmoji/${fallback.hexcode}.svg`,
+      isExtra: false
+    };
+  }
+  
+  return {
+    hexcode: datum.hexcode,
+    svgPath: `/openmoji/${datum.hexcode}.svg`,
+    isExtra: datum.hexcode.startsWith('E')
+  };
 }
 
 /**
@@ -445,7 +490,97 @@ Find the reasoning popup section (around line 1800) and update:
 </div>
 ```
 
-### Step 8: Vercel Optimizations
+### NEW Step 6: Global Coverage Sweep (v2.1)
+
+**Find all remaining emoji usage in the codebase:**
+
+1. **Search for emoji patterns:**
+   ```bash
+   # Search for Unicode emoji literals
+   grep -r "[\u{1F300}-\u{1F9FF}]" src/ --include="*.tsx" --include="*.ts"
+   
+   # Search for specific UI emojis
+   grep -r "🏆\|🏁\|⭐\|👤\|↩️\|❌" src/ --include="*.tsx" --include="*.ts"
+   ```
+
+2. **Files to check and update:**
+   - `src/app/page.tsx` (main menu)
+   - `src/components/game/ChallengeBar.tsx` 
+   - `src/lib/achievements.ts` (achievement definitions)
+   - Toast notifications in `LLMAlchemy.tsx`
+
+3. **Create utility helper for static emojis:**
+   ```typescript
+   // Add to src/lib/openmoji-service.ts
+   export function getStaticOpenMoji(emoji: string): string {
+     const hexcode = unicodeToHexSequence(emoji);
+     return `/openmoji/${hexcode}.svg`;
+   }
+   
+   // For simple cases, use direct img tags:
+   <img src={getStaticOpenMoji('🏆')} alt="Trophy" className="w-6 h-6" />
+   ```
+
+4. **Replace all instances:**
+   - **Achievements modal:** Replace `🏆`, `🏁` with `<OpenMojiDisplay>`
+   - **UI buttons:** Replace `⭐`, `👤`, `↩️` with OpenMoji versions
+   - **Toast messages:** Replace any emoji literals with OpenMoji
+   - **Challenge counters:** Replace progress/reward emojis
+
+### NEW Step 7: UI Polish (v2.1)
+
+**Fix centering bug in unlock modal:**
+
+In `src/components/game/LLMAlchemy.tsx`, around line 2800:
+
+```typescript
+// Find this line in the unlock animation modal:
+<OpenMojiDisplay 
+  emoji={showUnlock.emoji} 
+  hexcode={showUnlock.openmojiHex}
+  name={showUnlock.name} 
+  size="lg" 
+  className="mb-3 w-20 h-20"  // CURRENT
+/>
+
+// Update to:
+<OpenMojiDisplay 
+  emoji={showUnlock.emoji} 
+  hexcode={showUnlock.openmojiHex}
+  name={showUnlock.name} 
+  size="lg" 
+  className="mb-3 w-20 h-20 mx-auto"  // ADD mx-auto
+/>
+```
+
+**Alternative approach with flex container:**
+```typescript
+<div className="flex justify-center mb-3">
+  <OpenMojiDisplay 
+    emoji={showUnlock.emoji} 
+    hexcode={showUnlock.openmojiHex}
+    name={showUnlock.name} 
+    size="lg" 
+    className="w-20 h-20"
+  />
+</div>
+```
+
+### NEW Step 8: Instrumentation (v2.1)
+
+**Debug logging is already included in the updated `resolveEmoji()` function:**
+
+- Logs alias matches in development
+- Logs search decisions (direct vs fuzzy)
+- Shows scores and reasoning
+- Only active when `NODE_ENV !== 'production'`
+
+**To see the microbe debug output:**
+1. Open browser console
+2. Create a new "Microbe" element  
+3. Look for: `[OpenMoji] Alias match: { name: "Microbe", alias: "E011", hexcode: "E011" }`
+
+### Step 9: Vercel Optimizations
 
 Add to `next.config.js`:
 
@@ -483,7 +618,7 @@ Add to `vercel.json`:
 }
 ```
 
-### Step 9: Optional Enhancements
+### Step 10: Optional Enhancements
 
 **1. Critical Path Preload**
 

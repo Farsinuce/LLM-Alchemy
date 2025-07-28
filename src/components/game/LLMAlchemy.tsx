@@ -2573,13 +2573,13 @@ const LLMAlchemy = () => {
               }}
             >
               <div className="text-center">
-                <OpenMojiDisplay 
-                  emoji={showUnlock.emoji} 
-                  hexcode={showUnlock.openmojiHex}
-                  name={showUnlock.name} 
-                  size="lg" 
-                  className="mb-3 w-20 h-20"
-                />
+                  <OpenMojiDisplay 
+                    emoji={showUnlock.emoji} 
+                    hexcode={showUnlock.openmojiHex}
+                    name={showUnlock.name} 
+                    size="lg" 
+                    className="mb-3 w-20 h-20 mx-auto"
+                  />
                 <div 
                   className="text-3xl font-bold mb-2" 
                   style={{ 

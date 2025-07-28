@@ -48,6 +48,13 @@ if (!globalCache.__openmojiResultCache) {
 }
 const resultCache = globalCache.__openmojiResultCache;
 
+// v2.1: Alias table for known mismatches
+const aliasHex: Record<string, string> = {
+  microbe: 'E011',        // Dedicated microbe emoji
+  'coffee grinder': 'E156', // Coffee grinder (if exists)
+  golem: 'E0BF'          // Golem (if exists)
+};
+
 interface ResolveEmojiParams {
   unicodeEmoji?: string;
   name: string;
@@ -63,6 +70,7 @@ interface ResolveEmojiResult {
 /**
  * Resolves the best OpenMoji for a given element
  * Always returns an OpenMoji (fallback to ❓ if nothing found)
+ * v2.1: Enhanced with debug logging and aliases
  */
 export function resolveEmoji({ 
   unicodeEmoji = '', 
@@ -72,7 +80,23 @@ export function resolveEmoji({
   // Check cache first
   const cacheKey = `${name}|${tags.join(',')}`;
   if (resultCache.has(cacheKey)) {
-    return resultCache.get(cacheKey);
+    return resultCache.get(cacheKey)!;
+  }
+  
+  // v2.1: Check aliases first
+  const alias = aliasHex[name.toLowerCase()];
+  if (alias) {
+    const datum = openmoji.openmojis.find(o => o.hexcode === alias);
+    if (datum) {
+      const result = wrap(datum);
+      resultCache.set(cacheKey, result);
+      
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('[OpenMoji] Alias match:', { name, alias, hexcode: datum.hexcode });
+      }
+      
+      return result;
+    }
   }
   
   // Get direct Unicode match if available
@@ -83,39 +107,53 @@ export function resolveEmoji({
   const searchResults = fuse.search(searchQuery);
   const bestHit = searchResults[0];
 
-  // Decision logic for using search result vs direct match
+  // Decision logic for using search result vs direct match (v2.1: threshold 0.35)
   const useBest = bestHit && (
     // Use if it's a PUA emoji (extends beyond Unicode)
     bestHit.item.hexcode.startsWith('E') ||
     // Use if no direct match exists
     !direct ||
-    // Use if search result is significantly better (0.25 threshold)
-    (direct && bestHit.score! < 0.25) // Score closer to 0 is better
+    // Use if search result is significantly better (v2.1: 0.35 threshold)
+    (direct && bestHit.score! < 0.35) // Score closer to 0 is better
   );
 
-  const datum = useBest ? bestHit.item : direct;
-
-  // Fallback to question mark if nothing found
-  if (!datum) {
-    const fallback = unicodeMap.get('❓')!;
-    const result = {
-      hexcode: fallback.hexcode,
-      svgPath: `/openmoji/${fallback.hexcode}.svg`,
-      isExtra: false
-    };
-    resultCache.set(cacheKey, result);
-    return result;
+  // v2.1: Debug logging in development
+  if (process.env.NODE_ENV !== 'production') {
+    console.debug('[OpenMoji] Search result:', {
+      name,
+      tags,
+      unicodeEmoji,
+      direct: direct ? `${direct.emoji} (${direct.hexcode})` : null,
+      bestHit: bestHit ? `${bestHit.item.emoji || bestHit.item.hexcode} (score: ${bestHit.score?.toFixed(3)})` : null,
+      useBest,
+      decision: useBest ? 'fuzzy' : 'direct'
+    });
   }
 
-  const result = {
-    hexcode: datum.hexcode,
-    svgPath: `/openmoji/${datum.hexcode}.svg`,
-    isExtra: datum.hexcode.startsWith('E')
-  };
+  const datum = useBest ? bestHit.item : direct;
+  const result = wrap(datum);
   
   // Cache the result
   resultCache.set(cacheKey, result);
   return result;
+}
+
+// v2.1: Helper function for consistent result wrapping
+function wrap(datum?: OpenMojiData): ResolveEmojiResult {
+  if (!datum) {
+    const fallback = unicodeMap.get('❓')!;
+    return {
+      hexcode: fallback.hexcode,
+      svgPath: `/openmoji/${fallback.hexcode}.svg`,
+      isExtra: false
+    };
+  }
+  
+  return {
+    hexcode: datum.hexcode,
+    svgPath: `/openmoji/${datum.hexcode}.svg`,
+    isExtra: datum.hexcode.startsWith('E')
+  };
 }
 
 /**
@@ -129,4 +167,13 @@ export function unicodeToHexSequence(emoji: string): string {
     .filter(code => code !== 0xFE0F) // Remove variation selector-16 anywhere
     .map(code => code.toString(16).toUpperCase().padStart(4, '0'))
     .join('-');
+}
+
+/**
+ * Helper function for static OpenMoji usage in UI components
+ * Returns the SVG path for a given Unicode emoji
+ */
+export function getStaticOpenMoji(emoji: string): string {
+  const hexcode = unicodeToHexSequence(emoji);
+  return `/openmoji/${hexcode}.svg`;
 }
