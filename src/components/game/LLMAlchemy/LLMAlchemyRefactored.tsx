@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Sparkles, X, GripHorizontal, User, ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
@@ -14,6 +14,8 @@ import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 import { useGameMode, useElements, useMixingArea, useCombinations, useAchievements, useGameUndo, useGameStats, useGamePersistence } from './contexts/GameStateProvider';
 import { Element, MixingElement } from './hooks/useGameState';
 import { useElementMixing } from './hooks/useElementMixing';
+import { useGameAudio } from './hooks/useGameAudio';
+import { useGameAnimations } from './hooks/useGameAnimations';
 import { UnlockModal, AchievementsModal, ReasoningPopup } from './components';
 import * as GameLogic from '@/lib/game-logic';
 
@@ -64,6 +66,20 @@ const LLMAlchemyRefactored = () => {
   const { isStateRestored, setStateRestored } = useGameStats();
   const { loadSavedState, resetGameState } = useGamePersistence();
   
+  // Initialize our custom hooks
+  const { playSound } = useGameAudio();
+  const { 
+    shakeElement, 
+    popElement, 
+    animatingElements, 
+    isPlayingLoadAnimation, 
+    animatedElements,
+    triggerShake,
+    triggerPop,
+    animateRemoval,
+    playElementLoadAnimation 
+  } = useGameAnimations();
+
   // UI-only state (ephemeral - doesn't need to be in global state)
   const [sortMode, setSortMode] = useState<string>('unlock');
   const [showUnlock, setShowUnlock] = useState<ShowUnlock | null>(null);
@@ -80,8 +96,6 @@ const LLMAlchemyRefactored = () => {
   const [touchStartTime, setTouchStartTime] = useState<number | null>(null);
   const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null);
   const [toast, setToast] = useState<string>('');
-  const [shakeElement, setShakeElement] = useState<string | null>(null);
-  const [popElement, setPopElement] = useState<string | null>(null);
   const [dragStartY, setDragStartY] = useState<number>(0);
   const [dragStartHeight, setDragStartHeight] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -90,10 +104,7 @@ const LLMAlchemyRefactored = () => {
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
   const [dimmedElements, setDimmedElements] = useState<Set<string>>(new Set());
-  const [animatingElements, setAnimatingElements] = useState<Set<string>>(new Set());
   const [isUndoing, setIsUndoing] = useState<boolean>(false);
-  const [isPlayingLoadAnimation, setIsPlayingLoadAnimation] = useState<boolean>(false);
-  const [animatedElements, setAnimatedElements] = useState<Set<string>>(new Set());
   
   
   // Refs
@@ -163,8 +174,6 @@ const LLMAlchemyRefactored = () => {
             
             // Trigger load animation if needed
             if (savedState.elements && savedState.elements.length > 5) {
-              setIsPlayingLoadAnimation(true);
-              setAnimatedElements(new Set(savedState.elements.map(e => e.id)));
               playElementLoadAnimation(savedState.elements);
             }
           } else {
@@ -230,8 +239,7 @@ const LLMAlchemyRefactored = () => {
       setFloatingEmojis([]);
       setShowUnlock(null);
       setReasoningPopup(null);
-      setShakeElement(null);
-      setPopElement(null);
+      // Clear animations handled by useGameAnimations hook
     }
   }, [gameMode, elements, resetGameState]);
 
@@ -380,76 +388,6 @@ const LLMAlchemyRefactored = () => {
   }, [reasoningPopup]);
 
   // Helper functions using game logic
-  const playSound = (type: string) => {
-    if (!audioContext.current) return;
-    
-    const osc = audioContext.current.createOscillator();
-    const gainNode = audioContext.current.createGain();
-    
-    osc.connect(gainNode);
-    gainNode.connect(audioContext.current.destination);
-    
-    const now = audioContext.current.currentTime;
-    
-    switch(type) {
-      case 'plop':
-        osc.frequency.setValueAtTime(400, now);
-        osc.frequency.exponentialRampToValueAtTime(200, now + 0.1);
-        gainNode.gain.setValueAtTime(0.3, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-        osc.start(now);
-        osc.stop(now + 0.1);
-        break;
-      case 'pop':
-        osc.frequency.setValueAtTime(600, now);
-        osc.frequency.exponentialRampToValueAtTime(300, now + 0.15);
-        gainNode.gain.setValueAtTime(0.4, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-        osc.start(now);
-        osc.stop(now + 0.15);
-        break;
-      case 'reward':
-        osc.frequency.setValueAtTime(523.25, now);
-        osc.frequency.setValueAtTime(659.25, now + 0.1);
-        osc.frequency.setValueAtTime(783.99, now + 0.2);
-        gainNode.gain.setValueAtTime(0.3, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-        osc.start(now);
-        osc.stop(now + 0.4);
-        break;
-      case 'end-element':
-        osc.frequency.setValueAtTime(440, now);
-        osc.frequency.setValueAtTime(554.37, now + 0.15);
-        osc.frequency.setValueAtTime(659.25, now + 0.3);
-        gainNode.gain.setValueAtTime(0.35, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-        osc.start(now);
-        osc.stop(now + 0.5);
-        break;
-      case 'press':
-        osc.frequency.setValueAtTime(200, now);
-        gainNode.gain.setValueAtTime(0.1, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-        osc.start(now);
-        osc.stop(now + 0.05);
-        break;
-      case 'click':
-        osc.frequency.setValueAtTime(1000, now);
-        gainNode.gain.setValueAtTime(0.2, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.03);
-        osc.start(now);
-        osc.stop(now + 0.03);
-        break;
-      case 'reverse-pop':
-        osc.frequency.setValueAtTime(300, now);
-        osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
-        gainNode.gain.setValueAtTime(0.4, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-        osc.start(now);
-        osc.stop(now + 0.15);
-        break;
-    }
-  };
 
   const showToast = (message: string) => {
     setToast(message);
@@ -461,10 +399,27 @@ const LLMAlchemyRefactored = () => {
     userApiKey,
     selectedModel,
     onShowToast: showToast,
-    onPlaySound: playSound,
+    onPlaySound: (type: string) => {
+      // Map string types to our SoundType enum
+      const soundMap: Record<string, Parameters<typeof playSound>[0]> = {
+        'plop': 'plop',
+        'pop': 'pop', 
+        'reward': 'reward',
+        'end-element': 'end-element',
+        'press': 'press',
+        'click': 'click',
+        'reverse-pop': 'reverse-pop'
+      };
+      const soundType = soundMap[type] || 'pop';
+      playSound(soundType);
+    },
     onShowUnlock: setShowUnlock,
-    onSetShakeElement: setShakeElement,
-    onSetPopElement: setPopElement,
+    onSetShakeElement: (elementId: string | null) => {
+      if (elementId) triggerShake(elementId);
+    },
+    onSetPopElement: (elementId: string | null) => {
+      if (elementId) triggerPop(elementId);
+    },
     onSetUnlockAnimationStartTime: setUnlockAnimationStartTime,
     dropZoneRef
   });
@@ -485,42 +440,6 @@ const LLMAlchemyRefactored = () => {
     setReasoningPopup(null);
   };
 
-  const animateRemoval = useCallback((elements: MixingElement[], onComplete: () => void) => {
-    if (elements.length === 0) {
-      onComplete();
-      return;
-    }
-    
-    elements.forEach((el, index) => {
-      setTimeout(() => {
-        setAnimatingElements(prev => new Set(prev).add(`${el.id}-${el.index}`));
-      }, index * 50);
-    });
-    
-    const totalDuration = elements.length * 50 + 300;
-    setTimeout(() => {
-      onComplete();
-      setAnimatingElements(new Set());
-    }, totalDuration);
-  }, []);
-
-  const playElementLoadAnimation = useCallback((elementsToAnimate: Element[]) => {
-    const elementsToAnimate_filtered = elementsToAnimate.filter(e => e.unlockOrder > 4);
-    if (elementsToAnimate_filtered.length === 0 || isPlayingLoadAnimation) return;
-    
-    console.log('[REFACTORED_LOAD_ANIMATION] Starting element load animation for', elementsToAnimate_filtered.length, 'elements');
-    setIsPlayingLoadAnimation(true);
-    
-    const sortedElements = [...elementsToAnimate_filtered].sort((a, b) => a.unlockOrder - b.unlockOrder);
-    setAnimatedElements(new Set(sortedElements.map(e => e.id)));
-    
-    const totalDuration = (sortedElements.length * 25) + 300 + 200;
-    
-    setTimeout(() => {
-      setIsPlayingLoadAnimation(false);
-      setAnimatedElements(new Set());
-    }, totalDuration);
-  }, [isPlayingLoadAnimation]);
 
   const handleElementClick = (element: Element, event: React.MouseEvent) => {
     if (element.reasoning) {
