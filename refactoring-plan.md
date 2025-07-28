@@ -67,6 +67,15 @@ This phase focuses on cleaning up existing code, reducing duplication, and impro
     3.  **Database Types:** ⏳ File created, generation command can be run when needed
     4.  **Migration:** ✅ Updated all imports to use centralized types from `@/types`
     5.  **ESLint Protection:** ✅ `import/no-cycle` rule already in place
+	
+	## Minor Issues Encountered:
+
+1. __TypeScript compatibility warnings__ about `GenericSupabaseClient` type - These are non-blocking warnings that don't affect functionality
+
+2. __db.generated.ts is empty__ - We didn't run the Supabase type generation command (`npx supabase gen types...`). This can be done later when needed.
+
+3. __Achievement type conflict__ in LLMAlchemy.tsx - There appear to be multiple Achievement type definitions in the codebase that may need consolidation in a future phase.
+
 
 **Migration Results:**
 - ✅ Types properly separated into domain-specific files
