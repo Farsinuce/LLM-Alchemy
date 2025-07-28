@@ -16,7 +16,6 @@
     "precommit": "npm run gen:types && npm run lint && npm run typecheck"
   },
   "dependencies": {
-    "@rollup/rollup-win32-x64-msvc": "^4.46.1",
     "@stripe/stripe-js": "^7.4.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.50.4",
