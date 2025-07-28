@@ -8,6 +8,8 @@ import { Achievement, checkAchievements, updateAchievementsWithProgress } from '
 import { GAME_CONFIG } from '@/lib/game-config';
 import { ChallengeBar } from '@/components/game/ChallengeBar';
 import { elementMatchesCategory } from '@/lib/challenge-elements';
+import { resolveEmoji } from '@/lib/openmoji-service';
+import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 
 // Type definitions
 interface Element {
@@ -22,6 +24,9 @@ interface Element {
   isEndElement?: boolean;
   parents?: Element[]; // Runtime only - the elements that created this one
   energyEnhanced?: boolean; // Runtime only - tracks if this was created via energy enhancement
+  // OpenMoji-specific fields (only for PUA emojis)
+  openmojiHex?: string;      // Hexcode for non-Unicode emojis
+  isOpenmojiExtra?: boolean; // True if using PUA emoji
 }
 
 interface MixingElement extends Element {
@@ -121,7 +126,7 @@ const LLMAlchemy = () => {
   const [sortMode, setSortMode] = useState<string>('unlock');
   const [combinations, setCombinations] = useState<Record<string, string | null>>({});
   const [showUnlock, setShowUnlock] = useState<ShowUnlock | null>(null);
-  const [mixingElements, setMixingElements] = useState<MixingElements | null>(null);
+  const [, setMixingElements] = useState<MixingElements | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [hoveredElement, setHoveredElement] = useState<number | null>(null);
   const [isMixing, setIsMixing] = useState<boolean>(false);
@@ -1033,7 +1038,7 @@ const LLMAlchemy = () => {
     });
 
     // Enhanced fetch with timeout and retry
-    const makeRequest = async (isRetry: boolean = false): Promise<any> => {
+    const makeRequest = async (isRetry: boolean = false): Promise<{ outcomes: { result: string; emoji: string; color: string; rarity: string; reasoning: string; tags: string[]; isEndElement: boolean }[] | null; reasoning?: string; error?: string }> => {
       const abortController = new AbortController();
       const timeoutId = setTimeout(() => abortController.abort(), 8000); // 8 second timeout
       
@@ -1161,13 +1166,12 @@ const LLMAlchemy = () => {
           console.log(`[LLM-Alchemy Debug] Single outcome available:`, selectedOutcome);
         } else {
           // Multiple outcomes - select based on rarity probabilities
-          const rarityWeights = { common: 60, uncommon: 30, rare: 10 };
           const roll = Math.random() * 100;
           
           // Sort outcomes by rarity preference
-          const commonOutcomes = parsedResult.outcomes.filter((o: any) => o.rarity === 'common');
-          const uncommonOutcomes = parsedResult.outcomes.filter((o: any) => o.rarity === 'uncommon');
-          const rareOutcomes = parsedResult.outcomes.filter((o: any) => o.rarity === 'rare');
+          const commonOutcomes = parsedResult.outcomes.filter((o: { rarity: string }) => o.rarity === 'common');
+          const uncommonOutcomes = parsedResult.outcomes.filter((o: { rarity: string }) => o.rarity === 'uncommon');
+          const rareOutcomes = parsedResult.outcomes.filter((o: { rarity: string }) => o.rarity === 'rare');
           
           if (roll < 60 && commonOutcomes.length > 0) {
             selectedOutcome = commonOutcomes[Math.floor(Math.random() * commonOutcomes.length)];
@@ -1419,6 +1423,14 @@ const LLMAlchemy = () => {
         }
       } else {
         const isEndElement = 'isEndElement' in result ? result.isEndElement || false : false;
+        
+        // Resolve OpenMoji for the new element
+        const openmojiData = resolveEmoji({
+          unicodeEmoji: ('emoji' in result ? result.emoji : null) || '✨',
+          name: result.result,
+          tags: ('tags' in result ? result.tags : null) || []
+        });
+        
         const newElement = {
           id: result.result.toLowerCase().replace(/\s+/g, '-'),
           name: result.result,
@@ -1430,7 +1442,12 @@ const LLMAlchemy = () => {
           tags: ('tags' in result ? result.tags : null) || [],
           isEndElement,
           parents: elementsToMix, // Track the parent elements that created this one
-          energyEnhanced: hasEnergy && elementsToMix.length === 2 // Track if this was energy-enhanced (not energy as element)
+          energyEnhanced: hasEnergy && elementsToMix.length === 2, // Track if this was energy-enhanced (not energy as element)
+          // Only store OpenMoji data for PUA (extra) emojis
+          ...(openmojiData.isExtra && {
+            openmojiHex: openmojiData.hexcode,
+            isOpenmojiExtra: true
+          })
         };
         
         // Update arrays first
@@ -1677,7 +1694,7 @@ const LLMAlchemy = () => {
       
       // Small delay to avoid conflicts
       setTimeout(() => {
-        showReasoningPopup(touchDragging, syntheticEvent as any);
+        showReasoningPopup(touchDragging, syntheticEvent as React.TouchEvent);
       }, 50);
       
       return;
@@ -2114,7 +2131,12 @@ const LLMAlchemy = () => {
                   WebkitUserSelect: 'none'
                 }}
               >
-                <div className="text-lg sm:text-xl">{energyElement.emoji}</div>
+                <OpenMojiDisplay 
+                  emoji={energyElement.emoji} 
+                  hexcode={energyElement.openmojiHex}
+                  name={energyElement.name} 
+                  size="md" 
+                />
                 <div className="text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight">{energyElement.name}</div>
               </div>
               <div className="w-px h-12 sm:h-14 md:h-16 bg-gray-600 mx-1"></div>
@@ -2161,7 +2183,12 @@ const LLMAlchemy = () => {
                     : undefined
                 }}
             >
-              <div className="text-lg sm:text-xl">{element.emoji}</div>
+              <OpenMojiDisplay 
+                emoji={element.emoji} 
+                hexcode={element.openmojiHex}
+                name={element.name} 
+                size="md" 
+              />
               <div className="text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight">{element.name}</div>
             </div>
           ))}
@@ -2475,7 +2502,13 @@ const LLMAlchemy = () => {
                         hoveredUIElement === `mixing-${element.index}` && !isDragging ? `0 0 0 2px ${getRarityHoverColor(element.rarity)}` : ''
             }}
           >
-            <div className="text-lg sm:text-xl pointer-events-none">{element.emoji}</div>
+            <OpenMojiDisplay 
+              emoji={element.emoji} 
+              hexcode={element.openmojiHex}
+              name={element.name} 
+              size="md" 
+              className="pointer-events-none"
+            />
             <div className="text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight pointer-events-none">{element.name}</div>
           </div>
         ))}
@@ -2540,7 +2573,13 @@ const LLMAlchemy = () => {
               }}
             >
               <div className="text-center">
-                <div className="text-6xl mb-3">{showUnlock.emoji}</div>
+                <OpenMojiDisplay 
+                  emoji={showUnlock.emoji} 
+                  hexcode={showUnlock.openmojiHex}
+                  name={showUnlock.name} 
+                  size="lg" 
+                  className="mb-3 w-20 h-20"
+                />
                 <div 
                   className="text-3xl font-bold mb-2" 
                   style={{ 
@@ -2763,7 +2802,13 @@ const LLMAlchemy = () => {
             opacity: 0.95
           }}
         >
-          <div className="text-lg sm:text-xl pointer-events-none">{touchDragging.emoji}</div>
+          <OpenMojiDisplay 
+            emoji={touchDragging.emoji} 
+            hexcode={touchDragging.openmojiHex}
+            name={touchDragging.name} 
+            size="md" 
+            className="pointer-events-none"
+          />
           <div className="text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight pointer-events-none">{touchDragging.name}</div>
         </div>
       )}
@@ -2789,11 +2834,22 @@ const LLMAlchemy = () => {
             }}
           >
             {reasoningPopup.element.parents && reasoningPopup.element.parents.length > 0 && (
-              <div className="text-center text-sm mb-1">
-                {reasoningPopup.element.energyEnhanced 
-                  ? reasoningPopup.element.parents.map(parent => parent.emoji).join('〰️')
-                  : reasoningPopup.element.parents.map(parent => parent.emoji).join('+')
-                }
+              <div className="text-center text-sm mb-1 flex items-center justify-center gap-1">
+                {reasoningPopup.element.parents.map((parent, index) => (
+                  <React.Fragment key={parent.id}>
+                    <OpenMojiDisplay 
+                      emoji={parent.emoji} 
+                      hexcode={parent.openmojiHex}
+                      name={parent.name} 
+                      size="sm" 
+                    />
+                    {index < reasoningPopup.element.parents!.length - 1 && (
+                      <span className="text-gray-400 mx-1">
+                        {reasoningPopup.element.energyEnhanced ? '〰️' : '+'}
+                      </span>
+                    )}
+                  </React.Fragment>
+                ))}
               </div>
             )}
             <div className="text-gray-300 italic text-center text-xs">

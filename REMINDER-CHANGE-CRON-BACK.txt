@@ -1,6 +1,0 @@
-REMINDER: Change cron schedule back to daily!
-
-Current: "0 * * * *" (hourly)
-Change back to: "0 0 * * *" (daily at midnight)
-
-In vercel.json file when testing is complete.

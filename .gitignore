@@ -15,6 +15,7 @@
 
 # backup
 /backup
+/.backup
 
 # next.js
 /.next/
@@ -26,6 +27,9 @@
 # misc
 .DS_Store
 *.pem
+
+# OpenMoji SVG assets (generated during build)
+/public/openmoji/
 
 # debug
 npm-debug.log*

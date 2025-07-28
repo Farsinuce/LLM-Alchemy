@@ -4,17 +4,20 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "node scripts/copy-openmoji.js && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "node scripts/copy-openmoji.js"
   },
   "dependencies": {
     "@stripe/stripe-js": "^7.4.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.50.4",
+    "fuse.js": "^7.1.0",
     "lucide-react": "^0.525.0",
     "nanoid": "^5.1.5",
     "next": "15.3.5",
+    "openmoji": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "stripe": "^18.3.0"
