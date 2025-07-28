@@ -14,11 +14,14 @@ export interface MixingElement extends Element {
 }
 
 export interface LastCombination {
-  elementCreated: Element;
+  createdElement: {
+    element: Element;
+    isEndElement: boolean;
+  };
   combinationKey: string;
+  mixingAreaState: MixingElement[];
   achievementsGained: Achievement[];
   endElementsGained: Element[];
-  wasEndElement: boolean;
   timestamp: number;
 }
 

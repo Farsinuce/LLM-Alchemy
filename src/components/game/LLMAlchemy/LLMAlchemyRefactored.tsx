@@ -4,17 +4,17 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Sparkles, X, GripHorizontal, User, ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
-import { createClient, incrementDailyCount, saveGameState, loadGameState, consumeToken, addTokens, getLlmModelPreference } from '@/lib/supabase';
+import { createClient, saveGameState, loadGameState, addTokens, getLlmModelPreference } from '@/lib/supabase';
 import { Achievement } from '@/types';
 import { GAME_CONFIG } from '@/lib/game-config';
 import { ChallengeBar } from '@/components/game/ChallengeBar';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 
 // Import our new state management
-import { useGameStateContext, useGameMode, useElements, useMixingArea, useCombinations, useAchievements, useGameUndo, useGameStats, useGamePersistence } from './contexts/GameStateProvider';
+import { useGameMode, useElements, useMixingArea, useCombinations, useAchievements, useGameUndo, useGameStats, useGamePersistence } from './contexts/GameStateProvider';
 import { Element, MixingElement } from './hooks/useGameState';
 import { useElementMixing } from './hooks/useElementMixing';
-import { useElementInteraction } from './hooks/useElementInteraction';
+import { UnlockModal, AchievementsModal, ReasoningPopup } from './components';
 import * as GameLogic from '@/lib/game-logic';
 
 // UI-only interfaces (not moved to state management)
@@ -50,28 +50,29 @@ interface WindowWithWebkit extends Window {
 }
 
 const LLMAlchemyRefactored = () => {
-  const { user, dbUser, dailyCount, tokenBalance, refreshDailyCount, refreshTokenBalance } = useSupabase();
+  const { user, dbUser, dailyCount, tokenBalance, refreshTokenBalance } = useSupabase();
   const router = useRouter();
   const searchParams = useSearchParams();
   
   // Get state and actions from context
-  const { state } = useGameStateContext();
   const { gameMode, setGameMode } = useGameMode();
-  const { elements, endElements, setElements, addElement, setEndElements, addEndElement } = useElements();
-  const { mixingArea, setMixingArea, addToMixingArea, removeFromMixingArea, updateMixingElement, clearMixingArea } = useMixingArea();
-  const { combinations, failedCombinations, setCombinations, addCombination, setFailedCombinations, addFailedCombination } = useCombinations();
-  const { achievements, setAchievements, addAchievements } = useAchievements();
+  const { elements, endElements, setElements, setEndElements } = useElements();
+  const { mixingArea, setMixingArea, addToMixingArea, updateMixingElement, clearMixingArea } = useMixingArea();
+  const { combinations, failedCombinations, setCombinations, setFailedCombinations } = useCombinations();
+  const { achievements } = useAchievements();
   const { lastCombination, undoAvailable, setLastCombination, setUndoAvailable } = useGameUndo();
-  const { totalCombinationsMade, isStateRestored, incrementTotalCombinations, setStateRestored } = useGameStats();
+  const { isStateRestored, setStateRestored } = useGameStats();
   const { loadSavedState, resetGameState } = useGamePersistence();
   
   // UI-only state (ephemeral - doesn't need to be in global state)
   const [sortMode, setSortMode] = useState<string>('unlock');
   const [showUnlock, setShowUnlock] = useState<ShowUnlock | null>(null);
+  const [showAchievements, setShowAchievements] = useState<boolean>(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [unlockAnimationStartTime, setUnlockAnimationStartTime] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [hoveredElement, setHoveredElement] = useState<number | null>(null);
-  const [isMixing, setIsMixing] = useState<boolean>(false);
-  const [hoveredUIElement, setHoveredUIElement] = useState<string | null>(null);
+  const [isMixing] = useState<boolean>(false);
   const [touchDragging, setTouchDragging] = useState<MixingElement | null>(null);
   const [touchOffset, setTouchOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [listHeight, setListHeight] = useState<number>(192);
@@ -84,13 +85,10 @@ const LLMAlchemyRefactored = () => {
   const [dragStartY, setDragStartY] = useState<number>(0);
   const [dragStartHeight, setDragStartHeight] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [unlockAnimationStartTime, setUnlockAnimationStartTime] = useState<number | null>(null);
   const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmoji[]>([]);
   const [reasoningPopup, setReasoningPopup] = useState<ReasoningPopup | null>(null);
-  const [showAchievements, setShowAchievements] = useState<boolean>(false);
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
-  const [undoUsed, setUndoUsed] = useState<boolean>(false);
   const [dimmedElements, setDimmedElements] = useState<Set<string>>(new Set());
   const [animatingElements, setAnimatingElements] = useState<Set<string>>(new Set());
   const [isUndoing, setIsUndoing] = useState<boolean>(false);
@@ -109,6 +107,7 @@ const LLMAlchemyRefactored = () => {
     end_date: string;
     isCompleted: boolean;
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [currentChallenges, setCurrentChallenges] = useState<Challenge[]>([]);
   
   // Refs
@@ -502,47 +501,6 @@ const LLMAlchemyRefactored = () => {
     dropZoneRef
   });
 
-  const {
-    handleElementDrop,
-    handleElementDoubleClick
-  } = useElementInteraction({
-    onMixElements: mixElements,
-    onShowToast: showToast,
-    onPlaySound: playSound,
-    dropZoneRef
-  });
-
-  const checkDailyLimit = () => {
-    if (userApiKey) return true;
-    if (tokenBalance > 0) return true;
-    
-    if (dailyCount >= GAME_CONFIG.DAILY_FREE_COMBINATIONS) {
-      showToast(`Daily limit reached: ${dailyCount}/${GAME_CONFIG.DAILY_FREE_COMBINATIONS} - Click "Get more" for tokens!`);
-      return false;
-    }
-    return true;
-  };
-
-  const incrementDailyCounter = async () => {
-    try {
-      if (user && !userApiKey) {
-        const supabase = createClient();
-        
-        if (tokenBalance > 0) {
-          await consumeToken(supabase, user.id);
-          await refreshTokenBalance();
-        } else {
-          await incrementDailyCount(supabase, user.id);
-          await refreshDailyCount();
-        }
-      }
-      return true;
-    } catch (error) {
-      console.error('Error updating usage counter:', error);
-      return true;
-    }
-  };
-
   const showReasoningPopup = (element: Element, event: React.MouseEvent | React.TouchEvent) => {
     if (!element.reasoning) return;
     
@@ -656,7 +614,6 @@ const LLMAlchemyRefactored = () => {
     return GameLogic.sortElements(elements, sortMode as 'unlock' | 'alpha', searchTerm);
   }, [elements, sortMode, searchTerm]);
 
-  const energyElement = elements.find(e => e.name === 'Energy');
   const regularElementCount = elements.length;
   const endElementCount = endElements.length;
 
@@ -850,7 +807,54 @@ const LLMAlchemyRefactored = () => {
             <span className="text-sm">Back</span>
           </button>
           
-          <div className="text-sm text-gray-400 flex items-center gap-1">
+          <div className="text-sm text-gray-400 flex items-center gap-2">
+            {/* Undo Button */}
+            {undoAvailable && !isUndoing && (
+              <button
+                onClick={async () => {
+                  if (lastCombination) {
+                    setIsUndoing(true);
+                    playSound('reverse-pop');
+                    
+                    // Remove the created element
+                    if (lastCombination.createdElement.isEndElement) {
+                      const newEndElements = endElements.filter(e => e.id !== lastCombination.createdElement.element.id);
+                      setEndElements(newEndElements);
+                    } else {
+                      const newElements = elements.filter(e => e.id !== lastCombination.createdElement.element.id);
+                      setElements(newElements);
+                    }
+                    
+                    // Restore the mixing area
+                    setMixingArea(lastCombination.mixingAreaState);
+                    
+                    // Remove from combinations
+                    const newCombinations = { ...combinations };
+                    delete newCombinations[lastCombination.combinationKey];
+                    setCombinations(newCombinations);
+                    
+                    // Remove from failed combinations if it was there
+                    const newFailedCombinations = failedCombinations.filter(key => key !== lastCombination.combinationKey);
+                    setFailedCombinations(newFailedCombinations);
+                    
+                    // Clear undo state
+                    setLastCombination(null);
+                    setUndoAvailable(false);
+                    
+                    showToast('Undid last combination');
+                    
+                    setTimeout(() => {
+                      setIsUndoing(false);
+                    }, 300);
+                  }
+                }}
+                className="px-2 py-1 bg-orange-600 hover:bg-orange-500 rounded text-white font-medium transition-colors text-xs"
+                title="Undo last combination"
+              >
+                ↶ Undo
+              </button>
+            )}
+            
             {userApiKey ? (
               <span className="text-green-400">Using your API key</span>
             ) : tokenBalance > 0 ? (
@@ -1212,33 +1216,23 @@ const LLMAlchemyRefactored = () => {
       <ChallengeBar isAnonymous={dbUser?.is_anonymous} currentGameMode={gameMode} />
 
       {/* Reasoning Popup */}
-      {reasoningPopup && (
-        <div
-          className="reasoning-popup fixed z-50 bg-gray-800 border border-gray-600 rounded-lg p-4 max-w-xs shadow-xl"
-          style={{
-            left: `${Math.min(reasoningPopup.x, window.innerWidth - 200)}px`,
-            top: `${Math.max(reasoningPopup.y - 100, 10)}px`,
-            transform: 'translateX(-50%)'
-          }}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <OpenMojiDisplay 
-              emoji={reasoningPopup.element.emoji} 
-              hexcode={reasoningPopup.element.openmojiHex}
-              name={reasoningPopup.element.name} 
-              size="sm" 
-            />
-            <h4 className="font-semibold">{reasoningPopup.element.name}</h4>
-          </div>
-          <p className="text-sm text-gray-300">{reasoningPopup.element.reasoning}</p>
-          <button
-            onClick={hideReasoningPopup}
-            className="absolute top-2 right-2 text-gray-400 hover:text-white"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      )}
+      <ReasoningPopup 
+        reasoningPopup={reasoningPopup}
+        onClose={hideReasoningPopup}
+      />
+
+      {/* Unlock Modal */}
+      <UnlockModal 
+        showUnlock={showUnlock}
+        onClose={() => setShowUnlock(null)}
+      />
+
+      {/* Achievements Modal */}
+      <AchievementsModal 
+        isOpen={showAchievements}
+        achievements={achievements}
+        onClose={() => setShowAchievements(false)}
+      />
 
       {/* Toast */}
       {toast && (

@@ -498,11 +498,14 @@ export function useElementMixing({
 
         // Set up undo functionality
         const lastCombination: LastCombination = {
-          elementCreated: newElement,
+          createdElement: {
+            element: newElement,
+            isEndElement: isEndElement
+          },
           combinationKey: mixKey,
+          mixingAreaState: mixingArea, // Capture current mixing area state
           achievementsGained: allAchievements,
           endElementsGained: isEndElement ? [newElement] : [],
-          wasEndElement: isEndElement,
           timestamp: Date.now()
         };
         
