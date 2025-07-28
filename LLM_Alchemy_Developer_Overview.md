@@ -71,7 +71,15 @@ Share it with incoming developers or paste it into an LLM to give instant contex
 | **src/app/api/stripe/webhook.ts** | Webhook listener – credits tokens, flips subscription flags. |
 | **src/components/auth/AuthModal.tsx** | Email & OAuth login/registration, Turnstile token handling. |
 | **src/components/auth/SupabaseProvider.tsx** | React context supplying `user`, `dbUser`, `dailyCount` + helpers. |
-| **src/components/game/LLMAlchemy.tsx** | Core game logic: drag‑drop grid, element state, animation loops, hard‑coded science combos. |
+| **src/components/game/LLMAlchemy.tsx** | **(LEGACY)** Original monolithic game component - being replaced by refactored version. |
+| **src/components/game/LLMAlchemy/LLMAlchemyWrapper.tsx** | Main entry point for refactored game - wraps components in GameStateProvider. |
+| **src/components/game/LLMAlchemy/LLMAlchemyRefactored.tsx** | **NEW** Modular game component using React Context state management. |
+| **src/components/game/LLMAlchemy/contexts/GameStateProvider.tsx** | React Context provider managing all game state with useReducer pattern. |
+| **src/components/game/LLMAlchemy/hooks/useGameState.ts** | Core reducer and state management logic extracted from main component. |
+| **src/components/game/LLMAlchemy/hooks/useElementMixing.ts** | Element combining logic and LLM API interactions. |
+| **src/components/game/LLMAlchemy/hooks/useElementInteraction.ts** | Drag & drop, touch, and UI interaction handling. |
+| **src/components/game/LLMAlchemy/components/{UnlockModal,AchievementsModal,ReasoningPopup}.tsx** | Extracted modal components for better maintainability. |
+| **src/lib/game-logic.ts** | Pure game logic functions (collision detection, sorting, validation, etc.). |
 | **src/components/game/ChallengeBar.tsx** | Banner that shows active challenges and rewards. |
 | **src/components/game/OpenMojiDisplay.tsx** | Renders all emojis as consistent SVGs using the OpenMoji library. |
 | **src/lib/supabase/browser.ts** | Creates a browser-safe Supabase client for use in UI components. |

@@ -95,20 +95,6 @@ const LLMAlchemyRefactored = () => {
   const [isPlayingLoadAnimation, setIsPlayingLoadAnimation] = useState<boolean>(false);
   const [animatedElements, setAnimatedElements] = useState<Set<string>>(new Set());
   
-  // Challenge-related state
-  interface Challenge {
-    id: string;
-    challenge_type: 'daily' | 'weekly';
-    title: string;
-    target_element?: string;
-    target_category?: string;
-    reward_tokens: number;
-    start_date: string;
-    end_date: string;
-    isCompleted: boolean;
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [currentChallenges, setCurrentChallenges] = useState<Challenge[]>([]);
   
   // Refs
   const draggedElement = useRef<MixingElement | null>(null);
@@ -130,24 +116,6 @@ const LLMAlchemyRefactored = () => {
     }
   }, []);
   
-  // Fetch current challenges
-  useEffect(() => {
-    const fetchChallenges = async () => {
-      try {
-        const response = await fetch('/api/challenges/current');
-        if (response.ok) {
-          const data = await response.json();
-          setCurrentChallenges(data.challenges || []);
-        }
-      } catch (error) {
-        console.error('Error fetching challenges:', error);
-      }
-    };
-
-    fetchChallenges();
-    const interval = setInterval(fetchChallenges, 60000);
-    return () => clearInterval(interval);
-  }, []);
   
   // Load model preference from Supabase for non-API-key users
   useEffect(() => {
@@ -1050,41 +1018,41 @@ const LLMAlchemyRefactored = () => {
         </div>
 
         {/* Mixing Area */}
-        <div className="flex-1 bg-gray-900/50 backdrop-blur-sm relative overflow-hidden">
-          <div 
-            ref={dropZoneRef}
-            className={`w-full h-full relative transition-colors ${
-              isDragging || touchDragging ? 'bg-blue-900/20 border-2 border-dashed border-blue-400' : ''
-            }`}
-            onDragOver={(e) => {
-              e.preventDefault();
-              e.dataTransfer.dropEffect = 'copy';
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              if (!draggedElement.current) return;
-              
-              const rect = dropZoneRef.current!.getBoundingClientRect();
-              const x = e.clientX - rect.left;
-              const y = e.clientY - rect.top;
-              
-              playSound('plop');
-              const offset = GameLogic.getElementSize() / 2;
-              const newPos = GameLogic.resolveCollisions(x - offset, y - offset, mixingArea, dropZoneRef.current!);
-              
-              const newElement: MixingElement = {
-                ...draggedElement.current,
-                x: newPos.x,
-                y: newPos.y,
-                index: Date.now(),
-                energized: false
-              };
-              
-              addToMixingArea(newElement);
-              setIsDragging(false);
-              draggedElement.current = null;
-            }}
-          >
+        <div 
+          ref={dropZoneRef}
+          className={`flex-1 bg-gray-800/30 backdrop-blur-sm relative overflow-hidden transition-colors ${
+            isDragging || touchDragging ? 'bg-blue-900/20 border-2 border-dashed border-blue-400' : ''
+          }`}
+          style={{ minHeight: '200px', touchAction: 'none' }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            if (!draggedElement.current) return;
+            
+            const rect = dropZoneRef.current!.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            playSound('plop');
+            const offset = GameLogic.getElementSize() / 2;
+            const newPos = GameLogic.resolveCollisions(x - offset, y - offset, mixingArea, dropZoneRef.current!);
+            
+            const newElement: MixingElement = {
+              ...draggedElement.current,
+              x: newPos.x,
+              y: newPos.y,
+              index: Date.now(),
+              energized: false
+            };
+            
+            addToMixingArea(newElement);
+            setIsDragging(false);
+            draggedElement.current = null;
+          }}
+        >
             {/* Mixing Area Elements */}
             {mixingArea.map((element) => {
               const elementSize = GameLogic.getElementSize();
@@ -1094,6 +1062,43 @@ const LLMAlchemyRefactored = () => {
                 <div
                   key={`mixing-${element.id}-${element.index}`}
                   id={`mixing-${element.id}-${element.index}`}
+                  draggable={!GameLogic.isTouchDevice() && !isMixing}
+                  onDragStart={(e) => {
+                    draggedElement.current = {
+                      ...element,
+                      fromMixingArea: true,
+                      mixIndex: element.index
+                    };
+                    setIsDragging(true);
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', element.name);
+                    playSound('press');
+                  }}
+                  onDragEnd={() => {
+                    setIsDragging(false);
+                    setHoveredElement(null);
+                    draggedElement.current = null;
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (isDragging && draggedElement.current && element.index !== draggedElement.current.mixIndex) {
+                      setHoveredElement(element.index);
+                    }
+                  }}
+                  onDragEnter={() => {
+                    if (isDragging && draggedElement.current && element.index !== draggedElement.current.mixIndex) {
+                      setHoveredElement(element.index);
+                    }
+                  }}
+                  onDragLeave={() => {
+                    setHoveredElement(null);
+                  }}
+                  onDrop={async (e) => {
+                    e.preventDefault();
+                    if (draggedElement.current && draggedElement.current.mixIndex !== element.index) {
+                      await mixElements(draggedElement.current, element);
+                    }
+                  }}
                   className={`absolute flex flex-col items-center justify-center text-center rounded-lg cursor-pointer transition-all duration-300 select-none ${
                     hoveredElement === element.index ? 'ring-2 ring-yellow-400 scale-110' : ''
                   } ${
@@ -1102,6 +1107,8 @@ const LLMAlchemyRefactored = () => {
                     isAnimating ? 'animate-[elementRemove_0.3s_ease-in-out_forwards]' : ''
                   } ${
                     element.energized ? 'animate-pulse' : ''
+                  } ${
+                    isDragging && draggedElement.current?.mixIndex === element.index ? 'opacity-50' : ''
                   }`}
                   style={{
                     left: `${element.x}px`,
@@ -1110,7 +1117,8 @@ const LLMAlchemyRefactored = () => {
                     height: `${elementSize}px`,
                     backgroundColor: element.color,
                     color: GameLogic.getContrastColor(element.color),
-                    zIndex: hoveredElement === element.index ? 1000 : 1
+                    zIndex: hoveredElement === element.index ? 1000 : 1,
+                    pointerEvents: isMixing ? 'none' : 'auto'
                   }}
                   onTouchStart={(e) => {
                     const touch = e.touches[0];
@@ -1183,7 +1191,6 @@ const LLMAlchemyRefactored = () => {
                 </div>
               </div>
             )}
-          </div>
         </div>
 
         {/* Touch Drag Element */}
