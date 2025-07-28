@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Achievement } from '@/types';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 import { Element } from '../hooks/useGameState';
@@ -14,11 +14,68 @@ interface UnlockModalProps {
 }
 
 export const UnlockModal: React.FC<UnlockModalProps> = ({ showUnlock, onClose }) => {
+  // Auto-close after 3 seconds for new discoveries, 2 seconds for already discovered
+  useEffect(() => {
+    if (!showUnlock) return;
+    
+    const timeout = setTimeout(() => {
+      onClose();
+    }, showUnlock.isNew ? 3000 : 2000);
+
+    return () => clearTimeout(timeout);
+  }, [showUnlock, onClose]);
+
   if (!showUnlock) return null;
 
+  // Get rarity-based styling
+  const getRarityStyle = (rarity: string = 'common') => {
+    switch (rarity) {
+      case 'uncommon':
+        return {
+          borderColor: '#10B981', // Green
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          glowColor: '0 0 20px rgba(16, 185, 129, 0.3)'
+        };
+      case 'rare':
+        return {
+          borderColor: '#8B5CF6', // Purple
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+          glowColor: '0 0 20px rgba(139, 92, 246, 0.3)'
+        };
+      case 'epic':
+        return {
+          borderColor: '#F59E0B', // Orange/Gold
+          backgroundColor: 'rgba(245, 158, 11, 0.1)',
+          glowColor: '0 0 20px rgba(245, 158, 11, 0.3)'
+        };
+      case 'legendary':
+        return {
+          borderColor: '#EF4444', // Red
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          glowColor: '0 0 20px rgba(239, 68, 68, 0.3)'
+        };
+      default:
+        return {
+          borderColor: '#6B7280', // Gray
+          backgroundColor: 'rgba(107, 114, 128, 0.1)',
+          glowColor: '0 0 20px rgba(107, 114, 128, 0.2)'
+        };
+    }
+  };
+
+  const rarityStyle = getRarityStyle(showUnlock.rarity);
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 max-w-sm mx-4 border border-gray-600">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in" onClick={onClose}>
+      <div 
+        className="bg-gray-800 rounded-lg p-6 max-w-sm mx-4 border-2 animate-element-unlock-bounce cursor-pointer"
+        style={{
+          borderColor: rarityStyle.borderColor,
+          backgroundColor: `${rarityStyle.backgroundColor}`,
+          boxShadow: rarityStyle.glowColor
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="text-center">
           <div className="text-6xl mb-4">
             <OpenMojiDisplay 
@@ -51,12 +108,27 @@ export const UnlockModal: React.FC<UnlockModalProps> = ({ showUnlock, onClose })
               <span className="text-sm text-purple-300">🏁 End Element</span>
             </div>
           )}
-          <button
-            onClick={onClose}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-colors"
-          >
-            Continue
-          </button>
+          
+          {/* Rarity indicator */}
+          {showUnlock.rarity && showUnlock.rarity !== 'common' && (
+            <div className="mt-4">
+              <span 
+                className="px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wide"
+                style={{ 
+                  color: rarityStyle.borderColor,
+                  backgroundColor: rarityStyle.backgroundColor,
+                  border: `1px solid ${rarityStyle.borderColor}`
+                }}
+              >
+                {showUnlock.rarity}
+              </span>
+            </div>
+          )}
+          
+          {/* Auto-close indicator */}
+          <div className="mt-4 text-xs text-gray-400">
+            Click anywhere to close • Auto-closes in {showUnlock.isNew ? '3' : '2'}s
+          </div>
         </div>
       </div>
     </div>

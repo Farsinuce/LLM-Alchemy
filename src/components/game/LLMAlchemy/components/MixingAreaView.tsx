@@ -15,41 +15,65 @@ interface MixingAreaViewProps {
   mixingArea: MixingElement[];
   isMixing: boolean;
   mixingResult: string | null;
+  canUndo: boolean;
   onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
   onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
   onTouchEnd: (e: React.TouchEvent<HTMLDivElement>) => void;
   onMixingElementMouseDown: (e: React.MouseEvent<HTMLDivElement>, element: MixingElement) => void;
   onMixingElementTouchStart: (e: React.TouchEvent<HTMLDivElement>, element: MixingElement) => void;
   onClearMixingArea: () => void;
+  onUndo: () => void;
 }
 
 export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
   mixingArea,
   isMixing,
   mixingResult,
+  canUndo,
   onDrop,
   onDragOver,
   onTouchEnd,
   onMixingElementMouseDown,
   onMixingElementTouchStart,
-  onClearMixingArea
+  onClearMixingArea,
+  onUndo
 }) => {
   return (
     <div className="flex-1 relative overflow-hidden">
       {/* Mixing Area */}
       <div
         className={`
-          absolute inset-4 border-2 border-dashed rounded-lg transition-all duration-300
+          absolute inset-4 border-2 border-dashed rounded-lg transition-all duration-500
           ${mixingArea.length > 0 
             ? 'border-purple-400 bg-purple-900/20' 
             : 'border-gray-600 bg-gray-800/50'
           }
-          ${isMixing ? 'border-yellow-400 bg-yellow-900/20' : ''}
+          ${isMixing ? 'border-yellow-400 bg-yellow-900/20 animate-mixing-blur' : ''}
         `}
         onDrop={onDrop}
         onDragOver={onDragOver}
         onTouchEnd={onTouchEnd}
       >
+        {/* UNDO Button - Top Left */}
+        <button
+          onClick={onUndo}
+          disabled={!canUndo}
+          className="absolute top-4 left-4 px-3 py-1 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded text-white text-sm font-medium transition-colors z-10"
+          title="Undo last action"
+        >
+          ↶ Undo
+        </button>
+
+        {/* CLEAR Button - Top Right */}
+        {mixingArea.length > 0 && !isMixing && (
+          <button
+            onClick={onClearMixingArea}
+            className="absolute top-4 right-4 px-3 py-1 bg-red-600 hover:bg-red-500 rounded text-white text-sm font-medium transition-colors z-10"
+            title="Clear mixing area"
+          >
+            Clear
+          </button>
+        )}
         {/* Drop Zone Instructions */}
         {mixingArea.length === 0 && !isMixing && (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -61,10 +85,10 @@ export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
           </div>
         )}
 
-        {/* Mixing Status */}
+        {/* Mixing Status with Blur Backdrop */}
         {isMixing && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-yellow-400">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm rounded-lg animate-fade-in">
+            <div className="text-center text-yellow-400 bg-black/50 rounded-xl p-6 border border-yellow-400/30">
               <div className="text-4xl mb-2 animate-spin">⚗️</div>
               <p className="text-lg font-medium">Mixing Elements...</p>
               <p className="text-sm mt-1">Please wait while the LLM creates magic</p>
@@ -87,7 +111,7 @@ export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
         {mixingArea.map((element) => (
           <div
             key={element.id}
-            className="absolute transform -translate-x-1/2 -translate-y-1/2 p-3 bg-gray-700 rounded-lg cursor-move hover:bg-gray-600 transition-colors select-none touch-manipulation"
+            className="absolute transform -translate-x-1/2 -translate-y-1/2 p-3 bg-gray-700 rounded-lg cursor-move hover:bg-gray-600 transition-colors select-none touch-manipulation animate-element-drop-in"
             style={{
               left: `${element.x}px`,
               top: `${element.y}px`,
@@ -108,17 +132,6 @@ export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
             </div>
           </div>
         ))}
-
-        {/* Clear Button */}
-        {mixingArea.length > 0 && !isMixing && (
-          <button
-            onClick={onClearMixingArea}
-            className="absolute top-4 right-4 px-3 py-1 bg-red-600 hover:bg-red-500 rounded text-white text-sm font-medium transition-colors"
-            title="Clear mixing area"
-          >
-            Clear
-          </button>
-        )}
 
         {/* Mixing Area Info */}
         {mixingArea.length > 0 && !isMixing && !mixingResult && (

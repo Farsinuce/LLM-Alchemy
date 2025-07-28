@@ -3,6 +3,7 @@
 import React from 'react';
 import { GameElement } from '@/types/game.types';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
+import { getContrastColor, getRarityHoverColor, getElementSizeClasses, isTouchDevice } from '@/lib/ui-utils';
 
 interface ElementListViewProps {
   elements: GameElement[];
@@ -11,9 +12,14 @@ interface ElementListViewProps {
   shakeElement: string | null;
   popElement: string | null;
   hoveredElement: string | null;
+  isDragging: boolean;
+  dimmedElements: Set<string>;
+  isPlayingLoadAnimation: boolean;
+  animatedElements: Set<string>;
   onElementDragStart: (e: React.DragEvent<HTMLDivElement>, element: GameElement) => void;
   onElementTouchStart: (e: React.TouchEvent<HTMLDivElement>, element: GameElement) => void;
-  onElementMouseEnter: (name: string) => void;
+  onElementClick: (element: GameElement, event: React.MouseEvent) => void;
+  onElementMouseEnter: (element: GameElement, event: React.MouseEvent) => void;
   onElementMouseLeave: () => void;
 }
 
@@ -24,11 +30,18 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
   shakeElement,
   popElement,
   hoveredElement,
+  isDragging,
+  dimmedElements,
+  isPlayingLoadAnimation,
+  animatedElements,
   onElementDragStart,
   onElementTouchStart,
+  onElementClick,
   onElementMouseEnter,
   onElementMouseLeave
 }) => {
+  const isTouch = isTouchDevice();
+
   // Sort elements based on sortMode
   const sortedElements = React.useMemo(() => {
     const filtered = elements.filter(element =>
@@ -44,49 +57,55 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
   }, [elements, searchTerm, sortMode]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-3">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+    <div className="flex-1 overflow-y-auto p-4 scrollbar-mobile">
+      {/* Use flex-wrap layout for natural responsiveness */}
+      <div className="flex flex-wrap gap-2">
         {sortedElements.map((element) => (
           <div
-            key={element.name}
-            draggable
+            key={element.id}
+            draggable={!isTouch}
             onDragStart={(e) => onElementDragStart(e, element)}
             onTouchStart={(e) => onElementTouchStart(e, element)}
-            onMouseEnter={() => onElementMouseEnter(element.name)}
+            onMouseEnter={(e) => onElementMouseEnter(element, e)}
             onMouseLeave={onElementMouseLeave}
+            onClick={(e) => onElementClick(element, e)}
+            onContextMenu={(e) => e.preventDefault()}
             className={`
-              element-card group relative p-3 bg-gray-700 rounded-lg cursor-grab active:cursor-grabbing 
-              transition-all duration-200 hover:bg-gray-600 hover:scale-105 select-none touch-manipulation
-              ${shakeElement === element.name ? 'animate-shake' : ''}
-              ${popElement === element.name ? 'animate-pop-in' : ''}
-              ${hoveredElement === element.name ? 'ring-2 ring-blue-400' : ''}
+              ${getElementSizeClasses()} flex flex-col items-center justify-center rounded-lg cursor-move 
+              hover:scale-110 transition-transform select-none
+              ${popElement === element.id ? 'animate-element-pop-in' : ''}
+              ${shakeElement === element.id ? 'animate-element-shake' : ''}
+              ${isPlayingLoadAnimation && animatedElements.has(element.id) ? 'animate-element-load-delayed' : ''}
+              ${dimmedElements.has(element.name) ? 'element-dimmed' : ''}
             `}
+            style={{ 
+              backgroundColor: element.color,
+              color: getContrastColor(element.color),
+              boxShadow: !isDragging && hoveredElement === element.id ? `0 0 0 2px ${getRarityHoverColor(element.rarity)}` : '',
+              touchAction: 'none',
+              WebkitTouchCallout: 'none',
+              WebkitUserSelect: 'none',
+              animationDelay: isPlayingLoadAnimation && animatedElements.has(element.id) 
+                ? `${(element.unlockOrder || 0) * 25}ms` 
+                : undefined
+            }}
           >
-            {/* Element Icon */}
-            <div className="flex justify-center mb-2">
-              <OpenMojiDisplay
-                emoji={element.emoji}
-                name={element.name}
-                className="text-2xl group-hover:scale-110 transition-transform"
-              />
-            </div>
+            {/* Question mark badge for elements with reasoning */}
+            {element.reasoning && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold text-black">
+                ?
+              </div>
+            )}
             
-            {/* Element Name */}
-            <div className="text-center">
-              <span className="text-sm font-medium text-white block leading-tight">
-                {element.name}
-              </span>
-              
-              {/* Discovery Indicator */}
-              {element.unlockOrder && (
-                <span className="text-xs text-gray-400 mt-1 block">
-                  #{element.unlockOrder}
-                </span>
-              )}
+            <OpenMojiDisplay 
+              emoji={element.emoji} 
+              hexcode={element.openmojiHex}
+              name={element.name} 
+              size="md" 
+            />
+            <div className="text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight">
+              {element.name}
             </div>
-            
-            {/* Hover Effect Overlay */}
-            <div className="absolute inset-0 bg-blue-400 opacity-0 group-hover:opacity-10 rounded-lg transition-opacity pointer-events-none"></div>
           </div>
         ))}
       </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Sparkles, X, GripHorizontal, User, ArrowLeft } from 'lucide-react';
+import { Sparkles, GripHorizontal, User, ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
 import { createClient, saveGameState, loadGameState, addTokens, getLlmModelPreference } from '@/lib/supabase';
@@ -16,7 +16,7 @@ import { Element, MixingElement } from './hooks/useGameState';
 import { useElementMixing } from './hooks/useElementMixing';
 import { useGameAudio } from './hooks/useGameAudio';
 import { useGameAnimations } from './hooks/useGameAnimations';
-import { UnlockModal, AchievementsModal, ReasoningPopup } from './components';
+import { UnlockModal, AchievementsModal, ReasoningPopup, ElementListView, MixingAreaView } from './components';
 import * as GameLogic from '@/lib/game-logic';
 
 // UI-only interfaces (not moved to state management)
@@ -71,7 +71,6 @@ const LLMAlchemyRefactored = () => {
   const { 
     shakeElement, 
     popElement, 
-    animatingElements, 
     isPlayingLoadAnimation, 
     animatedElements,
     triggerShake,
@@ -820,107 +819,67 @@ const LLMAlchemyRefactored = () => {
       <div className="flex-1 flex flex-col relative z-10 min-h-0">
         {/* Element List */}
         <div 
-          className="overflow-y-auto bg-gray-800/30 backdrop-blur-sm"
+          className="bg-gray-800/30 backdrop-blur-sm"
           style={{ height: `${listHeight}px` }}
         >
-          <div className="p-3">
-            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
-              {sortedElements.map((element) => {
-                const elementSize = GameLogic.getElementSize();
-                const isAnimated = animatedElements.has(element.id);
-                const shouldShowLoadAnimation = isPlayingLoadAnimation && element.unlockOrder > 4;
-                const animationDelay = shouldShowLoadAnimation ? (element.unlockOrder - 5) * 25 : 0;
-                
-                return (
-                  <div
-                    key={element.id}
-                    draggable={!GameLogic.isTouchDevice()}
-                    onDragStart={(e) => {
-                      draggedElement.current = {
-                        ...element,
-                        x: 0,
-                        y: 0,
-                        index: 0,
-                        energized: false
-                      };
-                      setIsDragging(true);
-                      e.dataTransfer.effectAllowed = 'copy';
-                      e.dataTransfer.setData('text/plain', element.name);
-                    }}
-                    onDragEnd={() => {
-                      setIsDragging(false);
-                      draggedElement.current = null;
-                    }}
-                    onTouchStart={(e) => {
-                      const touch = e.touches[0];
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      setTouchStartTime(Date.now());
-                      setTouchStartPos({ x: touch.clientX, y: touch.clientY });
-                      setTouchOffset({
-                        x: touch.clientX - rect.left,
-                        y: touch.clientY - rect.top
-                      });
-                      
-                      setTimeout(() => {
-                        if (touchStartTime && Date.now() - touchStartTime > 150) {
-                          setTouchDragging({
-                            ...element,
-                            x: 0,
-                            y: 0,
-                            index: 0,
-                            energized: false,
-                            fromMixingArea: false,
-                            mixIndex: undefined
-                          });
-                          
-                          const otherElements = new Set(sortedElements.filter(el => el.id !== element.id).map(el => el.id));
-                          setDimmedElements(otherElements);
-                          
-                          if ('vibrate' in navigator) {
-                            navigator.vibrate(10);
-                          }
-                        }
-                      }, 150);
-                    }}
-                    onClick={(e) => handleElementClick(element, e)}
-                    onMouseEnter={(e) => handleElementMouseEnter(element, e)}
-                    onMouseLeave={handleElementMouseLeave}
-                    className={`
-                      aspect-square flex flex-col items-center justify-center text-center rounded-lg cursor-pointer transition-all duration-300 relative
-                      ${isDragging ? 'opacity-30' : 'hover:scale-105 hover:shadow-lg active:scale-95'}
-                      ${shakeElement === element.id ? 'animate-[shake_0.5s_ease-in-out]' : ''}
-                      ${popElement === element.id ? 'animate-[pop_0.3s_ease-out]' : ''}
-                      ${dimmedElements.has(element.id) ? 'opacity-30' : ''}
-                      ${isAnimated && shouldShowLoadAnimation ? 'animate-[elementLoad_0.6s_ease-out]' : ''}
-                      ${element.reasoning ? 'hover:ring-2 hover:ring-yellow-400/50' : ''}
-                    `}
-                    style={{ 
-                      backgroundColor: element.color,
-                      color: GameLogic.getContrastColor(element.color),
-                      width: `${elementSize}px`,
-                      height: `${elementSize}px`,
-                      animationDelay: shouldShowLoadAnimation ? `${animationDelay}ms` : undefined
-                    }}
-                  >
-                    <OpenMojiDisplay 
-                      emoji={element.emoji} 
-                      hexcode={element.openmojiHex}
-                      name={element.name} 
-                      size="sm" 
-                    />
-                    <div className="text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight">
-                      {element.name}
-                    </div>
-                    {element.reasoning && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full text-[8px] flex items-center justify-center text-black font-bold">
-                        ?
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <ElementListView
+            elements={sortedElements}
+            searchTerm={searchTerm}
+            sortMode={sortMode}
+            shakeElement={shakeElement}
+            popElement={popElement}
+            hoveredElement={hoveredElement?.toString() || null}
+            isDragging={isDragging}
+            dimmedElements={dimmedElements}
+            isPlayingLoadAnimation={isPlayingLoadAnimation}
+            animatedElements={animatedElements}
+            onElementDragStart={(e, element) => {
+              draggedElement.current = {
+                ...element,
+                x: 0,
+                y: 0,
+                index: 0,
+                energized: false
+              };
+              setIsDragging(true);
+              e.dataTransfer.effectAllowed = 'copy';
+              e.dataTransfer.setData('text/plain', element.name);
+            }}
+            onElementTouchStart={(e, element) => {
+              const touch = e.touches[0];
+              const rect = e.currentTarget.getBoundingClientRect();
+              setTouchStartTime(Date.now());
+              setTouchStartPos({ x: touch.clientX, y: touch.clientY });
+              setTouchOffset({
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top
+              });
+              
+              setTimeout(() => {
+                if (touchStartTime && Date.now() - touchStartTime > 150) {
+                  setTouchDragging({
+                    ...element,
+                    x: 0,
+                    y: 0,
+                    index: 0,
+                    energized: false,
+                    fromMixingArea: false,
+                    mixIndex: undefined
+                  });
+                  
+                  const otherElements = new Set(sortedElements.filter(el => el.id !== element.id).map(el => el.id));
+                  setDimmedElements(otherElements);
+                  
+                  if ('vibrate' in navigator) {
+                    navigator.vibrate(10);
+                  }
+                }
+              }, 150);
+            }}
+            onElementClick={handleElementClick}
+            onElementMouseEnter={handleElementMouseEnter}
+            onElementMouseLeave={handleElementMouseLeave}
+          />
         </div>
 
         {/* Divider */}
@@ -971,145 +930,117 @@ const LLMAlchemyRefactored = () => {
             setIsDragging(false);
             draggedElement.current = null;
           }}
+          onTouchEnd={handleTouchEnd}
         >
-            {/* Mixing Area Elements */}
-            {mixingArea.map((element) => {
-              const elementSize = GameLogic.getElementSize();
-              const isAnimating = animatingElements.has(`${element.id}-${element.index}`);
+          <MixingAreaView
+            mixingArea={mixingArea.map(el => ({ ...el, name: el.name, emoji: el.emoji }))}
+            isMixing={isMixing}
+            mixingResult={null}
+            canUndo={undoAvailable}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (!draggedElement.current) return;
               
-              return (
-                <div
-                  key={`mixing-${element.id}-${element.index}`}
-                  id={`mixing-${element.id}-${element.index}`}
-                  draggable={!GameLogic.isTouchDevice() && !isMixing}
-                  onDragStart={(e) => {
-                    draggedElement.current = {
-                      ...element,
-                      fromMixingArea: true,
-                      mixIndex: element.index
-                    };
-                    setIsDragging(true);
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain', element.name);
-                    playSound('press');
-                  }}
-                  onDragEnd={() => {
-                    setIsDragging(false);
-                    setHoveredElement(null);
-                    draggedElement.current = null;
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    if (isDragging && draggedElement.current && element.index !== draggedElement.current.mixIndex) {
-                      setHoveredElement(element.index);
-                    }
-                  }}
-                  onDragEnter={() => {
-                    if (isDragging && draggedElement.current && element.index !== draggedElement.current.mixIndex) {
-                      setHoveredElement(element.index);
-                    }
-                  }}
-                  onDragLeave={() => {
-                    setHoveredElement(null);
-                  }}
-                  onDrop={async (e) => {
-                    e.preventDefault();
-                    if (draggedElement.current && draggedElement.current.mixIndex !== element.index) {
-                      await mixElements(draggedElement.current, element);
-                    }
-                  }}
-                  className={`absolute flex flex-col items-center justify-center text-center rounded-lg cursor-pointer transition-all duration-300 select-none ${
-                    hoveredElement === element.index ? 'ring-2 ring-yellow-400 scale-110' : ''
-                  } ${
-                    touchDragging && touchDragging.mixIndex === element.index ? 'opacity-50' : ''
-                  } ${
-                    isAnimating ? 'animate-[elementRemove_0.3s_ease-in-out_forwards]' : ''
-                  } ${
-                    element.energized ? 'animate-pulse' : ''
-                  } ${
-                    isDragging && draggedElement.current?.mixIndex === element.index ? 'opacity-50' : ''
-                  }`}
-                  style={{
-                    left: `${element.x}px`,
-                    top: `${element.y}px`,
-                    width: `${elementSize}px`,
-                    height: `${elementSize}px`,
-                    backgroundColor: element.color,
-                    color: GameLogic.getContrastColor(element.color),
-                    zIndex: hoveredElement === element.index ? 1000 : 1,
-                    pointerEvents: isMixing ? 'none' : 'auto'
-                  }}
-                  onTouchStart={(e) => {
-                    const touch = e.touches[0];
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setTouchStartTime(Date.now());
-                    setTouchStartPos({ x: touch.clientX, y: touch.clientY });
-                    setTouchOffset({
-                      x: touch.clientX - rect.left,
-                      y: touch.clientY - rect.top
-                    });
-                    
-                    setTimeout(() => {
-                      if (touchStartTime && Date.now() - touchStartTime > 100) {
-                        setTouchDragging({
-                          ...element,
-                          fromMixingArea: true,
-                          mixIndex: element.index
-                        });
-                        
-                        const otherIndices = new Set(mixingArea.filter(el => el.index !== element.index).map(el => el.index.toString()));
-                        setDimmedElements(otherIndices);
-                        
-                        if ('vibrate' in navigator) {
-                          navigator.vibrate(10);
-                        }
-                      }
-                    }, 100);
-                  }}
-                  onClick={(e) => handleElementClick(element, e)}
-                  onMouseEnter={(e) => handleElementMouseEnter(element, e)}
-                  onMouseLeave={handleElementMouseLeave}
-                >
-                  <OpenMojiDisplay 
-                    emoji={element.emoji} 
-                    hexcode={element.openmojiHex}
-                    name={element.name} 
-                    size="sm" 
-                  />
-                  <div className="text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight">
-                    {element.name}
-                  </div>
-                  {element.reasoning && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full text-[8px] flex items-center justify-center text-black font-bold">
-                      ?
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Clear Button */}
-            {mixingArea.length > 0 && !isMixing && (
-              <button
-                onClick={clearMixingAreaWithAnimation}
-                className="absolute bottom-4 right-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 z-10"
-              >
-                <X size={16} />
-                Clear
-              </button>
-            )}
-
-            {/* Instructions */}
-            {mixingArea.length === 0 && !isDragging && !touchDragging && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center text-gray-400">
-                  <div className="text-6xl mb-4">⚗️</div>
-                  <h3 className="text-xl font-semibold mb-2">Mixing Area</h3>
-                  <p className="text-sm">Drag elements here to combine them</p>
-                  <p className="text-xs opacity-75 mt-1">Touch and hold on mobile</p>
-                </div>
-              </div>
-            )}
+              const rect = dropZoneRef.current!.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const y = e.clientY - rect.top;
+              
+              playSound('plop');
+              const offset = GameLogic.getElementSize() / 2;
+              const newPos = GameLogic.resolveCollisions(x - offset, y - offset, mixingArea, dropZoneRef.current!);
+              
+              const newElement: MixingElement = {
+                ...draggedElement.current,
+                x: newPos.x,
+                y: newPos.y,
+                index: Date.now(),
+                energized: false
+              };
+              
+              addToMixingArea(newElement);
+              setIsDragging(false);
+              draggedElement.current = null;
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'copy';
+            }}
+            onTouchEnd={handleTouchEnd}
+            onMixingElementMouseDown={(e, element) => {
+              draggedElement.current = {
+                ...element,
+                fromMixingArea: true,
+                mixIndex: element.index
+              };
+              setIsDragging(true);
+              playSound('press');
+            }}
+            onMixingElementTouchStart={(e, element) => {
+              const touch = e.touches[0];
+              const rect = e.currentTarget.getBoundingClientRect();
+              setTouchStartTime(Date.now());
+              setTouchStartPos({ x: touch.clientX, y: touch.clientY });
+              setTouchOffset({
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top
+              });
+              
+              setTimeout(() => {
+                if (touchStartTime && Date.now() - touchStartTime > 100) {
+                  setTouchDragging({
+                    ...element,
+                    fromMixingArea: true,
+                    mixIndex: element.index
+                  });
+                  
+                  const otherIndices = new Set(mixingArea.filter(el => el.index !== element.index).map(el => el.index.toString()));
+                  setDimmedElements(otherIndices);
+                  
+                  if ('vibrate' in navigator) {
+                    navigator.vibrate(10);
+                  }
+                }
+              }, 100);
+            }}
+            onClearMixingArea={clearMixingAreaWithAnimation}
+            onUndo={async () => {
+              if (lastCombination) {
+                setIsUndoing(true);
+                playSound('reverse-pop');
+                
+                // Remove the created element
+                if (lastCombination.createdElement.isEndElement) {
+                  const newEndElements = endElements.filter(e => e.id !== lastCombination.createdElement.element.id);
+                  setEndElements(newEndElements);
+                } else {
+                  const newElements = elements.filter(e => e.id !== lastCombination.createdElement.element.id);
+                  setElements(newElements);
+                }
+                
+                // Restore the mixing area
+                setMixingArea(lastCombination.mixingAreaState);
+                
+                // Remove from combinations
+                const newCombinations = { ...combinations };
+                delete newCombinations[lastCombination.combinationKey];
+                setCombinations(newCombinations);
+                
+                // Remove from failed combinations if it was there
+                const newFailedCombinations = failedCombinations.filter(key => key !== lastCombination.combinationKey);
+                setFailedCombinations(newFailedCombinations);
+                
+                // Clear undo state
+                setLastCombination(null);
+                setUndoAvailable(false);
+                
+                showToast('Undid last combination');
+                
+                setTimeout(() => {
+                  setIsUndoing(false);
+                }, 300);
+              }
+            }}
+          />
         </div>
 
         {/* Touch Drag Element */}
