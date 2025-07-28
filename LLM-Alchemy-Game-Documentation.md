@@ -1,7 +1,7 @@
 # LLM Alchemy - Comprehensive Game Documentation
 
-**Version**: 3.0  
-**Last Updated**: July 28, 2025
+**Version**: 3.1  
+**Last Updated**: July 29, 2025
 
 ## 1. Overview
 
@@ -11,7 +11,7 @@ The project is built on a robust, production-ready tech stack designed for scala
 
 *   **🚀 LIVE GAME**: https://llm-alchemy-beta2.vercel.app
 *   **📂 REPOSITORY**: https://github.com/Farsinuce/LLM-Alchemy
-*   **⚡ STATUS**: Live, with ongoing refactoring to prepare for a major visual redesign.
+*   **⚡ STATUS**: **Phase 2 Refactoring Complete** - Modular architecture ready for upcoming visual redesign.
 
 ## 2. Core Gameplay
 
@@ -33,6 +33,27 @@ All discoveries are automatically saved to the player's account, persisting acro
 - **Visuals**: OpenMoji for a consistent, high-quality emoji style
 - **Hosting**: Vercel (with CI/CD from GitHub)
 - **Payments**: Stripe (integration in progress)
+- **Testing**: ✨ **NEW** Vitest with @vitest/ui for interactive testing
+
+### Modular Game Architecture ✨ **NEW**
+
+The game has been completely refactored from a monolithic component structure to a clean, modular architecture:
+
+```
+GameStateProvider (React Context + useReducer)
+├── LLMAlchemyRefactored (Main game component)
+│   ├── GameHeader (Search, controls, mode toggle)
+│   ├── ElementListView (Scrollable element grid)
+│   ├── MixingAreaView (Drag-and-drop area)
+│   └── Modals (UnlockModal, AchievementsModal, ReasoningPopup)
+├── Custom Hooks
+│   ├── useGameState (Core state management with reducer)
+│   ├── useElementMixing (LLM API interactions)
+│   ├── useElementInteraction (Drag & drop logic)
+│   ├── useGameAudio (Web Audio API management)
+│   └── useGameAnimations (CSS animation states)
+└── Pure Logic Functions (src/lib/game-logic.ts)
+```
 
 ### System Flow
 ```
@@ -46,6 +67,12 @@ All discoveries are automatically saved to the player's account, persisting acro
 │  Supabase Auth  │────▶│   Supabase DB    │     │ OpenMoji Service │
 │ (Anon/Registered)│    │ (Game State, etc)│     │ (SVG Resolution) │
 └─────────────────┘     └──────────────────┘     └──────────────────┘
+         │
+         ▼
+┌─────────────────┐     ┌──────────────────┐
+│ GameStateProvider│────▶│   Vitest Tests   │
+│ (useReducer)    │     │ (12 test cases)  │
+└─────────────────┘     └──────────────────┘
 ```
 
 ## 4. Key Features
@@ -66,23 +93,90 @@ To ensure a consistent and charming visual style, all emojis in the game are ren
     *   **Subscription**: €5.99/month for unlimited combinations.
     *   **Token Packs**: Starting from €0.40 for 100 tokens.
 
-### State Management & Persistence
+### State Management & Persistence ✨ **ENHANCED**
+- **Modern State Architecture**: React Context + useReducer pattern for predictable state management
 - **Per-Mode Progress**: A player's progress in Science and Creative modes is saved independently.
 - **Auto-Save**: Game state is automatically and securely saved to the Supabase database.
 - **Cross-Session Restoration**: Players can close their browser and resume their game exactly where they left off.
+- **Immutable Updates**: All state changes go through the reducer for consistency and debugging
+
+### Testing Infrastructure ✨ **NEW**
+- **Vitest Setup**: Modern, fast testing framework with TypeScript support
+- **Interactive UI**: Vitest UI for browser-based test interaction and debugging
+- **Reducer Testing**: Comprehensive test coverage for core game state logic (12 test cases)
+- **CI Integration**: Tests run automatically on every commit via GitHub Actions
 
 ## 5. Project Structure
 
-The codebase is organized following Next.js best practices:
+The codebase is organized following Next.js best practices with enhanced modularity:
 
 | Path | Purpose |
 |---|---|
 | `src/app/` | Contains all pages, API routes, and global styles. |
 | `src/components/` | Reusable React components, such as the `AuthModal` or `OpenMojiDisplay`. |
+| **`src/components/game/LLMAlchemy/`** ✨ | **NEW**: Modular game architecture with contexts, hooks, and components. |
+| **`src/components/game/LLMAlchemy/contexts/`** ✨ | **NEW**: React Context providers for state management. |
+| **`src/components/game/LLMAlchemy/hooks/`** ✨ | **NEW**: Custom hooks for game logic, mixing, interactions, audio, animations. |
+| **`src/components/game/LLMAlchemy/components/`** ✨ | **NEW**: Extracted UI components (GameHeader, ElementListView, MixingAreaView, Modals). |
 | `src/lib/` | Core application logic, including Supabase helpers, LLM prompt builders, and the OpenMoji service. |
+| **`src/lib/game-logic.ts`** ✨ | **NEW**: Pure functions for game logic (collision detection, sorting, validation). |
 | `src/types/` | Centralized TypeScript type definitions. |
 | `scripts/` | Build-time scripts, like the one that prepares the OpenMoji assets. |
 | `supabase/` | SQL files for database migrations and schema definitions. |
+| **`vitest.config.ts`** ✨ | **NEW**: Vitest testing configuration with TypeScript/alias support. |
+| **`*.test.ts`** ✨ | **NEW**: Test files alongside source code (12 reducer tests implemented). |
 | `refactoring-plan.md` | The detailed, step-by-step plan for the current code refactoring effort. |
 | `llm-alchemy-roadmap.md` | The high-level project roadmap for future development. |
 | `LLM_Alchemy_Developer_Overview.md` | A more technical, file-by-file overview for developers. |
+
+## 6. Development Workflow ✨ **ENHANCED**
+
+### Running the Project
+```bash
+npm run dev          # Start development server
+npm run build        # Production build
+npm run test         # Run tests in watch mode
+npm run test:ui      # Open Vitest UI in browser
+npm run test:run     # Run tests once (CI mode)
+npm run gen:types    # Generate Supabase TypeScript types
+```
+
+### Code Quality
+- **Pre-commit Hooks**: Automatic type generation, linting, and type checking
+- **ESLint Rules**: Strict rules including client/server boundary enforcement
+- **GitHub Actions**: Automated CI/CD pipeline running on every push/PR
+- **TypeScript**: Strict typing throughout the codebase
+
+### Testing Strategy
+- **Unit Tests**: Core game logic and reducer behavior
+- **Integration Tests**: Component interaction and state management
+- **E2E Testing**: Planned for future phases
+- **Visual Regression**: Planned with upcoming OpenMoji redesign
+
+## 7. Architecture Benefits ✨ **NEW**
+
+The Phase 2 refactoring has delivered significant improvements:
+
+### Maintainability
+- **Component Size**: Reduced from 2000+ line monolith to focused, single-responsibility components
+- **Separation of Concerns**: Clear boundaries between UI, state, side effects, and business logic
+- **Developer Experience**: Easier to understand, modify, and extend
+
+### Reliability
+- **Test Coverage**: 12 passing tests for core game mechanics
+- **Immutable State**: Reducer pattern prevents accidental state mutations
+- **Type Safety**: Comprehensive TypeScript coverage prevents runtime errors
+
+### Performance
+- **Component Splitting**: Better code splitting and lazy loading opportunities
+- **Memoization**: Strategic component memoization in extracted components
+- **Pure Functions**: Easier optimization of game logic functions
+
+### Scalability
+- **Hook System**: Easy to add new game features as custom hooks
+- **Context Pattern**: Clean state sharing without prop drilling
+- **Modular Architecture**: Ready for upcoming visual redesign phases
+
+---
+
+**Ready for Phase 3: OpenMoji Visual Redesign** 🎨
