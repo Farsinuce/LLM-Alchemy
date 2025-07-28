@@ -148,7 +148,17 @@ export const TAG_MAPPING: Record<string, string[]> = {
 };
 
 // Helper function to check if element matches category
+// Updated to support both legacy tags and new achievementTags structure
 export function elementMatchesCategory(elementTags: string[], targetCategory: string): boolean {
+  if (!elementTags || elementTags.length === 0) return false;
+  
   const possibleTags = TAG_MAPPING[targetCategory] || [targetCategory];
   return elementTags.some(tag => possibleTags.includes(tag.toLowerCase()));
+}
+
+// Overloaded version that accepts an element object with achievementTags
+export function elementMatchesCategoryFromElement(element: { achievementTags?: string[], tags?: string[] }, targetCategory: string): boolean {
+  // Use achievementTags first, fall back to tags for backwards compatibility
+  const elementTags = element.achievementTags || element.tags || [];
+  return elementMatchesCategory(elementTags, targetCategory);
 }

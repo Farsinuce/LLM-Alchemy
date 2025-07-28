@@ -56,9 +56,9 @@ const aliasHex: Record<string, string> = {
 };
 
 interface ResolveEmojiParams {
-  unicodeEmoji?: string;
+  unicodeEmoji: string;
   name: string;
-  tags?: string[];
+  tags?: string[];  // These are specifically emojiTags for visual search
 }
 
 interface ResolveEmojiResult {

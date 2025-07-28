@@ -10,7 +10,10 @@ interface Element {
   unlockOrder: number;
   rarity?: string;
   reasoning?: string;
-  tags?: string[];
+  // Tag separation for different purposes
+  achievementTags?: string[];  // For achievements and challenges
+  emojiTags?: string[];        // For OpenMoji visual search
+  tags?: string[];             // Legacy fallback for backwards compatibility
   isEndElement?: boolean;
   parents?: Element[];
   energyEnhanced?: boolean;
@@ -39,11 +42,12 @@ export const buildSharedSections = (rarityTarget: string, currentGameMode: strin
   "outcomes": [
     {
       "result": "Element Name",
-      "emoji": "appropriate Unicode emoji (no text or Asian characters)", 
+      "emoji": "one appropriate Unicode emoji (no text or Asian characters)", 
       "color": "hex color code",
       "rarity": "common" or "uncommon" or "rare",${currentGameMode === 'science' ? '\n      "isEndElement": true or false,' : ''}
       "reasoning": "brief explanation",
-      "tags": ["category1", "category2"]
+      "achievementTags": ["category1", "category2"],
+      "emojiTags": ["visual1", "visual2", "descriptive3"]
     }
   ]
 }
@@ -138,9 +142,17 @@ REASONING REQUIREMENT:
 Every result needs a brief (15-60 character) scientific explanation.
 Focus on mechanism: "Heat evaporates liquid" or "Pressure crystallizes minerals"
 
-TAGS REQUIREMENT:
-- Assign 1-4 relevant tags for achievement tracking
-- Science tags: "organism", "mineral", "compound", "metal", "plant", "animal", "chemical", "gas", "liquid", "solid", "edible", "tool", "danger", "catastrophe", "terrestrial", "aquatic", "aerial", "arctic", "desert", "forest", "marine", "energy-form", "thermal", "electrical", "radioactive", "natural", "synthetic", "geological", "biological", "volcanic", "atmospheric", "industrial", "modern-tech", "massive", "corrosive", "explosive", "toxic", "medicinal", "building-material", "fuel", "unstable", "microscopic"
+TAGS REQUIREMENT - TWO SEPARATE TAG TYPES:
+
+1. ACHIEVEMENT TAGS (1-6 tags for game mechanics):
+- Used for challenges, achievements, and game progression
+- Science categories: "organism", "mineral", "compound", "metal", "plant", "animal", "chemical", "gas", "liquid", "solid", "edible", "tool", "danger", "catastrophe", "terrestrial", "aquatic", "aerial", "arctic", "desert", "forest", "marine", "energy-form", "thermal", "electrical", "radioactive", "natural", "synthetic", "geological", "biological", "volcanic", "atmospheric", "industrial", "modern-tech", "massive", "corrosive", "explosive", "toxic", "medicinal", "building-material", "fuel", "unstable", "microscopic"
+
+2. EMOJI TAGS (2-4 descriptive visual hints):
+- Used for finding better OpenMoji emoji representations
+- Descriptive visual terms that help match the element to appropriate emoji
+- Examples: For "Coffee Grinder" → achievementTags: ["tool", "kitchen"] + emojiTags: ["coffee", "grinder", "mill", "machine"]
+- Examples: For "Microbe" → achievementTags: ["organism", "microscopic"] + emojiTags: ["microbe", "germ", "cell"]
 
 Recent successful combinations (last 10): ${recentText}
 Recent failed combinations (last 5): ${failedText}
@@ -149,13 +161,14 @@ Respond with ONLY a valid JSON object:
 {
   "outcomes": [
     {
-      "result": "Element Name",
-      "emoji": "one appropriate emoji (no text)",
-      "color": "hex color",
-      "rarity": "common",
-      "isEndElement": false,
-      "reasoning": "brief explanation",
-      "tags": ["tag1", "tag2"]
+      "result": "Element Name",
+      "emoji": "one appropriate Unicode emoji (no text or Asian characters)",
+      "color": "hex color",
+      "rarity": "common",
+      "isEndElement": false,
+      "reasoning": "brief explanation",
+      "achievementTags": ["category1", "category2"],
+      "emojiTags": ["visual1", "visual2", "descriptive3"]
     }
   ]
 }
@@ -264,9 +277,17 @@ Multiple outcome generation:
 
 ${shared.reasoningRequirement}
 
-TAGS REQUIREMENT:
-- Assign 1-4 relevant tags for achievement tracking
-- Creative tags: "creature", "animal", "plant", "food", "tool", "weapon", "artifact", "mythological", "celestial", "aquatic", "flying", "magical", "technology", "furniture", "clothing", "mineral", "undead", "divine", "demonic", "legendary", "everyday", "natural", "synthetic", "fictional-character", "building", "vehicle", "musical", "explosive", "edible", "toxic", "precious", "ancient", "modern", "ethereal", "solid", "liquid", "gas", "fire-related", "ice-related", "earth-related", "air-related", "water-related", "life-related", "abstract", "emotion", "historical", "pop-culture", "superhero", "place", "event"
+TAGS REQUIREMENT - TWO SEPARATE TAG TYPES:
+
+1. ACHIEVEMENT TAGS (1-6 tags for game mechanics):
+- Used for challenges, achievements, and game progression
+- Creative categories: "creature", "animal", "plant", "food", "tool", "weapon", "artifact", "mythological", "celestial", "aquatic", "flying", "magical", "technology", "furniture", "clothing", "mineral", "undead", "divine", "demonic", "legendary", "everyday", "natural", "synthetic", "fictional-character", "building", "vehicle", "musical", "explosive", "edible", "toxic", "precious", "ancient", "modern", "ethereal", "solid", "liquid", "gas", "fire-related", "ice-related", "earth-related", "air-related", "water-related", "life-related", "abstract", "emotion", "historical", "pop-culture", "superhero", "place", "event"
+
+2. EMOJI TAGS (2-4 descriptive visual hints):
+- Used for finding better OpenMoji emoji representations
+- Descriptive visual terms that help match the element to appropriate emoji
+- Examples: For "Dragon" → achievementTags: ["creature", "mythological"] + emojiTags: ["dragon", "fire", "wings", "beast"]
+- Examples: For "Pizza" → achievementTags: ["food", "everyday"] + emojiTags: ["pizza", "slice", "food"]
 
 Recent successful combinations (last 10): ${recentText}
 Recent rejected combinations (last 5): ${failedText}
@@ -276,11 +297,12 @@ Respond with ONLY a valid JSON object:
   "outcomes": [
     {
       "result": "Element Name",
-      "emoji": "appropriate emoji", 
+      "emoji": "one appropriate Unicode emoji (no text or Asian characters)", 
       "color": "hex color",
       "rarity": "common",
       "reasoning": "brief explanation",
-      "tags": ["tag1", "tag2"]
+      "achievementTags": ["category1", "category2"],
+      "emojiTags": ["visual1", "visual2", "descriptive3"]
     }
   ]
 }

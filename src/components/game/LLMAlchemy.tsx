@@ -20,10 +20,13 @@ interface Element {
   unlockOrder: number;
   rarity?: string;
   reasoning?: string;
-  tags?: string[];
+  // Tag separation for different purposes
+  achievementTags?: string[];  // For achievements and challenges
+  emojiTags?: string[];        // For OpenMoji visual search
+  tags?: string[];             // Legacy fallback for backwards compatibility
   isEndElement?: boolean;
-  parents?: Element[]; // Runtime only - the elements that created this one
-  energyEnhanced?: boolean; // Runtime only - tracks if this was created via energy enhancement
+  parents?: Element[];
+  energyEnhanced?: boolean;
   // OpenMoji-specific fields (only for PUA emojis)
   openmojiHex?: string;      // Hexcode for non-Unicode emojis
   isOpenmojiExtra?: boolean; // True if using PUA emoji
@@ -244,9 +247,10 @@ const LLMAlchemy = () => {
       if (challenge.target_element) {
         // Weekly challenge - specific element
         isCompleted = element.name.toLowerCase() === challenge.target_element.toLowerCase();
-      } else if (challenge.target_category && element.tags) {
-        // Daily challenge - category (use proper tag matching with synonyms)
-        isCompleted = elementMatchesCategory(element.tags, challenge.target_category);
+      } else if (challenge.target_category) {
+        // Daily challenge - category (use proper tag matching with synonyms and new tag structure)
+        const elementTags = element.achievementTags || element.tags || [];
+        isCompleted = elementMatchesCategory(elementTags, challenge.target_category);
       }
       
       if (isCompleted) {
@@ -1424,14 +1428,18 @@ const LLMAlchemy = () => {
       } else {
         const isEndElement = 'isEndElement' in result ? result.isEndElement || false : false;
         
-        // Resolve OpenMoji for the new element
+        // Resolve OpenMoji for the new element using emojiTags (with fallback to achievementTags/tags for backwards compatibility)
+        const emojiTags = ('emojiTags' in result && Array.isArray(result.emojiTags) ? result.emojiTags : null) || 
+                          ('achievementTags' in result && Array.isArray(result.achievementTags) ? result.achievementTags : null) || 
+                          ('tags' in result && Array.isArray(result.tags) ? result.tags : null) || [];
+        
         const openmojiData = resolveEmoji({
           unicodeEmoji: ('emoji' in result ? result.emoji : null) || '✨',
           name: result.result,
-          tags: ('tags' in result ? result.tags : null) || []
+          tags: emojiTags
         });
         
-        const newElement = {
+        const newElement: Element = {
           id: result.result.toLowerCase().replace(/\s+/g, '-'),
           name: result.result,
           emoji: ('emoji' in result ? result.emoji : null) || '✨',
@@ -1439,7 +1447,11 @@ const LLMAlchemy = () => {
           unlockOrder: elements.length + endElements.length,
           rarity: 'rarity' in result ? result.rarity : 'common',
           reasoning: ('reasoning' in result ? result.reasoning : null) || '',
-          tags: ('tags' in result ? result.tags : null) || [],
+          // Store both tag types (with backwards compatibility)
+          achievementTags: ('achievementTags' in result && Array.isArray(result.achievementTags) ? result.achievementTags : null) || 
+                          ('tags' in result && Array.isArray(result.tags) ? result.tags : null) || [],
+          emojiTags: ('emojiTags' in result && Array.isArray(result.emojiTags) ? result.emojiTags : null) || [],
+          tags: ('tags' in result && Array.isArray(result.tags) ? result.tags : null) || [], // Legacy fallback
           isEndElement,
           parents: elementsToMix, // Track the parent elements that created this one
           energyEnhanced: hasEnergy && elementsToMix.length === 2, // Track if this was energy-enhanced (not energy as element)

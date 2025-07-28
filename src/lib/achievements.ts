@@ -23,7 +23,10 @@ export interface Element {
   unlockOrder: number;
   rarity?: string;
   reasoning?: string;
-  tags?: string[];
+  // Tag separation for different purposes
+  achievementTags?: string[];  // For achievements and challenges
+  emojiTags?: string[];        // For OpenMoji visual search
+  tags?: string[];             // Legacy fallback for backwards compatibility
   isEndElement?: boolean;
   parents?: Element[];
   energyEnhanced?: boolean;
@@ -94,9 +97,11 @@ function calculateAchievementCount(
   }
   
   if (tags) {
-    return allDiscoveredElements.filter(e => 
-      e.tags && e.tags.some(tag => tags.includes(tag))
-    ).length;
+    return allDiscoveredElements.filter(e => {
+      // Check achievementTags first, then fall back to tags for backwards compatibility
+      const elementTags = e.achievementTags || e.tags || [];
+      return elementTags.some(tag => tags.includes(tag));
+    }).length;
   }
   
   return 0;
@@ -173,8 +178,9 @@ export function checkAchievements(
   
   try {
     // Tag-based achievement detection
-    if (newElement.tags && Array.isArray(newElement.tags)) {
-      for (const tag of newElement.tags) {
+    const newElementTags = newElement.achievementTags || newElement.tags || [];
+    if (newElementTags.length > 0) {
+      for (const tag of newElementTags) {
         let achievementId: string | null = null;
         let achievementName: string = '';
         let achievementDescription: string = '';
@@ -183,7 +189,10 @@ export function checkAchievements(
         // Check if this is the first element with this tag
         const hasExistingWithTag = [...allElements, ...allEndElements]
           .filter(e => e.id !== newElement.id)
-          .some(e => e.tags && e.tags.includes(tag));
+          .some(e => {
+            const elementTags = e.achievementTags || e.tags || [];
+            return elementTags.includes(tag);
+          });
         
         if (!hasExistingWithTag) {
           // Map tags to achievements based on game mode
@@ -338,9 +347,18 @@ export function checkAchievements(
       
       // Master of States: 5 elements in each state of matter
       if (!existingAchievements.find(a => a.id === 'master-of-states')) {
-        const solidElements = allDiscoveredElements.filter(e => e.tags && e.tags.includes('solid'));
-        const liquidElements = allDiscoveredElements.filter(e => e.tags && e.tags.includes('liquid'));
-        const gasElements = allDiscoveredElements.filter(e => e.tags && e.tags.includes('gas'));
+        const solidElements = allDiscoveredElements.filter(e => {
+          const elementTags = e.achievementTags || e.tags || [];
+          return elementTags.includes('solid');
+        });
+        const liquidElements = allDiscoveredElements.filter(e => {
+          const elementTags = e.achievementTags || e.tags || [];
+          return elementTags.includes('liquid');
+        });
+        const gasElements = allDiscoveredElements.filter(e => {
+          const elementTags = e.achievementTags || e.tags || [];
+          return elementTags.includes('gas');
+        });
         
         if (solidElements.length >= 5 && liquidElements.length >= 5 && gasElements.length >= 5) {
           newAchievements.push({
@@ -359,13 +377,12 @@ export function checkAchievements(
         const discoveredBiomes = new Set();
         
         allDiscoveredElements.forEach(element => {
-          if (element.tags) {
-            element.tags.forEach(tag => {
-              if (biomeTags.includes(tag)) {
-                discoveredBiomes.add(tag);
-              }
-            });
-          }
+          const elementTags = element.achievementTags || element.tags || [];
+          elementTags.forEach(tag => {
+            if (biomeTags.includes(tag)) {
+              discoveredBiomes.add(tag);
+            }
+          });
         });
         
         if (discoveredBiomes.size >= 4) {
@@ -381,7 +398,10 @@ export function checkAchievements(
       
       // Metallurgist: 10 different metals
       if (!existingAchievements.find(a => a.id === 'advanced-metallurgist')) {
-        const metalElements = allDiscoveredElements.filter(e => e.tags && e.tags.includes('metal'));
+        const metalElements = allDiscoveredElements.filter(e => {
+          const elementTags = e.achievementTags || e.tags || [];
+          return elementTags.includes('metal');
+        });
         
         if (metalElements.length >= 10) {
           newAchievements.push({
@@ -397,9 +417,10 @@ export function checkAchievements(
       // Danger Zone: 5 dangerous elements
       if (!existingAchievements.find(a => a.id === 'danger-zone')) {
         const dangerTags = ['danger', 'catastrophe', 'toxic', 'explosive', 'corrosive', 'radioactive', 'unstable'];
-        const dangerousElements = allDiscoveredElements.filter(e => 
-          e.tags && e.tags.some(tag => dangerTags.includes(tag))
-        );
+        const dangerousElements = allDiscoveredElements.filter(e => {
+          const elementTags = e.achievementTags || e.tags || [];
+          return elementTags.some(tag => dangerTags.includes(tag));
+        });
         
         if (dangerousElements.length >= 5) {
           newAchievements.push({
@@ -415,9 +436,10 @@ export function checkAchievements(
       // Life Finds a Way: 15 organisms
       if (!existingAchievements.find(a => a.id === 'life-finds-a-way')) {
         const lifeTags = ['plant', 'animal', 'organism'];
-        const lifeElements = allDiscoveredElements.filter(e => 
-          e.tags && e.tags.some(tag => lifeTags.includes(tag))
-        );
+        const lifeElements = allDiscoveredElements.filter(e => {
+          const elementTags = e.achievementTags || e.tags || [];
+          return elementTags.some(tag => lifeTags.includes(tag));
+        });
         
         if (lifeElements.length >= 15) {
           newAchievements.push({
