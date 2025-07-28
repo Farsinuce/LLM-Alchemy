@@ -1,5 +1,5 @@
 // Mark a challenge as completed for the current user
-import { createServerSupabaseClient } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { elementMatchesCategory } from '@/lib/challenge-elements';
 

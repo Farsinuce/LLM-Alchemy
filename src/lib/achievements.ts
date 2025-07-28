@@ -1,36 +1,7 @@
 // Achievement system for LLM Alchemy
 // Extracted from LLMAlchemy.tsx for better code organization
 
-export interface Achievement {
-  id: string;
-  name: string;
-  description: string;
-  emoji: string;
-  unlocked: number;
-  // Tiering support
-  isProgressive?: boolean;
-  countType?: string;
-  tier?: 1 | 2 | 3;
-  currentCount?: number;
-  nextTierAt?: number | null;
-}
-
-export interface Element {
-  id: string;
-  name: string;
-  emoji: string;
-  color: string;
-  unlockOrder: number;
-  rarity?: string;
-  reasoning?: string;
-  // Tag separation for different purposes
-  achievementTags?: string[];  // For achievements and challenges
-  emojiTags?: string[];        // For OpenMoji visual search
-  tags?: string[];             // Legacy fallback for backwards compatibility
-  isEndElement?: boolean;
-  parents?: Element[];
-  energyEnhanced?: boolean;
-}
+import { Achievement, GameElement } from '@/types';
 
 // Tiered achievement configuration - easy to extend
 interface TieredAchievementConfig {
@@ -86,8 +57,8 @@ const TIERED_ACHIEVEMENTS: TieredAchievementConfig[] = [
  */
 function calculateAchievementCount(
   countType: string,
-  allElements: Element[],
-  allEndElements: Element[],
+  allElements: GameElement[],
+  allEndElements: GameElement[],
   tags?: string[]
 ): number {
   const allDiscoveredElements = [...allElements, ...allEndElements];
@@ -125,8 +96,8 @@ function getTierInfo(count: number, tiers: [number, number, number]): {
  */
 export function updateAchievementsWithProgress(
   achievements: Achievement[],
-  allElements: Element[],
-  allEndElements: Element[]
+  allElements: GameElement[],
+  allEndElements: GameElement[]
 ): Achievement[] {
   return achievements.map(achievement => {
     // Find if this achievement is tiered
@@ -168,9 +139,9 @@ export function updateAchievementsWithProgress(
  * @returns Array of newly unlocked achievements
  */
 export function checkAchievements(
-  newElement: Element,
-  allElements: Element[],
-  allEndElements: Element[],
+  newElement: GameElement,
+  allElements: GameElement[],
+  allEndElements: GameElement[],
   existingAchievements: Achievement[],
   gameMode: 'science' | 'creative'
 ): Achievement[] {

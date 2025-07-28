@@ -1,7 +1,7 @@
 'use client';
 
 import { useSupabase } from '@/components/auth/SupabaseProvider';
-import { getOrCreateAnonymousUser } from '@/lib/supabase-client';
+import { getOrCreateAnonymousUser } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 

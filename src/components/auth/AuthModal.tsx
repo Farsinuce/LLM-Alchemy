@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
-import { createClient } from '@/lib/supabase-client';
+import { createClient } from '@/lib/supabase/browser';
 import { getTurnstileToken } from '@/lib/turnstile';
 import { getStaticOpenMoji } from '@/lib/openmoji-service';
 

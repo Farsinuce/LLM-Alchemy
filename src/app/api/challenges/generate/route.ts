@@ -1,5 +1,5 @@
 // Challenge generation endpoint - called by Vercel Cron daily at midnight Copenhagen time
-import { createServiceRoleClient } from '@/lib/supabase';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getRandomDailyCategories, getRandomWeeklyElement } from '@/lib/challenge-elements';
 import { NextResponse } from 'next/server';
 

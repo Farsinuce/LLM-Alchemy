@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Sparkles, X, GripHorizontal, User, ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
-import { createClient, incrementDailyCount, decrementDailyCount, saveGameState, loadGameState, consumeToken, addTokens, getLlmModelPreference } from '@/lib/supabase-client';
+import { createClient, incrementDailyCount, decrementDailyCount, saveGameState, loadGameState, consumeToken, addTokens, getLlmModelPreference } from '@/lib/supabase';
 import { buildSharedSections, buildSciencePrompt, buildCreativePrompt } from '@/lib/llm-prompts';
-import { Achievement, checkAchievements, updateAchievementsWithProgress } from '@/lib/achievements';
+import { checkAchievements, updateAchievementsWithProgress } from '@/lib/achievements';
+import { Achievement } from '@/types';
 import { GAME_CONFIG } from '@/lib/game-config';
 import { ChallengeBar } from '@/components/game/ChallengeBar';
 import { elementMatchesCategory } from '@/lib/challenge-elements';
@@ -232,7 +233,7 @@ const LLMAlchemy = () => {
     // Skip challenge completion check if user has disabled challenges
     if (dbUser && !dbUser.is_anonymous) {
       const supabase = createClient();
-      const { getChallengePreference } = await import('@/lib/supabase-client');
+      const { getChallengePreference } = await import('@/lib/supabase');
       const challengesEnabled = await getChallengePreference(supabase, user.id);
       if (!challengesEnabled) return;
     }

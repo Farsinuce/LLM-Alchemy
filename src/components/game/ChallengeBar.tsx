@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
-import { createClient, getChallengePreference } from '@/lib/supabase-client';
+import { createClient, getChallengePreference } from '@/lib/supabase';
 import { getStaticOpenMoji } from '@/lib/openmoji-service';
 import { Challenge, ChallengeBarProps } from '@/types';
 

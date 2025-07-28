@@ -4,11 +4,11 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Sparkles, ArrowRight, X } from 'lucide-react';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
-import { 
-  createClient, 
-  getGameProgress, 
-  resetGameState, 
-  getLlmModelPreference, 
+import {
+  createClient,
+  getGameProgress,
+  resetGameState,
+  getLlmModelPreference,
   updateLlmModelPreference,
   getChallengePreference,
   updateChallengePreference

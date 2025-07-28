@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase-client';
+import { createClient } from '@/lib/supabase/browser';
 
 export default function AuthCallback() {
   const [status, setStatus] = useState('Processing...');

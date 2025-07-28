@@ -3,7 +3,8 @@ import type { User, GameState, GameProgress } from '@/types'
 
 // Generic Supabase client type that accepts different client configurations
 // This allows compatibility with both browser and server clients
-type GenericSupabaseClient = SupabaseClient
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type GenericSupabaseClient = SupabaseClient<any, any, any>
 
 // Prevent multiple simultaneous signup attempts
 let isCreatingUser = false;

@@ -7,7 +7,10 @@
     "build": "node scripts/copy-openmoji.js && next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "node scripts/copy-openmoji.js"
+    "postinstall": "node scripts/copy-openmoji.js",
+    "gen:types": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > src/types/db.generated.ts",
+    "typecheck": "tsc --noEmit",
+    "precommit": "npm run gen:types && npm run lint && npm run typecheck"
   },
   "dependencies": {
     "@stripe/stripe-js": "^7.4.0",
@@ -30,6 +33,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
+    "eslint-plugin-import": "^2.32.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
