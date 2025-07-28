@@ -40,11 +40,6 @@ export default function TestOpenMojiPage() {
       .filter(tag => tag.length > 0);
     
     try {
-      // Enable debug logging in browser console
-      const originalEnv = process.env.NODE_ENV;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (process.env as any).NODE_ENV = 'development';
-      
       console.log('[OpenMoji Debug] Testing with inputs:', { unicodeEmoji, name, tags });
       
       const resolved = resolveEmoji({
@@ -52,10 +47,6 @@ export default function TestOpenMojiPage() {
         name,
         tags
       });
-      
-      // Restore environment
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (process.env as any).NODE_ENV = originalEnv;
       
       setResult({
         original: { unicodeEmoji, name, tags },

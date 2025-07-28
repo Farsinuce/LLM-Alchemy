@@ -5,6 +5,9 @@ import { ArrowLeft, Shield, CheckCircle, XCircle, RefreshCw } from 'lucide-react
 import Link from 'next/link';
 import { initTurnstile, executeTurnstile, isTurnstileReady, getTurnstileToken } from '@/lib/turnstile';
 
+// Force dynamic rendering to avoid static generation issues
+export const dynamic = 'force-dynamic';
+
 export default function TestCaptchaPage() {
   const [testResults, setTestResults] = useState<{
     automated?: { success: boolean; message: string; token?: string };

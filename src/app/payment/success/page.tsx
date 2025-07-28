@@ -4,6 +4,9 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Sparkles, CheckCircle, ArrowRight, Home } from 'lucide-react';
 
+// Force dynamic rendering to avoid static generation issues
+export const dynamic = 'force-dynamic';
+
 function PaymentSuccessContent() {
   const [status, setStatus] = useState('Processing payment...');
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
