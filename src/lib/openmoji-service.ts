@@ -102,10 +102,17 @@ export function resolveEmoji({
   // Get direct Unicode match if available
   const direct = unicodeEmoji ? unicodeMap.get(unicodeEmoji) : null;
   
-  // Always search for potentially better match
-  const searchQuery = `${name} ${tags.join(' ')}`.trim();
-  const searchResults = fuse.search(searchQuery);
-  const bestHit = searchResults[0];
+  // Two-phase search: prioritize element name, fallback to tags
+  // Phase 1: Search by name only
+  let searchResults = fuse.search(name);
+  let bestHit = searchResults[0];
+  
+  // Phase 2: If no good match by name alone (score > 0.3), try with tags
+  if (!bestHit || bestHit.score! > 0.3) {
+    const searchQuery = `${name} ${tags.join(' ')}`.trim();
+    searchResults = fuse.search(searchQuery);
+    bestHit = searchResults[0];
+  }
 
   // Decision logic for using search result vs direct match (v2.1: threshold 0.35)
   const useBest = bestHit && (
@@ -119,10 +126,12 @@ export function resolveEmoji({
 
   // v2.1: Debug logging in development
   if (process.env.NODE_ENV !== 'production') {
+    const searchPhase = (bestHit?.score ?? 1) <= 0.3 ? 'name-only' : 'name-with-tags';
     console.debug('[OpenMoji] Search result:', {
       name,
       tags,
       unicodeEmoji,
+      searchPhase,
       direct: direct ? `${direct.emoji} (${direct.hexcode})` : null,
       bestHit: bestHit ? `${bestHit.item.emoji || bestHit.item.hexcode} (score: ${bestHit.score?.toFixed(3)})` : null,
       useBest,
