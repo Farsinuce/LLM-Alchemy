@@ -1004,6 +1004,11 @@ const LLMAlchemyRefactored = () => {
             mixingResult={null}
             canUndo={undoAvailable}
             animatingElements={animatedElements}
+            hoveredElement={hoveredElement}
+            hoveredUIElement={null}
+            isDragging={isDragging}
+            touchDragging={touchDragging}
+            dimmedElements={dimmedElements}
             onMixingElementMouseDown={(e, element) => {
               // Find the full element from mixingArea to ensure all properties are included
               const fullElement = mixingArea.find(m => m.index === element.index);
@@ -1054,6 +1059,14 @@ const LLMAlchemyRefactored = () => {
                 }
               }, 100);
             }}
+            onMixingElementMouseEnter={(element) => setHoveredElement(element.index)}
+            onMixingElementMouseLeave={() => setHoveredElement(null)}
+            onMixingElementDragOver={(e, element) => {
+              e.preventDefault();
+              setHoveredElement(element.index);
+            }}
+            onMixingElementDragEnter={(element) => setHoveredElement(element.index)}
+            onMixingElementDragLeave={() => setHoveredElement(null)}
             onClearMixingArea={clearMixingAreaWithAnimation}
             onUndo={async () => {
               if (lastCombination) {

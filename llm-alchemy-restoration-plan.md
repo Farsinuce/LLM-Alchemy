@@ -40,25 +40,34 @@ Get the refactored game back to feature parity with the original monolith, focus
 - **Note:** Full drag/drop logic implemented but unverified
 
 ### A5. Hover Timer (500ms) ✅
-**Status:** IMPLEMENTED - NEEDS TESTING
-- [x] 500ms hover timer code added with useRef timeout
-- [x] Popup dismissal on mouse leave implemented
+**Status:** COMPLETE (2025-01-29 13:45)
+- [x] 500ms hover timer implemented in ElementListView.tsx
+- [x] Fixed hover handlers to use local timeout logic instead of bypassing
+- [x] Popup dismissal on mouse leave working
 - [x] Touch device detection to skip hover on mobile
-- **Implementation:** Used exact pattern from original component
+- **Implementation:** Fixed mouse event routing to use handleElementMouseEnter/Leave
 
 ### A6. Element Dimming During Drag ✅
-**Status:** IMPLEMENTED - NEEDS TESTING
+**Status:** COMPLETE (Already implemented)
 - [x] Elements that were previously mixed with current element are dimmed
 - [x] Failed combinations also trigger dimming
 - [x] Dimming cleared when drag ends
 - **Implementation:** Uses CSS opacity transition with element-dimmed class
 
-### A7. Staggered Removal Animations ✅
-**Status:** IMPLEMENTED - NEEDS TESTING
-- [x] MixingAreaView now receives animatingElements prop
+### A7. Staggered Removal Animations ✅  
+**Status:** COMPLETE (Already implemented)
+- [x] MixingAreaView receives animatingElements prop
 - [x] Elements animate with staggered timing when clearing
 - [x] CSS animation classes applied correctly
 - **Implementation:** Uses animate-element-remove-staggered CSS class
+
+### A8. Mixing Area Visibility ✅
+**Status:** COMPLETE (2025-01-29 13:45)
+- [x] Fixed MixingAreaView structure to match original
+- [x] Proper color contrast using getContrastColor function
+- [x] Simplified overlay system for better element visibility
+- [x] All missing props added to component usage
+- **Implementation:** Restored original element styling and z-index hierarchy
 
 ### A6. Touch Support
 **Test:** Basic long-press drag works on mobile

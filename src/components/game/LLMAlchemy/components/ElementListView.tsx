@@ -112,8 +112,8 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
             draggable={!isTouch}
             onDragStart={(e) => onElementDragStart(e, element)}
             onTouchStart={(e) => onElementTouchStart(e, element)}
-            onMouseEnter={(e) => onElementMouseEnter(element, e)}
-            onMouseLeave={onElementMouseLeave}
+            onMouseEnter={(e) => handleElementMouseEnter(element, e)}
+            onMouseLeave={handleElementMouseLeave}
             onClick={(e) => onElementClick(element, e)}
             onContextMenu={(e) => e.preventDefault()}
             className={`

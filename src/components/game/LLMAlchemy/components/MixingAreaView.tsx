@@ -3,6 +3,7 @@
 import React from 'react';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 import { MixingElement } from '../hooks/useGameState';
+import { getContrastColor, getRarityHoverColor } from '@/lib/ui-utils';
 
 interface MixingAreaViewProps {
   mixingArea: MixingElement[];
@@ -10,8 +11,18 @@ interface MixingAreaViewProps {
   mixingResult: string | null;
   canUndo: boolean;
   animatingElements: Set<string>;
+  hoveredElement: number | null;
+  hoveredUIElement: string | null;
+  isDragging: boolean;
+  touchDragging: MixingElement | null;
+  dimmedElements: Set<string>;
   onMixingElementMouseDown: (e: React.MouseEvent<HTMLDivElement>, element: MixingElement) => void;
   onMixingElementTouchStart: (e: React.TouchEvent<HTMLDivElement>, element: MixingElement) => void;
+  onMixingElementMouseEnter: (element: MixingElement) => void;
+  onMixingElementMouseLeave: () => void;
+  onMixingElementDragOver: (e: React.DragEvent, element: MixingElement) => void;
+  onMixingElementDragEnter: (element: MixingElement) => void;
+  onMixingElementDragLeave: () => void;
   onClearMixingArea: () => void;
   onUndo: () => void;
 }
@@ -19,120 +30,122 @@ interface MixingAreaViewProps {
 export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
   mixingArea,
   isMixing,
-  mixingResult,
   canUndo,
   animatingElements,
+  hoveredElement,
+  hoveredUIElement,
+  isDragging,
+  touchDragging,
+  dimmedElements,
   onMixingElementMouseDown,
   onMixingElementTouchStart,
+  onMixingElementMouseEnter,
+  onMixingElementMouseLeave,
+  onMixingElementDragOver,
+  onMixingElementDragEnter,
+  onMixingElementDragLeave,
   onClearMixingArea,
   onUndo
 }) => {
   return (
-    <div 
-      className={`
-        flex-1 relative overflow-hidden border-2 border-dashed rounded-lg transition-all duration-500 m-4
-        ${mixingArea.length > 0 
-          ? 'border-purple-400 bg-purple-900/20' 
-          : 'border-gray-600 bg-gray-800/50'
-        }
-        ${isMixing ? 'border-yellow-400 bg-yellow-900/20 animate-mixing-blur' : ''}
-      `}
-    >
-      {/* UNDO Button - Top Left */}
-      <button
-        onClick={onUndo}
-        disabled={!canUndo}
-        className="absolute top-4 left-4 px-3 py-1 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded text-white text-sm font-medium transition-colors z-20"
-        title="Undo last action"
-      >
-        ↶ Undo
-      </button>
-
-      {/* CLEAR Button - Top Right */}
-      {mixingArea.length > 0 && !isMixing && (
+    <div className="flex-1 relative overflow-hidden">
+      {/* Undo Button */}
+      {canUndo && (
         <button
-          onClick={onClearMixingArea}
-          className="absolute top-4 right-4 px-3 py-1 bg-red-600 hover:bg-red-500 rounded text-white text-sm font-medium transition-colors z-20"
-          title="Clear mixing area"
+          onClick={onUndo}
+          onMouseEnter={() => {}}
+          onMouseLeave={() => {}}
+          className="absolute top-4 left-4 px-3 py-2 rounded-lg transition-all z-20 flex items-center gap-1 bg-gray-700 hover:bg-gray-600 text-white cursor-pointer"
+          title="Undo last action"
         >
-          Clear
+          <span>↩️</span>
+          <span className="hidden sm:inline text-sm">Undo</span>
         </button>
       )}
 
-      {/* Drop Zone Instructions */}
-      {mixingArea.length === 0 && !isMixing && (
-        <div className="absolute inset-0 flex items-center justify-center z-10">
-          <div className="text-center text-gray-400">
-            <div className="text-4xl mb-2">🧪</div>
-            <p className="text-lg font-medium">Drop elements here to mix</p>
-            <p className="text-sm mt-1">Drag & drop or touch elements to combine them</p>
-          </div>
-        </div>
+      {/* Clear Button */}
+      {mixingArea.length > 0 && !isMixing && (
+        <button
+          onClick={onClearMixingArea}
+          onMouseEnter={() => {}}
+          onMouseLeave={() => {}}
+          className="absolute top-4 right-4 p-2 rounded-full z-20 bg-red-600 hover:bg-red-500 text-white transition-colors"
+          title="Clear mixing area"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       )}
 
-      {/* Mixing Status with Blur Backdrop */}
+      {/* Empty state */}
+      {mixingArea.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <p className="text-gray-500 text-center px-4">
+            Drag elements here to mix them!
+          </p>
+        </div>
+      )}
+      
+      {/* Mixing area elements */}
+      {mixingArea.map((element) => (
+        <div
+          key={`${element.id}-${element.index}`}
+          id={`mixing-${element.id}-${element.index}`}
+          draggable={!isMixing}
+          onDragStart={(e) => onMixingElementMouseDown(e as React.MouseEvent<HTMLDivElement>, element)}
+          onTouchStart={(e) => onMixingElementTouchStart(e, element)}
+          onMouseEnter={() => onMixingElementMouseEnter(element)}
+          onMouseLeave={onMixingElementMouseLeave}
+          onContextMenu={(e) => e.preventDefault()}
+          onDragOver={(e) => onMixingElementDragOver(e, element)}
+          onDragEnter={() => onMixingElementDragEnter(element)}
+          onDragLeave={onMixingElementDragLeave}
+          className={`absolute w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex flex-col items-center justify-center rounded-lg cursor-move ${
+            element.energized ? 'animate-shake' : ''
+          } ${
+            hoveredElement === element.index && !element.energized ? 'animate-continuous-pulse' : ''
+          } ${
+            touchDragging?.mixIndex === element.index && touchDragging?.fromMixingArea ? 'opacity-30' : ''
+          } ${
+            animatingElements.has(`${element.id}-${element.index}`) ? 'animate-element-pop-out' : ''
+          } ${
+            dimmedElements.has(element.name) ? 'element-dimmed' : ''
+          }`}
+          style={{ 
+            left: element.x, 
+            top: element.y,
+            backgroundColor: element.color,
+            color: getContrastColor(element.color),
+            pointerEvents: isMixing ? 'none' : 'auto',
+            touchAction: 'none',
+            WebkitTouchCallout: 'none',
+            WebkitUserSelect: 'none',
+            transition: 'none',
+            boxShadow: element.energized ? '0 0 20px rgba(250, 204, 21, 0.5), 0 0 0 2px #facc15' :
+                      hoveredElement === element.index ? `0 0 0 2px ${getRarityHoverColor(element.rarity)}` :
+                      hoveredUIElement === `mixing-${element.index}` && !isDragging ? `0 0 0 2px ${getRarityHoverColor(element.rarity)}` : ''
+          }}
+        >
+          <OpenMojiDisplay 
+            emoji={element.emoji} 
+            hexcode={element.openmojiHex}
+            name={element.name} 
+            size="md" 
+            className="pointer-events-none"
+          />
+          <div className="text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight pointer-events-none">{element.name}</div>
+        </div>
+      ))}
+      
+      {/* Mixing overlay */}
       {isMixing && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm rounded-lg animate-fade-in z-30">
-          <div className="text-center text-yellow-400 bg-black/50 rounded-xl p-6 border border-yellow-400/30">
-            <div className="text-4xl mb-2 animate-spin">⚗️</div>
-            <p className="text-lg font-medium">Mixing Elements...</p>
-            <p className="text-sm mt-1">Please wait while the LLM creates magic</p>
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+          <div className="bg-gray-800/90 rounded-xl p-6 flex flex-col items-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mb-3"></div>
+            <div className="text-sm">Mixing...</div>
           </div>
-        </div>
-      )}
-
-      {/* Result Display */}
-      {mixingResult && !isMixing && (
-        <div className="absolute inset-0 flex items-center justify-center z-30">
-          <div className="text-center text-green-400">
-            <div className="text-6xl mb-4 animate-bounce">✨</div>
-            <p className="text-xl font-bold mb-2">Success!</p>
-            <p className="text-lg">{mixingResult}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Mixing Area Elements */}
-      {mixingArea.map((element) => {
-        const elementKey = `${element.id}-${element.index}`;
-        const isRemoving = animatingElements.has(elementKey);
-        
-        return (
-          <div
-            key={element.id}
-            id={`mixing-${element.id}-${element.index}`}
-            className={`absolute w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex flex-col items-center justify-center rounded-lg cursor-move hover:bg-gray-600 transition-colors select-none touch-manipulation z-10 ${
-              isRemoving ? 'animate-element-remove-staggered' : 'animate-element-drop-in'
-            }`}
-            style={{
-              left: `${element.x}px`,
-              top: `${element.y}px`,
-              backgroundColor: element.color,
-              color: '#FFFFFF',
-            }}
-            onMouseDown={(e) => onMixingElementMouseDown(e, element)}
-            onTouchStart={(e) => onMixingElementTouchStart(e, element)}
-          >
-            <OpenMojiDisplay
-              emoji={element.emoji}
-              name={element.name}
-              size="md"
-              className="text-2xl"
-            />
-            <div className="text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight">{element.name}</div>
-          </div>
-        );
-      })}
-
-      {/* Mixing Area Info */}
-      {mixingArea.length > 0 && !isMixing && !mixingResult && (
-        <div className="absolute bottom-4 left-4 text-sm text-gray-300 z-10">
-          <p>{mixingArea.length} element{mixingArea.length !== 1 ? 's' : ''} ready to mix</p>
-          {mixingArea.length >= 2 && (
-            <p className="text-xs text-purple-400 mt-1">
-              Move elements closer together to combine them
-            </p>
-          )}
         </div>
       )}
     </div>
