@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
 
     // Create payment record in database
     const paymentType = isSubscription ? 'subscription' : 'tokens';
-    const { data: paymentRecord, error: paymentError } = await supabase
+    const { error: paymentError } = await supabase
       .rpc('create_stripe_payment', {
         p_user_id: user.id,
         p_stripe_session_id: session.id,

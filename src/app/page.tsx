@@ -36,7 +36,7 @@ export default function Home() {
   const [resetAchievements, setResetAchievements] = useState(false);
   const [selectedMode, setSelectedMode] = useState<'science' | 'creative'>('science');
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [todaysChallenges, setTodaysChallenges] = useState<{id: string, challenge_type: string, title: string, reward_tokens: number, isCompleted: boolean, completionDetails: any}[]>([]);
+  const [todaysChallenges, setTodaysChallenges] = useState<{id: string, challenge_type: string, title: string, reward_tokens: number, isCompleted: boolean, completionDetails: { element_discovered: string }}[]>([]);
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
   const [tempApiKey, setTempApiKey] = useState<string>('');
@@ -59,7 +59,20 @@ export default function Home() {
   
   // Completed challenges modal
   const [showCompletedChallenges, setShowCompletedChallenges] = useState(false);
-  const [completedChallenges, setCompletedChallenges] = useState<any[]>([]);
+  const [completedChallenges, setCompletedChallenges] = useState<{
+    id: string;
+    element_discovered: string;
+    game_mode: string;
+    completed_at: string;
+    challenges: {
+      challenge_type: string;
+      title: string;
+      target_element: string;
+      target_category: string;
+      reward_tokens: number;
+    } | null;
+    tokens_awarded: number;
+  }[]>([]);
   const [loadingCompleted, setLoadingCompleted] = useState(false);
 
   // Show toast function
@@ -173,8 +186,9 @@ export default function Home() {
       window.location.reload();
       
       showToast('Logged out successfully');
-    } catch (error: any) {
-      showToast('Error logging out: ' + error.message);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      showToast('Error logging out: ' + errorMessage);
     }
   };
 
@@ -209,8 +223,9 @@ export default function Home() {
         throw new Error('No checkout URL received');
       }
 
-    } catch (error: any) {
-      showToast(error.message || 'Payment failed');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      showToast(errorMessage || 'Payment failed');
     } finally {
       setIsCreatingPayment(false);
     }
@@ -357,10 +372,6 @@ export default function Home() {
     
     await loadCompletedChallenges();
     setShowCompletedChallenges(true);
-  };
-
-  const formatElementCount = (count: number) => {
-    return count === 0 ? 'None' : `${count} element${count === 1 ? '' : 's'}`;
   };
 
   if (loading) {
@@ -743,7 +754,7 @@ export default function Home() {
                 <p className="text-xs text-gray-400 mt-2">
                   {isAnonymous 
                     ? 'Challenges are only available for registered users'
-                    : 'When enabled, you won\'t receive challenge rewards or notifications'
+                    : "When enabled, you won't receive challenge rewards or notifications"
                   }
                 </p>
               </div>
@@ -761,8 +772,6 @@ export default function Home() {
                 </button>
                 <button
                   onClick={async () => {
-                    const validationPassed = true;
-                    
                     // Validate API key if provided
                     if (tempApiKey.trim()) {
                       const isValid = await validateApiKey(tempApiKey);

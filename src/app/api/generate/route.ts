@@ -5,7 +5,7 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, gameMode, apiKey, useProModel } = await req.json();
+    const { prompt, apiKey, useProModel } = await req.json();
 
     // Use custom API key if provided, otherwise use server's key
     const activeApiKey = apiKey || OPENROUTER_API_KEY;
@@ -47,7 +47,14 @@ export async function POST(req: NextRequest) {
     const maxTokens = model.includes('gemini-2.5-pro') ? 1500 : 500;
     
     // Build request body with reasoning control for Pro model
-    const requestBody: any = {
+    const requestBody: {
+      model: string;
+      messages: { role: string; content: string }[];
+      temperature: number;
+      max_tokens: number;
+      top_p: number;
+      reasoning?: { effort: string };
+    } = {
       model,
       messages: [
         {
@@ -155,7 +162,15 @@ export async function POST(req: NextRequest) {
         });
       } else if (Array.isArray(parsedResult.outcomes)) {
         // Valid outcomes found - validate each outcome
-        const validatedOutcomes = parsedResult.outcomes.map((outcome: any) => ({
+        const validatedOutcomes = parsedResult.outcomes.map((outcome: {
+          result: string;
+          emoji: string;
+          color: string;
+          rarity: string;
+          reasoning: string;
+          tags: string[];
+          isEndElement: boolean;
+        }) => ({
           result: outcome.result || 'Unknown',
           emoji: outcome.emoji || '✨',
           color: outcome.color || '#808080',

@@ -118,6 +118,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     console.log(`[Webhook] Invoice payment succeeded: ${invoice.id}`);
     
     // This handles recurring subscription payments
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((invoice as any).subscription && invoice.metadata?.userId) {
       const supabase = await createServerSupabaseClient();
       
@@ -153,6 +154,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       .from('subscriptions')
       .update({
         status: subscription.status,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         next_payment_date: (subscription as any).current_period_end ? new Date((subscription as any).current_period_end * 1000) : null,
         updated_at: new Date().toISOString(),
       })
@@ -206,7 +208,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 }
 
 // Handle GET requests (for webhook verification)
-export async function GET(req: NextRequest) {
+export async function GET() {
   return NextResponse.json({ 
     message: 'Stripe webhook endpoint is active',
     timestamp: new Date().toISOString() 

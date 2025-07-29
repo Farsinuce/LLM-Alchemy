@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 function PaymentSuccessContent() {
   const [status, setStatus] = useState('Processing payment...');
-  const [paymentDetails, setPaymentDetails] = useState<any>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -27,10 +26,6 @@ function PaymentSuccessContent() {
         // Since we're redirected here from Stripe, we can assume success
         // The webhook will handle the actual payment processing
         setStatus('Payment successful!');
-        setPaymentDetails({
-          sessionId: sessionId,
-          message: 'Your payment has been processed successfully.',
-        });
 
         // Redirect to home after 5 seconds
         setTimeout(() => {

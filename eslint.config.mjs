@@ -4,6 +4,9 @@ import pluginImport from 'eslint-plugin-import';
 const compat = new FlatCompat({ baseDirectory: import.meta.dirname });
 
 export default [
+  // Global ignores
+  { ignores: ['.next/**/*'] },
+
   // Next.js + TypeScript presets
   ...compat.extends('next', 'next/core-web-vitals', 'next/typescript'),
   // Plugin registrations

@@ -1,9 +1,10 @@
-import { createClient } from '@/lib/supabase-client';
+import { createClient } from '@/lib/supabase';
+import { User } from '@supabase/supabase-js';
 
 export interface AccountUpgradeResult {
   success: boolean;
   message: string;
-  user?: any;
+  user?: User;
 }
 
 export async function upgradeAnonymousAccount(
@@ -67,7 +68,7 @@ export async function upgradeAnonymousAccount(
       user: signUpData.user
     };
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Account upgrade error:', error);
     return {
       success: false,
@@ -100,7 +101,7 @@ export async function upgradeAnonymousAccountWithGoogle(
     // OAuth redirect will handle the rest
     return { success: true, message: 'Redirecting to Google...' };
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Google upgrade error:', error);
     return {
       success: false,
@@ -128,7 +129,7 @@ export async function checkAndHandleUpgradeCallback(): Promise<boolean> {
     }
 
     // Migrate the anonymous user data
-    const { data: migrationResult, error: migrationError } = await supabase
+    const { error: migrationError } = await supabase
       .rpc('migrate_anonymous_data', {
         p_anonymous_user_id: anonymousUserId,
         p_registered_user_id: user.id
