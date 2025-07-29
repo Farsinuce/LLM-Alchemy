@@ -38,6 +38,11 @@ export interface GameState {
   achievements: Achievement[];
   failedCombinations: string[];
   
+  // Enhanced state for UI restoration
+  dimmedElements: Set<string>;
+  animatingElements: Set<string>;
+  isUndoing: boolean;
+  
   // Undo/redo functionality
   lastCombination: LastCombination | null;
   undoAvailable: boolean;
@@ -65,6 +70,15 @@ export type GameAction =
   | { type: 'ADD_ACHIEVEMENTS'; payload: Achievement[] }
   | { type: 'SET_FAILED_COMBINATIONS'; payload: string[] }
   | { type: 'ADD_FAILED_COMBINATION'; payload: string }
+  | { type: 'SET_DIMMED_ELEMENTS'; payload: Set<string> }
+  | { type: 'ADD_DIMMED_ELEMENT'; payload: string }
+  | { type: 'REMOVE_DIMMED_ELEMENT'; payload: string }
+  | { type: 'CLEAR_DIMMED_ELEMENTS' }
+  | { type: 'SET_ANIMATING_ELEMENTS'; payload: Set<string> }
+  | { type: 'ADD_ANIMATING_ELEMENT'; payload: string }
+  | { type: 'REMOVE_ANIMATING_ELEMENT'; payload: string }
+  | { type: 'CLEAR_ANIMATING_ELEMENTS' }
+  | { type: 'SET_IS_UNDOING'; payload: boolean }
   | { type: 'SET_LAST_COMBINATION'; payload: LastCombination | null }
   | { type: 'SET_UNDO_AVAILABLE'; payload: boolean }
   | { type: 'INCREMENT_TOTAL_COMBINATIONS' }
@@ -98,6 +112,9 @@ const createInitialState = (gameMode: 'science' | 'creative' = 'science'): GameS
     mixingArea: [],
     achievements: [],
     failedCombinations: [],
+    dimmedElements: new Set<string>(),
+    animatingElements: new Set<string>(),
+    isUndoing: false,
     lastCombination: null,
     undoAvailable: false,
     totalCombinationsMade: 0,
@@ -187,6 +204,43 @@ function gameStateReducer(state: GameState, action: GameAction): GameState {
         ...state, 
         failedCombinations: [...state.failedCombinations.slice(-4), action.payload] 
       };
+
+    case 'SET_DIMMED_ELEMENTS':
+      return { ...state, dimmedElements: action.payload };
+
+    case 'ADD_DIMMED_ELEMENT':
+      return { 
+        ...state, 
+        dimmedElements: new Set([...state.dimmedElements, action.payload])
+      };
+
+    case 'REMOVE_DIMMED_ELEMENT':
+      const newDimmedElements = new Set(state.dimmedElements);
+      newDimmedElements.delete(action.payload);
+      return { ...state, dimmedElements: newDimmedElements };
+
+    case 'CLEAR_DIMMED_ELEMENTS':
+      return { ...state, dimmedElements: new Set<string>() };
+
+    case 'SET_ANIMATING_ELEMENTS':
+      return { ...state, animatingElements: action.payload };
+
+    case 'ADD_ANIMATING_ELEMENT':
+      return { 
+        ...state, 
+        animatingElements: new Set([...state.animatingElements, action.payload])
+      };
+
+    case 'REMOVE_ANIMATING_ELEMENT':
+      const newAnimatingElements = new Set(state.animatingElements);
+      newAnimatingElements.delete(action.payload);
+      return { ...state, animatingElements: newAnimatingElements };
+
+    case 'CLEAR_ANIMATING_ELEMENTS':
+      return { ...state, animatingElements: new Set<string>() };
+
+    case 'SET_IS_UNDOING':
+      return { ...state, isUndoing: action.payload };
 
     case 'SET_LAST_COMBINATION':
       return { ...state, lastCombination: action.payload };
@@ -282,6 +336,42 @@ export function useGameState(initialGameMode: 'science' | 'creative' = 'science'
 
     addFailedCombination: useCallback((combination: string) => {
       dispatch({ type: 'ADD_FAILED_COMBINATION', payload: combination });
+    }, []),
+
+    setDimmedElements: useCallback((dimmedElements: Set<string>) => {
+      dispatch({ type: 'SET_DIMMED_ELEMENTS', payload: dimmedElements });
+    }, []),
+
+    addDimmedElement: useCallback((elementName: string) => {
+      dispatch({ type: 'ADD_DIMMED_ELEMENT', payload: elementName });
+    }, []),
+
+    removeDimmedElement: useCallback((elementName: string) => {
+      dispatch({ type: 'REMOVE_DIMMED_ELEMENT', payload: elementName });
+    }, []),
+
+    clearDimmedElements: useCallback(() => {
+      dispatch({ type: 'CLEAR_DIMMED_ELEMENTS' });
+    }, []),
+
+    setAnimatingElements: useCallback((animatingElements: Set<string>) => {
+      dispatch({ type: 'SET_ANIMATING_ELEMENTS', payload: animatingElements });
+    }, []),
+
+    addAnimatingElement: useCallback((elementName: string) => {
+      dispatch({ type: 'ADD_ANIMATING_ELEMENT', payload: elementName });
+    }, []),
+
+    removeAnimatingElement: useCallback((elementName: string) => {
+      dispatch({ type: 'REMOVE_ANIMATING_ELEMENT', payload: elementName });
+    }, []),
+
+    clearAnimatingElements: useCallback(() => {
+      dispatch({ type: 'CLEAR_ANIMATING_ELEMENTS' });
+    }, []),
+
+    setIsUndoing: useCallback((isUndoing: boolean) => {
+      dispatch({ type: 'SET_IS_UNDOING', payload: isUndoing });
     }, []),
 
     setLastCombination: useCallback((combination: LastCombination | null) => {

@@ -41,7 +41,7 @@ interface ReasoningPopup {
   fromHover: boolean;
 }
 
-interface ShowUnlock extends Element {
+interface ShowUnlockElement extends Element {
   isNew: boolean;
   achievement?: Achievement | null;
 }
@@ -81,7 +81,7 @@ const LLMAlchemyRefactored = () => {
 
   // UI-only state (ephemeral - doesn't need to be in global state)
   const [sortMode, setSortMode] = useState<string>('unlock');
-  const [showUnlock, setShowUnlock] = useState<ShowUnlock | null>(null);
+  const [showUnlock, setShowUnlock] = useState<ShowUnlockElement | null>(null);
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [unlockAnimationStartTime, setUnlockAnimationStartTime] = useState<number | null>(null);
@@ -412,7 +412,7 @@ const LLMAlchemyRefactored = () => {
       const soundType = soundMap[type] || 'pop';
       playSound(soundType);
     },
-    onShowUnlock: setShowUnlock,
+    onShowUnlock: (element: ShowUnlockElement | null) => setShowUnlock(element),
     onSetShakeElement: (elementId: string | null) => {
       if (elementId) triggerShake(elementId);
     },
@@ -550,7 +550,7 @@ const LLMAlchemyRefactored = () => {
     e.preventDefault();
   };
 
-  const handleTouchEnd = async (e: TouchEvent) => {
+  const handleTouchEnd = async (e: TouchEvent | React.TouchEvent<HTMLDivElement>) => {
     if (!touchDragging) return;
     
     const touch = e.changedTouches[0];

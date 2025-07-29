@@ -1,12 +1,46 @@
 import { describe, it, expect } from 'vitest';
-import { GameState, GameAction } from './useGameState';
+import { GameState, GameAction, Element, MixingElement } from './useGameState';
+
+// Initial state factory (copied from the main file)
+const createInitialState = (gameMode: 'science' | 'creative' = 'science'): GameState => {
+  const baseElements = gameMode === 'creative' 
+    ? [
+        { id: 'life', name: 'Life', emoji: '🧬', color: '#32CD32', unlockOrder: 0 },
+        { id: 'earth', name: 'Earth', emoji: '🌍', color: '#8B4513', unlockOrder: 1 },
+        { id: 'air', name: 'Air', emoji: '💨', color: '#87CEEB', unlockOrder: 2 },
+        { id: 'fire', name: 'Fire', emoji: '🔥', color: '#FF4500', unlockOrder: 3 },
+        { id: 'water', name: 'Water', emoji: '💧', color: '#4682B4', unlockOrder: 4 },
+      ]
+    : [
+        { id: 'energy', name: 'Energy', emoji: '〰️', color: '#FFD700', unlockOrder: 0 },
+        { id: 'earth', name: 'Earth', emoji: '🌍', color: '#8B4513', unlockOrder: 1 },
+        { id: 'air', name: 'Air', emoji: '💨', color: '#87CEEB', unlockOrder: 2 },
+        { id: 'fire', name: 'Fire', emoji: '🔥', color: '#FF4500', unlockOrder: 3 },
+        { id: 'water', name: 'Water', emoji: '💧', color: '#4682B4', unlockOrder: 4 },
+      ];
+
+  return {
+    elements: baseElements,
+    endElements: [],
+    combinations: {},
+    gameMode,
+    mixingArea: [],
+    achievements: [],
+    failedCombinations: [],
+    dimmedElements: new Set<string>(),
+    animatingElements: new Set<string>(),
+    isUndoing: false,
+    lastCombination: null,
+    undoAvailable: false,
+    totalCombinationsMade: 0,
+    isStateRestored: false,
+  };
+};
 
 // Import the reducer function directly for testing
-// We'll extract it to test it in isolation
 function gameStateReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'SET_GAME_MODE':
-      // When mode changes, reset to base elements for that mode
       return createInitialState(action.payload);
 
     case 'SET_ELEMENTS':
@@ -16,15 +50,6 @@ function gameStateReducer(state: GameState, action: GameAction): GameState {
       return { 
         ...state, 
         elements: [...state.elements, action.payload] 
-      };
-
-    case 'SET_END_ELEMENTS':
-      return { ...state, endElements: action.payload };
-
-    case 'ADD_END_ELEMENT':
-      return { 
-        ...state, 
-        endElements: [...state.endElements, action.payload] 
       };
 
     case 'SET_COMBINATIONS':
@@ -51,13 +76,13 @@ function gameStateReducer(state: GameState, action: GameAction): GameState {
     case 'REMOVE_FROM_MIXING_AREA':
       return { 
         ...state, 
-        mixingArea: state.mixingArea.filter(el => !action.payload.includes(el.index)) 
+        mixingArea: state.mixingArea.filter((el: MixingElement) => !action.payload.includes(el.index)) 
       };
 
     case 'UPDATE_MIXING_ELEMENT':
       return {
         ...state,
-        mixingArea: state.mixingArea.map(el => 
+        mixingArea: state.mixingArea.map((el: MixingElement) => 
           el.index === action.payload.index 
             ? { ...el, ...action.payload.updates }
             : el
@@ -108,41 +133,8 @@ function gameStateReducer(state: GameState, action: GameAction): GameState {
   }
 }
 
-// Initial state factory (copied from the main file)
-const createInitialState = (gameMode: 'science' | 'creative' = 'science'): GameState => {
-  const baseElements = gameMode === 'creative' 
-    ? [
-        { id: 'life', name: 'Life', emoji: '🧬', color: '#32CD32', unlockOrder: 0 },
-        { id: 'earth', name: 'Earth', emoji: '🌍', color: '#8B4513', unlockOrder: 1 },
-        { id: 'air', name: 'Air', emoji: '💨', color: '#87CEEB', unlockOrder: 2 },
-        { id: 'fire', name: 'Fire', emoji: '🔥', color: '#FF4500', unlockOrder: 3 },
-        { id: 'water', name: 'Water', emoji: '💧', color: '#4682B4', unlockOrder: 4 },
-      ]
-    : [
-        { id: 'energy', name: 'Energy', emoji: '〰️', color: '#FFD700', unlockOrder: 0 },
-        { id: 'earth', name: 'Earth', emoji: '🌍', color: '#8B4513', unlockOrder: 1 },
-        { id: 'air', name: 'Air', emoji: '💨', color: '#87CEEB', unlockOrder: 2 },
-        { id: 'fire', name: 'Fire', emoji: '🔥', color: '#FF4500', unlockOrder: 3 },
-        { id: 'water', name: 'Water', emoji: '💧', color: '#4682B4', unlockOrder: 4 },
-      ];
-
-  return {
-    elements: baseElements,
-    endElements: [],
-    combinations: {},
-    gameMode,
-    mixingArea: [],
-    achievements: [],
-    failedCombinations: [],
-    lastCombination: null,
-    undoAvailable: false,
-    totalCombinationsMade: 0,
-    isStateRestored: false,
-  };
-};
-
 // Test data
-const testElement = {
+const testElement: Element = {
   id: 'steam',
   name: 'Steam',
   emoji: '💨',
@@ -150,7 +142,7 @@ const testElement = {
   unlockOrder: 5
 };
 
-const testMixingElement = {
+const testMixingElement: MixingElement = {
   ...testElement,
   x: 100,
   y: 100,
@@ -202,7 +194,7 @@ describe('Game State Reducer', () => {
       expect(result.gameMode).toBe('creative');
       expect(result.elements).toHaveLength(5);
       expect(result.elements[0].name).toBe('Life'); // Creative mode starts with Life
-      expect(result.elements.find(e => e.name === 'Energy')).toBeUndefined(); // No Energy in creative
+      expect(result.elements.find((e: Element) => e.name === 'Energy')).toBeUndefined(); // No Energy in creative
     });
 
     it('should reset all state when switching modes', () => {

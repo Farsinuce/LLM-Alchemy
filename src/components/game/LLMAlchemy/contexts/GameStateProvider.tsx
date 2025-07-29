@@ -25,6 +25,15 @@ interface GameStateContextType {
     addAchievements: (achievements: Achievement[]) => void;
     setFailedCombinations: (failedCombinations: string[]) => void;
     addFailedCombination: (combination: string) => void;
+    setDimmedElements: (dimmedElements: Set<string>) => void;
+    addDimmedElement: (elementName: string) => void;
+    removeDimmedElement: (elementName: string) => void;
+    clearDimmedElements: () => void;
+    setAnimatingElements: (animatingElements: Set<string>) => void;
+    addAnimatingElement: (elementName: string) => void;
+    removeAnimatingElement: (elementName: string) => void;
+    clearAnimatingElements: () => void;
+    setIsUndoing: (isUndoing: boolean) => void;
     setLastCombination: (combination: LastCombination | null) => void;
     setUndoAvailable: (available: boolean) => void;
     incrementTotalCombinations: () => void;
@@ -144,5 +153,23 @@ export function useGamePersistence() {
   return {
     loadSavedState: actions.loadSavedState,
     resetGameState: actions.resetGameState,
+  };
+}
+
+export function useElementInteractionState() {
+  const { state, actions } = useGameStateContext();
+  return {
+    dimmedElements: state.dimmedElements,
+    animatingElements: state.animatingElements,
+    isUndoing: state.isUndoing,
+    setDimmedElements: actions.setDimmedElements,
+    addDimmedElement: actions.addDimmedElement,
+    removeDimmedElement: actions.removeDimmedElement,
+    clearDimmedElements: actions.clearDimmedElements,
+    setAnimatingElements: actions.setAnimatingElements,
+    addAnimatingElement: actions.addAnimatingElement,
+    removeAnimatingElement: actions.removeAnimatingElement,
+    clearAnimatingElements: actions.clearAnimatingElements,
+    setIsUndoing: actions.setIsUndoing,
   };
 }
