@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { GameElement } from '@/types/game.types';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 import { getContrastColor, getRarityHoverColor, getElementSizeClasses, isTouchDevice } from '@/lib/ui-utils';
@@ -41,6 +41,52 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
   onElementMouseLeave
 }) => {
   const isTouch = isTouchDevice();
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handle mouse enter with 500ms delay for reasoning popup
+  const handleElementMouseEnter = (element: GameElement, event: React.MouseEvent) => {
+    // Show popup on hover for desktop with 500ms delay
+    if (!isTouch && element.reasoning) {
+      // Clear any existing timeout
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+      // Capture the bounding rect immediately
+      const rect = event.currentTarget.getBoundingClientRect();
+      // Set 500ms delay
+      hoverTimeoutRef.current = setTimeout(() => {
+        // Create a synthetic event with the captured rect
+        const syntheticEvent = {
+          ...event,
+          currentTarget: {
+            getBoundingClientRect: () => rect
+          },
+          type: 'mouseenter'
+        };
+        onElementMouseEnter(element, syntheticEvent as React.MouseEvent);
+      }, 500);
+    }
+  };
+
+  // Handle mouse leave - clear timeout and call parent handler
+  const handleElementMouseLeave = () => {
+    // Clear timeout if leaving before 500ms
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    // Call parent handler
+    onElementMouseLeave();
+  };
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Sort elements based on sortMode
   const sortedElements = React.useMemo(() => {
