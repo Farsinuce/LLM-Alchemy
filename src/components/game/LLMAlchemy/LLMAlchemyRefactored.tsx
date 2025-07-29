@@ -967,15 +967,29 @@ const LLMAlchemyRefactored = () => {
             }}
             onTouchEnd={handleTouchEnd}
             onMixingElementMouseDown={(e, element) => {
+              // Find the full element from mixingArea to ensure all properties are included
+              const fullElement = mixingArea.find(m => m.index === element.index);
+              if (!fullElement) {
+                console.error('Element not found in mixingArea:', element);
+                return;
+              }
+              
               draggedElement.current = {
-                ...element,
+                ...fullElement,
                 fromMixingArea: true,
-                mixIndex: element.index
+                mixIndex: fullElement.index
               };
               setIsDragging(true);
               playSound('press');
             }}
             onMixingElementTouchStart={(e, element) => {
+              // Find the full element from mixingArea to ensure all properties are included
+              const fullElement = mixingArea.find(m => m.index === element.index);
+              if (!fullElement) {
+                console.error('Element not found in mixingArea:', element);
+                return;
+              }
+              
               const touch = e.touches[0];
               const rect = e.currentTarget.getBoundingClientRect();
               setTouchStartTime(Date.now());
@@ -988,12 +1002,12 @@ const LLMAlchemyRefactored = () => {
               setTimeout(() => {
                 if (touchStartTime && Date.now() - touchStartTime > 100) {
                   setTouchDragging({
-                    ...element,
+                    ...fullElement,
                     fromMixingArea: true,
-                    mixIndex: element.index
+                    mixIndex: fullElement.index
                   });
                   
-                  const otherIndices = new Set(mixingArea.filter(el => el.index !== element.index).map(el => el.index.toString()));
+                  const otherIndices = new Set(mixingArea.filter(el => el.index !== fullElement.index).map(el => el.index.toString()));
                   setDimmedElements(otherIndices);
                   
                   if ('vibrate' in navigator) {
