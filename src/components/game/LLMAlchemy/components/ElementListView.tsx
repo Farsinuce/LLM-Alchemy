@@ -17,6 +17,7 @@ interface ElementListViewProps {
   isPlayingLoadAnimation: boolean;
   animatedElements: Set<string>;
   onElementDragStart: (e: React.DragEvent<HTMLDivElement>, element: GameElement) => void;
+  onElementDragEnd: () => void;
   onElementTouchStart: (e: React.TouchEvent<HTMLDivElement>, element: GameElement) => void;
   onElementClick: (element: GameElement, event: React.MouseEvent) => void;
   onElementMouseEnter: (element: GameElement, event: React.MouseEvent) => void;
@@ -136,12 +137,6 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
                 : undefined
             }}
           >
-            {/* Question mark badge for elements with reasoning */}
-            {element.reasoning && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold text-black">
-                ?
-              </div>
-            )}
             
             <OpenMojiDisplay 
               emoji={element.emoji} 

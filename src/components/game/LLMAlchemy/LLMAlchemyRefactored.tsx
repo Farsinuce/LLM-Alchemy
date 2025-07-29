@@ -9,10 +9,12 @@ import { Achievement } from '@/types';
 import { GAME_CONFIG } from '@/lib/game-config';
 import { ChallengeBar } from '@/components/game/ChallengeBar';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
+import { isTouchDevice } from '@/lib/ui-utils';
 
 // Import our new state management
 import { useGameMode, useElements, useMixingArea, useCombinations, useAchievements, useGameUndo, useGameStats, useGamePersistence } from './contexts/GameStateProvider';
-import { Element, MixingElement } from './hooks/useGameState';
+import { GameElement } from '@/types/game.types';
+import { MixingElement } from './hooks/useGameState';
 import { useElementMixing } from './hooks/useElementMixing';
 import { useGameAudio } from './hooks/useGameAudio';
 import { useGameAnimations } from './hooks/useGameAnimations';
@@ -35,13 +37,13 @@ interface FloatingEmoji {
 }
 
 interface ReasoningPopup {
-  element: Element;
+  element: GameElement;
   x: number;
   y: number;
   fromHover: boolean;
 }
 
-interface ShowUnlockElement extends Element {
+interface ShowUnlockElement extends GameElement {
   isNew: boolean;
   achievement?: Achievement | null;
 }
@@ -423,7 +425,7 @@ const LLMAlchemyRefactored = () => {
     dropZoneRef
   });
 
-  const showReasoningPopup = (element: Element, event: React.MouseEvent | React.TouchEvent) => {
+  const showReasoningPopup = (element: GameElement, event: React.MouseEvent | React.TouchEvent) => {
     if (!element.reasoning) return;
     
     const rect = event.currentTarget.getBoundingClientRect();
@@ -440,7 +442,7 @@ const LLMAlchemyRefactored = () => {
   };
 
 
-  const handleElementClick = (element: Element, event: React.MouseEvent) => {
+  const handleElementClick = (element: GameElement, event: React.MouseEvent) => {
     if (element.reasoning) {
       event.preventDefault();
       event.stopPropagation();
@@ -448,7 +450,7 @@ const LLMAlchemyRefactored = () => {
     }
   };
 
-  const handleElementMouseEnter = (element: Element, event: React.MouseEvent) => {
+  const handleElementMouseEnter = (element: GameElement, event: React.MouseEvent) => {
     // Simply show the reasoning popup - no 500ms delay needed here since child handles it
     showReasoningPopup(element, event);
   };
@@ -857,6 +859,11 @@ const LLMAlchemyRefactored = () => {
               e.dataTransfer.effectAllowed = 'copy';
               e.dataTransfer.setData('text/plain', element.name);
             }}
+            onElementDragEnd={() => {
+              setIsDragging(false);
+              setHoveredElement(null);
+              setDimmedElements(new Set()); // Clear dimming
+            }}
             onElementTouchStart={(e, element) => {
               const touch = e.touches[0];
               const rect = e.currentTarget.getBoundingClientRect();
@@ -907,12 +914,10 @@ const LLMAlchemyRefactored = () => {
           <GripHorizontal size={16} className="text-gray-400" />
         </div>
 
-        {/* Mixing Area */}
+        {/* Mixing Area - Direct implementation without overflow hidden */}
         <div 
           ref={dropZoneRef}
-          className={`flex-1 bg-gray-800/30 backdrop-blur-sm relative transition-colors ${
-            isDragging || touchDragging ? 'bg-blue-900/20 border-2 border-dashed border-blue-400' : ''
-          }`}
+          className="flex-1 bg-gray-800/30 backdrop-blur-sm relative"
           style={{ minHeight: '200px', touchAction: 'none' }}
           onDragOver={(e) => {
             e.preventDefault();
@@ -926,7 +931,6 @@ const LLMAlchemyRefactored = () => {
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
-            // Check if dropped on another element
             const targetElement = mixingArea.find(el => {
               const elRect = document.getElementById(`mixing-${el.id}-${el.index}`)?.getBoundingClientRect();
               if (!elRect) return false;
@@ -935,18 +939,14 @@ const LLMAlchemyRefactored = () => {
             });
 
             if (targetElement && targetElement.index !== draggedElement.current.mixIndex) {
-              // Mix the elements
               await mixElements(draggedElement.current, targetElement);
             } else if (!targetElement) {
-              // Add to mixing area
               playSound('plop');
               const offset = GameLogic.getElementSize() / 2;
               if (draggedElement.current.fromMixingArea) {
-                // Moving existing element
                 const newPos = GameLogic.resolveCollisions(x - offset, y - offset, mixingArea, dropZoneRef.current!, draggedElement.current.mixIndex);
                 updateMixingElement(draggedElement.current.mixIndex!, { x: newPos.x, y: newPos.y });
               } else {
-                // Adding new element
                 const newPos = GameLogic.resolveCollisions(x - offset, y - offset, mixingArea, dropZoneRef.current!);
                 const newElement: MixingElement = {
                   ...draggedElement.current,
@@ -966,114 +966,110 @@ const LLMAlchemyRefactored = () => {
           }}
           onTouchEnd={handleTouchEnd}
         >
-          <MixingAreaView
-            mixingArea={mixingArea}
-            isMixing={isMixing}
-            mixingResult={null}
-            canUndo={undoAvailable}
-            animatingElements={animatedElements}
-            hoveredElement={hoveredElement}
-            hoveredUIElement={null}
-            isDragging={isDragging}
-            touchDragging={touchDragging}
-            dimmedElements={dimmedElements}
-            onMixingElementMouseDown={(e, element) => {
-              // Find the full element from mixingArea to ensure all properties are included
-              const fullElement = mixingArea.find(m => m.index === element.index);
-              if (!fullElement) {
-                console.error('Element not found in mixingArea:', element);
-                return;
-              }
-              
-              draggedElement.current = {
-                ...fullElement,
-                fromMixingArea: true,
-                mixIndex: fullElement.index
-              };
-              setIsDragging(true);
-              playSound('press');
-            }}
-            onMixingElementTouchStart={(e, element) => {
-              // Find the full element from mixingArea to ensure all properties are included
-              const fullElement = mixingArea.find(m => m.index === element.index);
-              if (!fullElement) {
-                console.error('Element not found in mixingArea:', element);
-                return;
-              }
-              
-              const touch = e.touches[0];
-              const rect = e.currentTarget.getBoundingClientRect();
-              setTouchStartTime(Date.now());
-              setTouchStartPos({ x: touch.clientX, y: touch.clientY });
-              setTouchOffset({
-                x: touch.clientX - rect.left,
-                y: touch.clientY - rect.top
-              });
-              
-              setTimeout(() => {
-                if (touchStartTime && Date.now() - touchStartTime > 100) {
-                  setTouchDragging({
-                    ...fullElement,
-                    fromMixingArea: true,
-                    mixIndex: fullElement.index
-                  });
-                  
-                  const otherIndices = new Set(mixingArea.filter(el => el.index !== fullElement.index).map(el => el.index.toString()));
-                  setDimmedElements(otherIndices);
-                  
-                  if ('vibrate' in navigator) {
-                    navigator.vibrate(10);
-                  }
-                }
-              }, 100);
-            }}
-            onMixingElementMouseEnter={(element) => setHoveredElement(element.index)}
-            onMixingElementMouseLeave={() => setHoveredElement(null)}
-            onMixingElementDragOver={(e, element) => {
-              e.preventDefault();
-              setHoveredElement(element.index);
-            }}
-            onMixingElementDragEnter={(element) => setHoveredElement(element.index)}
-            onMixingElementDragLeave={() => setHoveredElement(null)}
-            onClearMixingArea={clearMixingAreaWithAnimation}
-            onUndo={async () => {
-              if (lastCombination) {
-                setIsUndoing(true);
-                playSound('reverse-pop');
-                
-                // Remove the created element
-                if (lastCombination.createdElement.isEndElement) {
-                  const newEndElements = endElements.filter(e => e.id !== lastCombination.createdElement.element.id);
-                  setEndElements(newEndElements);
-                } else {
-                  const newElements = elements.filter(e => e.id !== lastCombination.createdElement.element.id);
-                  setElements(newElements);
-                }
-                
-                // Restore the mixing area
-                setMixingArea(lastCombination.mixingAreaState);
-                
-                // Remove from combinations
-                const newCombinations = { ...combinations };
-                delete newCombinations[lastCombination.combinationKey];
-                setCombinations(newCombinations);
-                
-                // Remove from failed combinations if it was there
-                const newFailedCombinations = failedCombinations.filter(key => key !== lastCombination.combinationKey);
-                setFailedCombinations(newFailedCombinations);
-                
-                // Clear undo state
-                setLastCombination(null);
-                setUndoAvailable(false);
-                
-                showToast('Undid last combination');
+          {mixingArea.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <p className="text-gray-500 text-center px-4">
+                Drag elements here to mix them!
+              </p>
+            </div>
+          )}
+          
+          {mixingArea.map((element) => (
+            <div
+              key={`${element.id}-${element.index}`}
+              id={`mixing-${element.id}-${element.index}`}
+              draggable={!isTouchDevice && !isMixing}
+              onDragStart={(e) => {
+                draggedElement.current = {
+                  ...element,
+                  fromMixingArea: true,
+                  mixIndex: element.index
+                };
+                setIsDragging(true);
+                playSound('press');
+              }}
+              onDragEnd={() => {
+                setIsDragging(false);
+                setHoveredElement(null);
+                setDimmedElements(new Set());
+              }}
+              onTouchStart={(e) => {
+                const touch = e.touches[0];
+                const rect = e.currentTarget.getBoundingClientRect();
+                setTouchStartTime(Date.now());
+                setTouchStartPos({ x: touch.clientX, y: touch.clientY });
+                setTouchOffset({
+                  x: touch.clientX - rect.left,
+                  y: touch.clientY - rect.top
+                });
                 
                 setTimeout(() => {
-                  setIsUndoing(false);
-                }, 300);
-              }
-            }}
-          />
+                  if (touchStartTime && Date.now() - touchStartTime > 100) {
+                    setTouchDragging({
+                      ...element,
+                      fromMixingArea: true,
+                      mixIndex: element.index
+                    });
+                    
+                    if ('vibrate' in navigator) {
+                      navigator.vibrate(10);
+                    }
+                  }
+                }, 100);
+              }}
+              onMouseEnter={() => setHoveredElement(element.index)}
+              onMouseLeave={() => setHoveredElement(null)}
+              onContextMenu={(e) => e.preventDefault()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setHoveredElement(element.index);
+              }}
+              onDragEnter={() => setHoveredElement(element.index)}
+              onDragLeave={() => setHoveredElement(null)}
+              className={`absolute flex flex-col items-center justify-center rounded-lg cursor-move ${
+                element.energized ? 'animate-shake' : ''
+              } ${
+                hoveredElement === element.index && !element.energized ? 'animate-continuous-pulse' : ''
+              } ${
+                touchDragging?.mixIndex === element.index && touchDragging?.fromMixingArea ? 'opacity-30' : ''
+              } ${
+                dimmedElements.has(element.name) ? 'element-dimmed' : ''
+              }`}
+              style={{ 
+                left: element.x, 
+                top: element.y,
+                width: `${GameLogic.getElementSize()}px`,
+                height: `${GameLogic.getElementSize()}px`,
+                backgroundColor: element.color,
+                color: GameLogic.getContrastColor(element.color),
+                pointerEvents: isMixing ? 'none' : 'auto',
+                touchAction: 'none',
+                WebkitTouchCallout: 'none',
+                WebkitUserSelect: 'none',
+                transition: 'none',
+                boxShadow: element.energized ? '0 0 20px rgba(250, 204, 21, 0.5), 0 0 0 2px #facc15' :
+                          hoveredElement === element.index ? `0 0 0 2px ${GameLogic.getRarityHoverColor(element.rarity)}` : ''
+              }}
+            >
+              <OpenMojiDisplay 
+                emoji={element.emoji} 
+                hexcode={element.openmojiHex}
+                name={element.name} 
+                size="md" 
+                className="pointer-events-none"
+              />
+              <div className="text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight pointer-events-none">{element.name}</div>
+            </div>
+          ))}
+          
+          {isMixing && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+              <div className="bg-gray-800/90 rounded-xl p-6 flex flex-col items-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mb-3"></div>
+                <div className="text-sm">Mixing...</div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Touch Drag Element */}

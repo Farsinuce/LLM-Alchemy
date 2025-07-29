@@ -16,10 +16,11 @@ import {
   useGameUndo, 
   useGameStats 
 } from '../contexts/GameStateProvider';
-import { Element, MixingElement, LastCombination } from './useGameState';
+import { GameElement } from '@/types/game.types';
+import { MixingElement, LastCombination } from './useGameState';
 import * as GameLogic from '@/lib/game-logic';
 
-interface ShowUnlockElement extends Element {
+interface ShowUnlockElement extends GameElement {
   isNew: boolean;
   achievement?: Achievement | null;
 }
@@ -58,9 +59,9 @@ export function useElementMixing({
 
   // Generate combination using API
   const generateCombination = useCallback(async (
-    elem1: Element, 
-    elem2: Element, 
-    elem3: Element | null = null
+    elem1: GameElement, 
+    elem2: GameElement, 
+    elem3: GameElement | null = null
   ): Promise<GameLogic.CombinationResult> => {
     // Check daily limit first
     const limitCheck = GameLogic.shouldAllowMixing(
