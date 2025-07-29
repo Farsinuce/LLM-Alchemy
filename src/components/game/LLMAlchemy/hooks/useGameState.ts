@@ -1,5 +1,8 @@
 import { useReducer, useCallback } from 'react';
-import { Element, Achievement } from '@/types/game.types';
+import type { Element, Achievement } from '@/types/game.types';
+
+// Re-export types for other hooks
+export type { Element, Achievement };
 
 export interface MixingElement extends Element {
   x: number;
