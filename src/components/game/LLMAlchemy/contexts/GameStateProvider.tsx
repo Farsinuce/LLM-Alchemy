@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useGameState, GameState, GameAction, Element, MixingElement, LastCombination } from '../hooks/useGameState';
-import { Achievement } from '@/types/game.types';
+import { useGameState, GameState, GameAction, MixingElement, LastCombination } from '../hooks/useGameState';
+import { Element, Achievement } from '@/types/game.types';
 
 // Context type definition
 interface GameStateContextType {

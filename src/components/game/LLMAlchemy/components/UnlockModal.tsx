@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
-import { Achievement } from '@/types';
+import { Element, Achievement } from '@/types/game.types';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
-import { Element } from '@/types/game.types';
 
 interface ShowUnlock extends Element {
   isNew: boolean;
