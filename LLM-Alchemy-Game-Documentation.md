@@ -12,6 +12,7 @@ The project is built on a robust, production-ready tech stack designed for scala
 *   **🚀 LIVE GAME**: https://llm-alchemy-beta2.vercel.app
 *   **📂 REPOSITORY**: https://github.com/Farsinuce/LLM-Alchemy
 *   **⚡ STATUS**: **Phase 2 Refactoring Complete** - Modular architecture ready for upcoming visual redesign.
+*   **⚠️ BUILD FAILING**: A critical TypeScript error is currently blocking Vercel deployments.
 
 ## 2. Core Gameplay
 
@@ -115,9 +116,10 @@ The codebase is organized following Next.js best practices with enhanced modular
 | `src/app/` | Contains all pages, API routes, and global styles. |
 | `src/components/` | Reusable React components, such as the `AuthModal` or `OpenMojiDisplay`. |
 | **`src/components/game/LLMAlchemy/`** ✨ | **NEW**: Modular game architecture with contexts, hooks, and components. |
-| **`src/components/game/LLMAlchemy/contexts/`** ✨ | **NEW**: React Context providers for state management. |
+| **`src/components/game/LLMAlchemy/contexts/GameStateProvider.tsx`** ✨ | **NEW**: React Context provider managing all game state with useReducer pattern. |
 | **`src/components/game/LLMAlchemy/hooks/`** ✨ | **NEW**: Custom hooks for game logic, mixing, interactions, audio, animations. |
 | **`src/components/game/LLMAlchemy/components/`** ✨ | **NEW**: Extracted UI components (GameHeader, ElementListView, MixingAreaView, Modals). |
+| **`src/components/game/LLMAlchemy/LLMAlchemyRefactored.tsx`** ✨ | **NEW**: Main game component using the new modular architecture. **(CURRENTLY HAS BUILD ERROR)** |
 | `src/lib/` | Core application logic, including Supabase helpers, LLM prompt builders, and the OpenMoji service. |
 | **`src/lib/game-logic.ts`** ✨ | **NEW**: Pure functions for game logic (collision detection, sorting, validation). |
 | `src/types/` | Centralized TypeScript type definitions. |

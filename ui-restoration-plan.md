@@ -12,11 +12,107 @@ This plan addresses the UI features and animations that were lost during the Pha
 - All changes that led to TypeScript errors
 
 ### Critical Issues - MUST FIX IMMEDIATELY
-1. **Build Error on Vercel** ✅ FIXED - TypeScript error has been resolved
-   - Made `handleTouchEnd` function async to match its usage of await
-   - Fixed useElementMixing hook callback type mismatch  
-   - Dev server now runs successfully at http://localhost:3000
-   - ⚠️ Production build still fails due to lightningcss dependency issue (Windows-specific)
+1. **Build Error on Vercel** ❌ NOT FIXED - Vercel build is failing due to a TypeScript error.
+   - **Error:** `Type '{ fromMixingArea: true; mixIndex: any; id: string; name: string; emoji: string; x: number; y: number; }' is not assignable to type 'MixingElement'.`
+   - **File:** `src/components/game/LLMAlchemy/LLMAlchemyRefactored.tsx`
+   - **Priority:** IMMEDIATE
+
+### Missing Features - MUST IMPLEMENT
+1. **500ms hover delay for reasoning popups** - This is a key UX feature
+2. **Element dimming during drag** - Visual feedback for previously mixed elements
+3. **Failed combinations tracking** - Verify it works and is passed to LLM
+4. **Staggered animations for element removal** - Polish for mixing area
+5. **CSS-delayed load animations** - For a smoother initial element load
+
+### Lessons Learned
+- Over-engineered by adding unnecessary state properties
+- Lost focus on actual user-visible features
+- Created TypeScript conflicts that broke the build
+- Didn't test incrementally
+
+## Simplified Implementation Plan
+
+### Step 1: Fix Build Error (IMMEDIATE)
+**File:** `src/components/game/LLMAlchemy/LLMAlchemyRefactored.tsx`
+**Issue:** TypeScript type error on line 970. The object being created for `draggedElement.current` is missing required properties from the `MixingElement` type.
+**Fix:** Ensure all required properties (`index`, `energized`, `color`, `unlockOrder`) are spread from the source `element` object.
+```typescript
+// Change from:
+draggedElement.current = {
+  ...element,
+  fromMixingArea: true,
+  mixIndex: element.index
+}
+// To (ensure all properties are included):
+draggedElement.current = {
+  ...element,
+  fromMixingArea: true,
+  mixIndex: element.index
+};
+```
+The fix is to ensure the spread `...element` correctly includes all properties. The original code snippet in the user's discussion seems to be the point of error. I will fix it by ensuring all properties are passed.
+
+### Step 2: Implement 500ms Hover Delay (HIGH PRIORITY)
+**File:** `src/components/game/LLMAlchemy/components/ElementListView.tsx`
+**Implementation:**
+```typescript
+const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+const handleMouseEnter = (element: Element) => {
+  // Clear any existing timeout
+  if (hoverTimeoutRef.current) {
+    clearTimeout(hoverTimeoutRef.current);
+  }
+  
+  // Set new timeout for 500ms
+  hoverTimeoutRef.current = setTimeout(() => {
+    if (element.reasoning) {
+      setHoveredElementForReasoning(element);
+    }
+  }, 500);
+};
+
+const handleMouseLeave = () => {
+  // Clear timeout
+  if (hoverTimeoutRef.current) {
+    clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = null;
+  }
+  setHoveredElementForReasoning(null);
+};
+```
+
+### Step 3: Implement Element Dimming (MEDIUM PRIORITY)
+**Simple approach:** Add opacity to previously mixed elements
+```typescript
+// In ElementListView.tsx
+const isPreviouslyMixed = (elementName: string) => {
+  return Object.keys(combinations).some(key => 
+    key.includes(elementName)
+  );
+};
+
+// Apply class conditionally
+className={`element-card ${isPreviouslyMixed(element.name) ? 'opacity-30' : ''}`}
+```
+
+### Step 4: Verify Failed Combinations (MEDIUM PRIORITY)
+1. Check if `failedCombinations` array exists in state
+2. Verify it's being populated when combinations fail
+3. Ensure it's passed to the LLM prompt builder
+
+## Testing Approach
+1. Fix TypeScript error
+2. Run `npm run build` locally to verify
+3. Test each feature visually in the browser
+4. Deploy only after confirming build passes
+
+## What NOT to Do
+- ❌ Don't add complex state management
+- ❌ Don't create new hooks unless absolutely necessary
+- ❌ Don't refactor working code
+- ❌ Don't implement "nice to have" features until "must haves" work
+- ❌ Don't make multiple changes at once
 
 ### Missing Features - MUST IMPLEMENT
 1. **500ms hover delay for reasoning popups** - This is a key UX feature
