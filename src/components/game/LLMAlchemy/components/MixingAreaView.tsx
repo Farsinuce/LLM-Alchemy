@@ -114,8 +114,8 @@ export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
             dimmedElements.has(element.name) ? 'element-dimmed' : ''
           }`}
           style={{ 
-            left: element.x, 
-            top: element.y,
+            left: `${element.x}px`, 
+            top: `${element.y}px`,
             backgroundColor: element.color,
             color: getContrastColor(element.color),
             pointerEvents: isMixing ? 'none' : 'auto',
@@ -123,6 +123,7 @@ export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
             WebkitTouchCallout: 'none',
             WebkitUserSelect: 'none',
             transition: 'none',
+            zIndex: 10,
             boxShadow: element.energized ? '0 0 20px rgba(250, 204, 21, 0.5), 0 0 0 2px #facc15' :
                       hoveredElement === element.index ? `0 0 0 2px ${getRarityHoverColor(element.rarity)}` :
                       hoveredUIElement === `mixing-${element.index}` && !isDragging ? `0 0 0 2px ${getRarityHoverColor(element.rarity)}` : ''
