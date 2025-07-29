@@ -1,7 +1,7 @@
 // Achievement system for LLM Alchemy
 // Extracted from LLMAlchemy.tsx for better code organization
 
-import { Achievement, GameElement } from '@/types';
+import { Achievement, Element } from '@/types';
 
 // Tiered achievement configuration - easy to extend
 interface TieredAchievementConfig {
@@ -57,8 +57,8 @@ const TIERED_ACHIEVEMENTS: TieredAchievementConfig[] = [
  */
 function calculateAchievementCount(
   countType: string,
-  allElements: GameElement[],
-  allEndElements: GameElement[],
+  allElements: Element[],
+  allEndElements: Element[],
   tags?: string[]
 ): number {
   const allDiscoveredElements = [...allElements, ...allEndElements];
@@ -96,8 +96,8 @@ function getTierInfo(count: number, tiers: [number, number, number]): {
  */
 export function updateAchievementsWithProgress(
   achievements: Achievement[],
-  allElements: GameElement[],
-  allEndElements: GameElement[]
+  allElements: Element[],
+  allEndElements: Element[]
 ): Achievement[] {
   return achievements.map(achievement => {
     // Find if this achievement is tiered
@@ -139,9 +139,9 @@ export function updateAchievementsWithProgress(
  * @returns Array of newly unlocked achievements
  */
 export function checkAchievements(
-  newElement: GameElement,
-  allElements: GameElement[],
-  allEndElements: GameElement[],
+  newElement: Element,
+  allElements: Element[],
+  allEndElements: Element[],
   existingAchievements: Achievement[],
   gameMode: 'science' | 'creative'
 ): Achievement[] {
