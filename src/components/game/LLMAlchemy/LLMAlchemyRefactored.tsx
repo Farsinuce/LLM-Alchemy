@@ -906,29 +906,50 @@ const LLMAlchemyRefactored = () => {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'copy';
           }}
-          onDrop={(e) => {
+          onDrop={async (e) => {
             e.preventDefault();
-            if (!draggedElement.current) return;
-            
+            if (!draggedElement.current || isMixing) return;
+
             const rect = dropZoneRef.current!.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
+
+            // Check if dropped on another element
+            const targetElement = mixingArea.find(el => {
+              const elRect = document.getElementById(`mixing-${el.id}-${el.index}`)?.getBoundingClientRect();
+              if (!elRect) return false;
+              return e.clientX >= elRect.left && e.clientX <= elRect.right &&
+                     e.clientY >= elRect.top && e.clientY <= elRect.bottom;
+            });
+
+            if (targetElement && targetElement.index !== draggedElement.current.mixIndex) {
+              // Mix the elements
+              await mixElements(draggedElement.current, targetElement);
+            } else if (!targetElement) {
+              // Add to mixing area
+              playSound('plop');
+              const offset = GameLogic.getElementSize() / 2;
+              if (draggedElement.current.fromMixingArea) {
+                // Moving existing element
+                const newPos = GameLogic.resolveCollisions(x - offset, y - offset, mixingArea, dropZoneRef.current!, draggedElement.current.mixIndex);
+                updateMixingElement(draggedElement.current.mixIndex!, { x: newPos.x, y: newPos.y });
+              } else {
+                // Adding new element
+                const newPos = GameLogic.resolveCollisions(x - offset, y - offset, mixingArea, dropZoneRef.current!);
+                const newElement: MixingElement = {
+                  ...draggedElement.current,
+                  x: newPos.x,
+                  y: newPos.y,
+                  index: Date.now(),
+                  energized: false
+                };
+                addToMixingArea(newElement);
+              }
+            }
             
-            playSound('plop');
-            const offset = GameLogic.getElementSize() / 2;
-            const newPos = GameLogic.resolveCollisions(x - offset, y - offset, mixingArea, dropZoneRef.current!);
-            
-            const newElement: MixingElement = {
-              ...draggedElement.current,
-              x: newPos.x,
-              y: newPos.y,
-              index: Date.now(),
-              energized: false
-            };
-            
-            addToMixingArea(newElement);
-            setIsDragging(false);
             draggedElement.current = null;
+            setIsDragging(false);
+            setHoveredElement(null);
           }}
           onTouchEnd={handleTouchEnd}
         >
