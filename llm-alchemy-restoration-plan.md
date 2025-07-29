@@ -4,22 +4,24 @@
 Get the refactored game back to feature parity with the original monolith, focusing on gameplay first and cleanup second. No over-engineering.
 
 ## Current Status
-- Build fails on Vercel due to TypeScript errors
-- MixingAreaView already imports correct MixingElement type ✅
-- LLMAlchemyRefactored has been fixed for build errors ✅
-- Next: Restore missing gameplay features
+- Build now succeeds on Vercel ✅
+- TypeScript errors fixed in MixingAreaView and LLMAlchemyRefactored ✅
+- Core mixing functionality restored ✅
+- Next: Implement hover delays and visual feedback features
 
 ## Phase A: Gameplay Parity (Core Features)
 
 ### A1. Fix TypeScript Build ✅
-**Status:** COMPLETE - Fixed draggedElement type errors
+**Status:** COMPLETE (2025-01-29)
+- Fixed MixingAreaView missing properties (color, unlockOrder, etc.)
+- Fixed draggedElement type errors in refactored component
 
-### A2. Basic Element Combination
-**Test:** Water + Fire = Steam works
-- [ ] Verify element collision detection 
-- [ ] Confirm combination logic fires correctly
-- [ ] Check new element appears in list
-- **If broken:** Copy mixElements logic wholesale from LLMAlchemy.tsx
+### A2. Basic Element Combination ✅
+**Status:** COMPLETE (2025-01-29)
+- [x] Verify element collision detection 
+- [x] Confirm combination logic fires correctly
+- [x] Check new element appears in list
+- **Fix Applied:** Restored full drop handler logic from original
 
 ### A3. Energy Element Separation
 **Test:** Energy element shows "〰️" emoji and separator line works
@@ -27,15 +29,15 @@ Get the refactored game back to feature parity with the original monolith, focus
 - [ ] Confirm separator line appears between regular/end elements
 - **If broken:** Copy Energy rendering from original
 
-### A4. Drag & Drop Functionality
-**Test:** Can drag elements from list to mixing area
-- [ ] Mouse drag from element list works
-- [ ] Elements snap to position in mixing area
-- [ ] Drag within mixing area works
-- **If takes >2h:** Copy ALL drag handlers from LLMAlchemy.tsx verbatim
+### A4. Drag & Drop Functionality ✅
+**Status:** COMPLETE (2025-01-29)
+- [x] Mouse drag from element list works
+- [x] Elements snap to position in mixing area
+- [x] Drag within mixing area works
+- **Fix Applied:** Restored complete onDrop logic with element detection
 
-### A5. Hover Timer (500ms)
-**Test:** Hovering shows reasoning popup after delay
+### A5. Hover Timer (500ms) 🚧
+**Status:** IN PROGRESS - Next priority
 - [ ] 500ms hover timer triggers popup
 - [ ] Popup dismisses on mouse leave
 - **Implementation:** Copy hover logic exactly from monolith, avoid new abstractions
@@ -94,14 +96,14 @@ ALTER POLICY "Select challenges" ON public.challenges
 - [ ] Basic drag/drop works
 - [ ] No console errors
 
-## Go/No-Go Checkpoint
+## Go/No-Go Checkpoint ✅
 
-**Conceptual gate:** If at any point these aren't working, consider full rollback:
-1. Build passes TypeScript compilation
-2. Water + Fire = Steam combination works
-3. Can drag elements to mixing area
+**Conceptual gate:** All core features now working:
+1. Build passes TypeScript compilation ✅
+2. Water + Fire = Steam combination works ✅
+3. Can drag elements to mixing area ✅
 
-Everything else can ship with known issues.
+Proceeding with additional features and polish.
 
 ## Implementation Strategy
 
