@@ -39,11 +39,12 @@ Get the refactored game back to feature parity with the original monolith, focus
 - [ ] Test: Drag within mixing area works
 - **Note:** Full drag/drop logic implemented but unverified
 
-### A5. Hover Timer (500ms) ❌
-**Status:** BROKEN (2025-01-29 14:45) - ABANDONED
-- [ ] Hover modal still not working after multiple attempts
-- [ ] Conflicts between parent/child hover logic remain
-- **Decision:** Move on to other features - this is blocking too much progress
+### A5. Hover Timer (500ms) ✅
+**Status:** FIXED (2025-01-29 15:15)
+- [x] Hover logic refactored to be self-contained in ElementListView
+- [x] 500ms timeout properly implemented with cleanup
+- [x] Race conditions between parent/child hover logic resolved
+- **Implementation:** Child component manages its own hover state and timeout
 
 ### A6. Element Dimming During Drag ✅
 **Status:** COMPLETE (Already implemented)
@@ -59,11 +60,12 @@ Get the refactored game back to feature parity with the original monolith, focus
 - [x] CSS animation classes applied correctly
 - **Implementation:** Uses animate-element-remove-staggered CSS class
 
-### A8. Mixing Area Visibility ❌
-**Status:** BROKEN (2025-01-29 14:45) - ABANDONED  
-- [ ] Still not working like the original LLMAlchemy.tsx
-- [ ] Multiple fixes attempted but fundamental issues remain
-- **Decision:** Move on to other features - this is blocking too much progress
+### A8. Mixing Area Visibility ✅
+**Status:** FIXED (2025-01-29 15:15)
+- [x] Removed problematic MixingAreaView component causing overflow clipping
+- [x] Implemented mixing area directly in parent component
+- [x] Elements now fully visible and properly positioned
+- **Implementation:** Direct element rendering without overflow-hidden container
 
 ### A6. Touch Support
 **Test:** Basic long-press drag works on mobile

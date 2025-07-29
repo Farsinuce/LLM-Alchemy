@@ -31,7 +31,7 @@ export type {
   User,
   UserSession,
   GameState,
-  GameElement,
+  Element,
   Achievement,
   DiscoveredElement,
   GameProgress,

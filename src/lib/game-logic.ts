@@ -1,4 +1,5 @@
-import { Element, MixingElement } from '@/components/game/LLMAlchemy/hooks/useGameState';
+import { Element } from '@/types/game.types';
+import { MixingElement } from '@/components/game/LLMAlchemy/hooks/useGameState';
 
 // Constants for collision detection and UI
 export const GAME_CONSTANTS = {

@@ -1,7 +1,7 @@
 import { useReducer, useCallback } from 'react';
-import { GameElement, Achievement } from '@/types/game.types';
+import { Element, Achievement } from '@/types/game.types';
 
-export interface MixingElement extends GameElement {
+export interface MixingElement extends Element {
   x: number;
   y: number;
   index: number;
@@ -12,21 +12,21 @@ export interface MixingElement extends GameElement {
 
 export interface LastCombination {
   createdElement: {
-    element: GameElement;
+    element: Element;
     isEndElement: boolean;
   };
   combinationKey: string;
   mixingAreaState: MixingElement[];
   achievementsGained: Achievement[];
-  endElementsGained: GameElement[];
+  endElementsGained: Element[];
   timestamp: number;
 }
 
 // Core game state (domain/persistent data only)
 export interface GameState {
   // Core game data
-  elements: GameElement[];
-  endElements: GameElement[];
+  elements: Element[];
+  endElements: Element[];
   combinations: Record<string, string | null>;
   gameMode: 'science' | 'creative';
   
@@ -52,10 +52,10 @@ export interface GameState {
 // Action types for the reducer
 export type GameAction =
   | { type: 'SET_GAME_MODE'; payload: 'science' | 'creative' }
-  | { type: 'SET_ELEMENTS'; payload: GameElement[] }
-  | { type: 'ADD_ELEMENT'; payload: GameElement }
-  | { type: 'SET_END_ELEMENTS'; payload: GameElement[] }
-  | { type: 'ADD_END_ELEMENT'; payload: GameElement }
+  | { type: 'SET_ELEMENTS'; payload: Element[] }
+  | { type: 'ADD_ELEMENT'; payload: Element }
+  | { type: 'SET_END_ELEMENTS'; payload: Element[] }
+  | { type: 'ADD_END_ELEMENT'; payload: Element }
   | { type: 'SET_COMBINATIONS'; payload: Record<string, string | null> }
   | { type: 'ADD_COMBINATION'; payload: { key: string; result: string | null } }
   | { type: 'SET_MIXING_AREA'; payload: MixingElement[] }
@@ -275,19 +275,19 @@ export function useGameState(initialGameMode: 'science' | 'creative' = 'science'
       dispatch({ type: 'SET_GAME_MODE', payload: mode });
     }, []),
 
-    setElements: useCallback((elements: GameElement[]) => {
+    setElements: useCallback((elements: Element[]) => {
       dispatch({ type: 'SET_ELEMENTS', payload: elements });
     }, []),
 
-    addElement: useCallback((element: GameElement) => {
+    addElement: useCallback((element: Element) => {
       dispatch({ type: 'ADD_ELEMENT', payload: element });
     }, []),
 
-    setEndElements: useCallback((endElements: GameElement[]) => {
+    setEndElements: useCallback((endElements: Element[]) => {
       dispatch({ type: 'SET_END_ELEMENTS', payload: endElements });
     }, []),
 
-    addEndElement: useCallback((element: GameElement) => {
+    addEndElement: useCallback((element: Element) => {
       dispatch({ type: 'ADD_END_ELEMENT', payload: element });
     }, []),
 

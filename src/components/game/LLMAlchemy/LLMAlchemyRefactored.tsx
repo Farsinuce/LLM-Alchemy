@@ -13,7 +13,7 @@ import { isTouchDevice } from '@/lib/ui-utils';
 
 // Import our new state management
 import { useGameMode, useElements, useMixingArea, useCombinations, useAchievements, useGameUndo, useGameStats, useGamePersistence } from './contexts/GameStateProvider';
-import { GameElement } from '@/types/game.types';
+import { Element } from '@/types/game.types';
 import { MixingElement } from './hooks/useGameState';
 import { useElementMixing } from './hooks/useElementMixing';
 import { useGameAudio } from './hooks/useGameAudio';
@@ -37,13 +37,13 @@ interface FloatingEmoji {
 }
 
 interface ReasoningPopup {
-  element: GameElement;
+  element: Element;
   x: number;
   y: number;
   fromHover: boolean;
 }
 
-interface ShowUnlockElement extends GameElement {
+interface ShowUnlockElement extends Element {
   isNew: boolean;
   achievement?: Achievement | null;
 }
@@ -425,7 +425,7 @@ const LLMAlchemyRefactored = () => {
     dropZoneRef
   });
 
-  const showReasoningPopup = (element: GameElement, event: React.MouseEvent | React.TouchEvent) => {
+  const showReasoningPopup = (element: Element, event: React.MouseEvent | React.TouchEvent) => {
     if (!element.reasoning) return;
     
     const rect = event.currentTarget.getBoundingClientRect();
@@ -442,7 +442,7 @@ const LLMAlchemyRefactored = () => {
   };
 
 
-  const handleElementClick = (element: GameElement, event: React.MouseEvent) => {
+  const handleElementClick = (element: Element, event: React.MouseEvent) => {
     if (element.reasoning) {
       event.preventDefault();
       event.stopPropagation();
@@ -450,7 +450,7 @@ const LLMAlchemyRefactored = () => {
     }
   };
 
-  const handleElementMouseEnter = (element: GameElement, event: React.MouseEvent) => {
+  const handleElementMouseEnter = (element: Element, event: React.MouseEvent) => {
     // Simply show the reasoning popup - no 500ms delay needed here since child handles it
     showReasoningPopup(element, event);
   };
@@ -962,7 +962,7 @@ const LLMAlchemyRefactored = () => {
             draggedElement.current = null;
             setIsDragging(false);
             setHoveredElement(null);
-            setDimmedElements(new Set());
+            setDimmedElements(new Set()); // Fix: Clear dimming on drop
           }}
           onTouchEnd={handleTouchEnd}
         >

@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Zap } from 'lucide-react';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
-import { Element } from '../hooks/useGameState';
+import { Element } from '@/types/game.types';
 
 interface ReasoningPopup {
   element: Element;

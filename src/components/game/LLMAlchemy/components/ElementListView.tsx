@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { GameElement } from '@/types/game.types';
+import { Element } from '@/types/game.types';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 import { getContrastColor, getRarityHoverColor, getElementSizeClasses, isTouchDevice } from '@/lib/ui-utils';
 
 interface ElementListViewProps {
-  elements: GameElement[];
+  elements: Element[];
   searchTerm: string;
   sortMode: string;
   shakeElement: string | null;
@@ -16,11 +16,11 @@ interface ElementListViewProps {
   dimmedElements: Set<string>;
   isPlayingLoadAnimation: boolean;
   animatedElements: Set<string>;
-  onElementDragStart: (e: React.DragEvent<HTMLDivElement>, element: GameElement) => void;
+  onElementDragStart: (e: React.DragEvent<HTMLDivElement>, element: Element) => void;
   onElementDragEnd: () => void;
-  onElementTouchStart: (e: React.TouchEvent<HTMLDivElement>, element: GameElement) => void;
-  onElementClick: (element: GameElement, event: React.MouseEvent) => void;
-  onElementMouseEnter: (element: GameElement, event: React.MouseEvent) => void;
+  onElementTouchStart: (e: React.TouchEvent<HTMLDivElement>, element: Element) => void;
+  onElementClick: (element: Element, event: React.MouseEvent) => void;
+  onElementMouseEnter: (element: Element, event: React.MouseEvent) => void;
   onElementMouseLeave: () => void;
 }
 
@@ -45,7 +45,7 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle mouse enter with 500ms delay for reasoning popup
-  const handleElementMouseEnter = (element: GameElement, event: React.MouseEvent) => {
+  const handleElementMouseEnter = (element: Element, event: React.MouseEvent) => {
     // Show popup on hover for desktop with 500ms delay
     if (!isTouch && element.reasoning) {
       // Clear any existing timeout

@@ -1,7 +1,7 @@
 // GameElement, GameState, etc. (domain-prefixed)
 
 // Comprehensive game element structure used throughout the game
-export interface GameElement {
+export interface Element {
   id: string;
   name: string;
   emoji: string;
@@ -14,7 +14,7 @@ export interface GameElement {
   emojiTags?: string[];        // For OpenMoji visual search
   tags?: string[];             // Legacy fallback for backwards compatibility
   isEndElement?: boolean;
-  parents?: GameElement[];
+  parents?: Element[];
   energyEnhanced?: boolean;
   // OpenMoji-specific fields (only for PUA emojis)
   openmojiHex?: string;      // Hexcode for non-Unicode emojis
@@ -40,8 +40,8 @@ export interface GameState {
   id: string
   user_id: string
   game_mode: 'science' | 'creative'
-  elements: GameElement[]
-  end_elements: GameElement[]
+  elements: Element[]
+  end_elements: Element[]
   combinations: Record<string, string | null>
   achievements: Achievement[]
   failed_combinations: string[]
