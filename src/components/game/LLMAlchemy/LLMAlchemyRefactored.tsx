@@ -87,7 +87,6 @@ const LLMAlchemyRefactored = () => {
   const [unlockAnimationStartTime, setUnlockAnimationStartTime] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [hoveredElement, setHoveredElement] = useState<number | null>(null);
-  const [hoveredElementId, setHoveredElementId] = useState<string | null>(null);
   const [isMixing] = useState<boolean>(false);
   const [touchDragging, setTouchDragging] = useState<MixingElement | null>(null);
   const [touchOffset, setTouchOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -450,42 +449,11 @@ const LLMAlchemyRefactored = () => {
   };
 
   const handleElementMouseEnter = (element: Element, event: React.MouseEvent) => {
-    // Set hover state for visual feedback
-    setHoveredElementId(element.id);
-    
-    // Handle reasoning popup with 500ms delay (only for non-touch devices)
-    if (!GameLogic.isTouchDevice() && element.reasoning) {
-      // Clear any existing timeout
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-      
-      // Capture the bounding rect immediately to avoid stale references
-      const rect = event.currentTarget.getBoundingClientRect();
-      
-      // Set 500ms delay for reasoning popup
-      hoverTimeoutRef.current = setTimeout(() => {
-        const syntheticEvent = {
-          currentTarget: {
-            getBoundingClientRect: () => rect
-          },
-          type: 'mouseenter'
-        };
-        showReasoningPopup(element, syntheticEvent as React.MouseEvent);
-      }, 500);
-    }
+    // Simply show the reasoning popup - no 500ms delay needed here since child handles it
+    showReasoningPopup(element, event);
   };
 
   const handleElementMouseLeave = () => {
-    // Clear hover state for visual feedback
-    setHoveredElementId(null);
-    
-    // Clear timeout if leaving before 500ms
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-    
     // Hide popup if it was from hover
     if (reasoningPopup && reasoningPopup.fromHover) {
       hideReasoningPopup();
@@ -844,7 +812,7 @@ const LLMAlchemyRefactored = () => {
             sortMode={sortMode}
             shakeElement={shakeElement}
             popElement={popElement}
-            hoveredElement={hoveredElementId}
+            hoveredElement={null}
             isDragging={isDragging}
             dimmedElements={dimmedElements}
             isPlayingLoadAnimation={isPlayingLoadAnimation}
@@ -942,7 +910,7 @@ const LLMAlchemyRefactored = () => {
         {/* Mixing Area */}
         <div 
           ref={dropZoneRef}
-          className={`flex-1 bg-gray-800/30 backdrop-blur-sm relative overflow-hidden transition-colors ${
+          className={`flex-1 bg-gray-800/30 backdrop-blur-sm relative transition-colors ${
             isDragging || touchDragging ? 'bg-blue-900/20 border-2 border-dashed border-blue-400' : ''
           }`}
           style={{ minHeight: '200px', touchAction: 'none' }}
