@@ -39,13 +39,11 @@ Get the refactored game back to feature parity with the original monolith, focus
 - [ ] Test: Drag within mixing area works
 - **Note:** Full drag/drop logic implemented but unverified
 
-### A5. Hover Timer (500ms) ✅
-**Status:** COMPLETE (2025-01-29 13:45)
-- [x] 500ms hover timer implemented in ElementListView.tsx
-- [x] Fixed hover handlers to use local timeout logic instead of bypassing
-- [x] Popup dismissal on mouse leave working
-- [x] Touch device detection to skip hover on mobile
-- **Implementation:** Fixed mouse event routing to use handleElementMouseEnter/Leave
+### A5. Hover Timer (500ms) ❌
+**Status:** BROKEN (2025-01-29 14:45) - ABANDONED
+- [ ] Hover modal still not working after multiple attempts
+- [ ] Conflicts between parent/child hover logic remain
+- **Decision:** Move on to other features - this is blocking too much progress
 
 ### A6. Element Dimming During Drag ✅
 **Status:** COMPLETE (Already implemented)
@@ -61,15 +59,11 @@ Get the refactored game back to feature parity with the original monolith, focus
 - [x] CSS animation classes applied correctly
 - **Implementation:** Uses animate-element-remove-staggered CSS class
 
-### A8. Mixing Area Visibility ✅
-**Status:** COMPLETE (2025-01-29 14:00)
-- [x] Fixed MixingAreaView structure to match original
-- [x] Proper color contrast using getContrastColor function
-- [x] Simplified overlay system for better element visibility
-- [x] All missing props added to component usage
-- [x] **CRITICAL FIX:** Added 'px' units to positioning (left/top values)
-- [x] Added explicit z-index: 10 to ensure elements appear above background
-- **Implementation:** Fixed positioning units bug that was making elements invisible
+### A8. Mixing Area Visibility ❌
+**Status:** BROKEN (2025-01-29 14:45) - ABANDONED  
+- [ ] Still not working like the original LLMAlchemy.tsx
+- [ ] Multiple fixes attempted but fundamental issues remain
+- **Decision:** Move on to other features - this is blocking too much progress
 
 ### A6. Touch Support
 **Test:** Basic long-press drag works on mobile

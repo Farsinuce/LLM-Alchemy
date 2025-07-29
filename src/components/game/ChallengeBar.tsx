@@ -76,6 +76,14 @@ export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps
   const fetchChallenges = async () => {
     try {
       const response = await fetch('/api/challenges/current');
+      
+      // Handle 403 (anonymous users) gracefully - this is expected behavior
+      if (response.status === 403) {
+        setChallenges([]);
+        setError(null);
+        return;
+      }
+      
       if (!response.ok) throw new Error('Failed to fetch challenges');
       
       const data = await response.json();
