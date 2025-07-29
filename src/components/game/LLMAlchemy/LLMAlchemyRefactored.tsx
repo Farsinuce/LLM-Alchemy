@@ -87,6 +87,7 @@ const LLMAlchemyRefactored = () => {
   const [unlockAnimationStartTime, setUnlockAnimationStartTime] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [hoveredElement, setHoveredElement] = useState<number | null>(null);
+  const [hoveredElementId, setHoveredElementId] = useState<string | null>(null);
   const [isMixing] = useState<boolean>(false);
   const [touchDragging, setTouchDragging] = useState<MixingElement | null>(null);
   const [touchOffset, setTouchOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -449,11 +450,20 @@ const LLMAlchemyRefactored = () => {
   };
 
   const handleElementMouseEnter = (element: Element, event: React.MouseEvent) => {
+    // Set hover state for visual feedback
+    setHoveredElementId(element.id);
+    
+    // Handle reasoning popup with 500ms delay (only for non-touch devices)
     if (!GameLogic.isTouchDevice() && element.reasoning) {
+      // Clear any existing timeout
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }
+      
+      // Capture the bounding rect immediately to avoid stale references
       const rect = event.currentTarget.getBoundingClientRect();
+      
+      // Set 500ms delay for reasoning popup
       hoverTimeoutRef.current = setTimeout(() => {
         const syntheticEvent = {
           currentTarget: {
@@ -467,10 +477,16 @@ const LLMAlchemyRefactored = () => {
   };
 
   const handleElementMouseLeave = () => {
+    // Clear hover state for visual feedback
+    setHoveredElementId(null);
+    
+    // Clear timeout if leaving before 500ms
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
+    
+    // Hide popup if it was from hover
     if (reasoningPopup && reasoningPopup.fromHover) {
       hideReasoningPopup();
     }
@@ -828,7 +844,7 @@ const LLMAlchemyRefactored = () => {
             sortMode={sortMode}
             shakeElement={shakeElement}
             popElement={popElement}
-            hoveredElement={hoveredElement?.toString() || null}
+            hoveredElement={hoveredElementId}
             isDragging={isDragging}
             dimmedElements={dimmedElements}
             isPlayingLoadAnimation={isPlayingLoadAnimation}
@@ -842,6 +858,34 @@ const LLMAlchemyRefactored = () => {
                 energized: false
               };
               setIsDragging(true);
+              
+              // Calculate and set dimmed elements for visual feedback
+              const previouslyMixed = new Set<string>();
+              Object.keys(combinations).forEach(comboKey => {
+                const parts = comboKey.split('+');
+                if (parts.includes(element.name)) {
+                  parts.forEach(part => {
+                    if (part !== element.name && part !== 'Energy') {
+                      previouslyMixed.add(part);
+                    }
+                  });
+                }
+              });
+              
+              // Also check failed combinations
+              failedCombinations.forEach(failedCombo => {
+                const parts = failedCombo.split('+');
+                if (parts.includes(element.name)) {
+                  parts.forEach(part => {
+                    if (part !== element.name && part !== 'Energy') {
+                      previouslyMixed.add(part);
+                    }
+                  });
+                }
+              });
+              
+              setDimmedElements(previouslyMixed);
+              
               e.dataTransfer.effectAllowed = 'copy';
               e.dataTransfer.setData('text/plain', element.name);
             }}
@@ -950,6 +994,7 @@ const LLMAlchemyRefactored = () => {
             draggedElement.current = null;
             setIsDragging(false);
             setHoveredElement(null);
+            setDimmedElements(new Set());
           }}
           onTouchEnd={handleTouchEnd}
         >
@@ -958,35 +1003,7 @@ const LLMAlchemyRefactored = () => {
             isMixing={isMixing}
             mixingResult={null}
             canUndo={undoAvailable}
-            onDrop={(e) => {
-              e.preventDefault();
-              if (!draggedElement.current) return;
-              
-              const rect = dropZoneRef.current!.getBoundingClientRect();
-              const x = e.clientX - rect.left;
-              const y = e.clientY - rect.top;
-              
-              playSound('plop');
-              const offset = GameLogic.getElementSize() / 2;
-              const newPos = GameLogic.resolveCollisions(x - offset, y - offset, mixingArea, dropZoneRef.current!);
-              
-              const newElement: MixingElement = {
-                ...draggedElement.current,
-                x: newPos.x,
-                y: newPos.y,
-                index: Date.now(),
-                energized: false
-              };
-              
-              addToMixingArea(newElement);
-              setIsDragging(false);
-              draggedElement.current = null;
-            }}
-            onDragOver={(e) => {
-              e.preventDefault();
-              e.dataTransfer.dropEffect = 'copy';
-            }}
-            onTouchEnd={handleTouchEnd}
+            animatingElements={animatedElements}
             onMixingElementMouseDown={(e, element) => {
               // Find the full element from mixingArea to ensure all properties are included
               const fullElement = mixingArea.find(m => m.index === element.index);

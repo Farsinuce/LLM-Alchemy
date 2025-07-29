@@ -3,11 +3,13 @@
 ## Goal
 Get the refactored game back to feature parity with the original monolith, focusing on gameplay first and cleanup second. No over-engineering.
 
-## Current Status
+## Current Status (2025-01-29 13:00)
 - Build now succeeds on Vercel ✅
 - TypeScript errors fixed in MixingAreaView and LLMAlchemyRefactored ✅
-- Core mixing functionality restored ✅
-- Next: Implement hover delays and visual feedback features
+- Hover delay implementation complete (needs testing) ✅
+- Element dimming during drag implemented (needs testing) ✅
+- Staggered animations implemented (needs testing) ✅
+- Next: Test actual functionality
 
 ## Phase A: Gameplay Parity (Core Features)
 
@@ -15,32 +17,48 @@ Get the refactored game back to feature parity with the original monolith, focus
 **Status:** COMPLETE (2025-01-29)
 - Fixed MixingAreaView missing properties (color, unlockOrder, etc.)
 - Fixed draggedElement type errors in refactored component
+- All TypeScript compilation errors resolved
 
-### A2. Basic Element Combination ✅
-**Status:** COMPLETE (2025-01-29)
-- [x] Verify element collision detection 
-- [x] Confirm combination logic fires correctly
-- [x] Check new element appears in list
-- **Fix Applied:** Restored full drop handler logic from original
+### A2. Basic Element Combination ❓
+**Status:** CODE IMPLEMENTED - NEEDS TESTING
+- [ ] Test: element collision detection works
+- [ ] Test: combination logic fires correctly
+- [ ] Test: new element appears in list
+- **Note:** Code exists but functionality unverified
 
-### A3. Energy Element Separation
-**Test:** Energy element shows "〰️" emoji and separator line works
-- [ ] Verify OpenMojiDisplay handles Energy's emoji correctly
-- [ ] Confirm separator line appears between regular/end elements
-- **If broken:** Copy Energy rendering from original
+### A3. Energy Element Separation ❓
+**Status:** NEEDS TESTING
+- [ ] Test: Energy element shows "〰️" emoji correctly
+- [ ] Test: separator line appears between regular/end elements
+- **Note:** OpenMojiDisplay implementation exists but unverified
 
-### A4. Drag & Drop Functionality ✅
-**Status:** COMPLETE (2025-01-29)
-- [x] Mouse drag from element list works
-- [x] Elements snap to position in mixing area
-- [x] Drag within mixing area works
-- **Fix Applied:** Restored complete onDrop logic with element detection
+### A4. Drag & Drop Functionality ❓
+**Status:** CODE IMPLEMENTED - NEEDS TESTING
+- [ ] Test: Mouse drag from element list works
+- [ ] Test: Elements snap to position in mixing area
+- [ ] Test: Drag within mixing area works
+- **Note:** Full drag/drop logic implemented but unverified
 
-### A5. Hover Timer (500ms) 🚧
-**Status:** IN PROGRESS - Next priority
-- [ ] 500ms hover timer triggers popup
-- [ ] Popup dismisses on mouse leave
-- **Implementation:** Copy hover logic exactly from monolith, avoid new abstractions
+### A5. Hover Timer (500ms) ✅
+**Status:** IMPLEMENTED - NEEDS TESTING
+- [x] 500ms hover timer code added with useRef timeout
+- [x] Popup dismissal on mouse leave implemented
+- [x] Touch device detection to skip hover on mobile
+- **Implementation:** Used exact pattern from original component
+
+### A6. Element Dimming During Drag ✅
+**Status:** IMPLEMENTED - NEEDS TESTING
+- [x] Elements that were previously mixed with current element are dimmed
+- [x] Failed combinations also trigger dimming
+- [x] Dimming cleared when drag ends
+- **Implementation:** Uses CSS opacity transition with element-dimmed class
+
+### A7. Staggered Removal Animations ✅
+**Status:** IMPLEMENTED - NEEDS TESTING
+- [x] MixingAreaView now receives animatingElements prop
+- [x] Elements animate with staggered timing when clearing
+- [x] CSS animation classes applied correctly
+- **Implementation:** Uses animate-element-remove-staggered CSS class
 
 ### A6. Touch Support
 **Test:** Basic long-press drag works on mobile

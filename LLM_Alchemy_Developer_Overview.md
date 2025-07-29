@@ -62,6 +62,9 @@ Share it with incoming developers or paste it into an LLM to give instant contex
    - Supabase Row‑Level‑Security on every table  
    - Daily free‑combination counter in `users.daily_count` (reset by DB cron).
 
+
+Note: The game deploys on Vercel. We don't do npm run build.
+
 ---
 
 ## 3 · File‑by‑File Cheat‑Sheet
@@ -80,7 +83,7 @@ Share it with incoming developers or paste it into an LLM to give instant contex
 | **src/components/auth/SupabaseProvider.tsx** | React context supplying `user`, `dbUser`, `dailyCount` + helpers. |
 | **src/components/game/LLMAlchemy.tsx** | **(LEGACY)** Original monolithic game component - deprecated. |
 | **src/components/game/LLMAlchemy/LLMAlchemyWrapper.tsx** | ✨ **Main entry point** for refactored game - wraps components in GameStateProvider. |
-| **src/components/game/LLMAlchemy/LLMAlchemyRefactored.tsx** | ✨ **NEW** Modular game component using React Context state management. **(CURRENTLY HAS BUILD ERROR)** |
+| **src/components/game/LLMAlchemy/LLMAlchemyRefactored.tsx** | ✨ **NEW** Modular game component using React Context state management. |
 | **src/components/game/LLMAlchemy/contexts/GameStateProvider.tsx** | ✨ React Context provider managing all game state with useReducer pattern. |
 | **src/components/game/LLMAlchemy/hooks/useGameState.ts** | ✨ Core reducer and state management logic extracted from main component. |
 | **src/components/game/LLMAlchemy/hooks/useElementMixing.ts** | ✨ Element combining logic and LLM API interactions. |

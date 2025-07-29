@@ -9,9 +9,7 @@ interface MixingAreaViewProps {
   isMixing: boolean;
   mixingResult: string | null;
   canUndo: boolean;
-  onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
-  onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
-  onTouchEnd: (e: React.TouchEvent<HTMLDivElement>) => void;
+  animatingElements: Set<string>;
   onMixingElementMouseDown: (e: React.MouseEvent<HTMLDivElement>, element: MixingElement) => void;
   onMixingElementTouchStart: (e: React.TouchEvent<HTMLDivElement>, element: MixingElement) => void;
   onClearMixingArea: () => void;
@@ -23,9 +21,7 @@ export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
   isMixing,
   mixingResult,
   canUndo,
-  onDrop,
-  onDragOver,
-  onTouchEnd,
+  animatingElements,
   onMixingElementMouseDown,
   onMixingElementTouchStart,
   onClearMixingArea,
@@ -43,9 +39,6 @@ export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
           }
           ${isMixing ? 'border-yellow-400 bg-yellow-900/20 animate-mixing-blur' : ''}
         `}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        onTouchEnd={onTouchEnd}
       >
         {/* UNDO Button - Top Left */}
         <button
@@ -101,30 +94,38 @@ export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
         )}
 
         {/* Mixing Area Elements */}
-        {mixingArea.map((element) => (
-          <div
-            key={element.id}
-            className="absolute transform -translate-x-1/2 -translate-y-1/2 p-3 bg-gray-700 rounded-lg cursor-move hover:bg-gray-600 transition-colors select-none touch-manipulation animate-element-drop-in"
-            style={{
-              left: `${element.x}px`,
-              top: `${element.y}px`,
-            }}
-            onMouseDown={(e) => onMixingElementMouseDown(e, element)}
-            onTouchStart={(e) => onMixingElementTouchStart(e, element)}
-          >
-            <div className="flex flex-col items-center gap-1">
-              <OpenMojiDisplay
-                emoji={element.emoji}
-                name={element.name}
-                size="md"
-                className="text-2xl"
-              />
-              <span className="text-xs text-white font-medium leading-tight max-w-16 text-center">
-                {element.name}
-              </span>
+        {mixingArea.map((element) => {
+          const elementKey = `${element.id}-${element.index}`;
+          const isRemoving = animatingElements.has(elementKey);
+          
+          return (
+            <div
+              key={element.id}
+              id={`mixing-${element.id}-${element.index}`}
+              className={`absolute transform -translate-x-1/2 -translate-y-1/2 p-3 bg-gray-700 rounded-lg cursor-move hover:bg-gray-600 transition-colors select-none touch-manipulation ${
+                isRemoving ? 'animate-element-remove-staggered' : 'animate-element-drop-in'
+              }`}
+              style={{
+                left: `${element.x}px`,
+                top: `${element.y}px`,
+              }}
+              onMouseDown={(e) => onMixingElementMouseDown(e, element)}
+              onTouchStart={(e) => onMixingElementTouchStart(e, element)}
+            >
+              <div className="flex flex-col items-center gap-1">
+                <OpenMojiDisplay
+                  emoji={element.emoji}
+                  name={element.name}
+                  size="md"
+                  className="text-2xl"
+                />
+                <span className="text-xs text-white font-medium leading-tight max-w-16 text-center">
+                  {element.name}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {/* Mixing Area Info */}
         {mixingArea.length > 0 && !isMixing && !mixingResult && (
