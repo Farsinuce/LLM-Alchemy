@@ -933,7 +933,7 @@ const LLMAlchemyRefactored = () => {
           onTouchEnd={handleTouchEnd}
         >
           <MixingAreaView
-            mixingArea={mixingArea.map(el => ({ ...el, name: el.name, emoji: el.emoji }))}
+            mixingArea={mixingArea}
             isMixing={isMixing}
             mixingResult={null}
             canUndo={undoAvailable}

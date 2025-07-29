@@ -1,4 +1,4 @@
-===== START: C:\ai\LLM-Alchemy\src\consolidate-files.bat ===== 
+===== START: C:\AI\LLM-Alchemy\src\consolidate-files.bat ===== 
 @echo off
 setlocal enabledelayedexpansion
 
@@ -82,10 +82,10 @@ if !skippedCount! GTR 0 echo Files skipped (media/binary): !skippedCount!
 echo ========================================
 echo.
 pause 
-===== END: C:\ai\LLM-Alchemy\src\consolidate-files.bat ===== 
+===== END: C:\AI\LLM-Alchemy\src\consolidate-files.bat ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\globals.css ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\globals.css ===== 
 @import "tailwindcss";
 @import "../styles/animations.css";
 
@@ -432,10 +432,10 @@ body {
   color: var(--color-warning);
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\globals.css ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\globals.css ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\layout.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\layout.tsx ===== 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -480,10 +480,10 @@ export default function RootLayout({
   );
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\layout.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\layout.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\page.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\page.tsx ===== 
 'use client'
 
 import { useRouter } from 'next/navigation';
@@ -1468,10 +1468,10 @@ export default function Home() {
   );
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\page.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\page.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\api\challenges\complete\route.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\api\challenges\complete\route.ts ===== 
 // Mark a challenge as completed for the current user
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
@@ -1665,10 +1665,10 @@ export async function POST(request: Request) {
   }
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\api\challenges\complete\route.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\api\challenges\complete\route.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\api\challenges\completed\route.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\api\challenges\completed\route.ts ===== 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
@@ -1726,10 +1726,10 @@ export async function GET() {
   }
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\api\challenges\completed\route.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\api\challenges\completed\route.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\api\challenges\current\route.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\api\challenges\current\route.ts ===== 
 // Get current active challenges with user completion status
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
@@ -1800,10 +1800,10 @@ export async function GET() {
   }
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\api\challenges\current\route.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\api\challenges\current\route.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\api\challenges\generate\route.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\api\challenges\generate\route.ts ===== 
 // Challenge generation endpoint - called by Vercel Cron daily at midnight Copenhagen time
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getRandomDailyCategories, getRandomWeeklyElement } from '@/lib/challenge-elements';
@@ -1940,10 +1940,10 @@ export async function GET(request: Request) {
   }
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\api\challenges\generate\route.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\api\challenges\generate\route.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\api\generate\route.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\api\generate\route.ts ===== 
 import { NextRequest, NextResponse } from 'next/server';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
@@ -2149,10 +2149,10 @@ export async function POST(req: NextRequest) {
   }
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\api\generate\route.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\api\generate\route.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\api\stripe\checkout\route.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\api\stripe\checkout\route.ts ===== 
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
@@ -2316,10 +2316,10 @@ export async function POST(req: NextRequest) {
   }
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\api\stripe\checkout\route.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\api\stripe\checkout\route.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\api\stripe\webhook\route.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\api\stripe\webhook\route.ts ===== 
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
@@ -2535,10 +2535,10 @@ export async function GET(req: NextRequest) {
   });
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\api\stripe\webhook\route.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\api\stripe\webhook\route.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\api\verify-turnstile\route.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\api\verify-turnstile\route.ts ===== 
 import { NextRequest, NextResponse } from 'next/server';
 
 const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY;
@@ -2606,10 +2606,10 @@ export async function POST(request: NextRequest) {
   }
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\api\verify-turnstile\route.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\api\verify-turnstile\route.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\auth\callback\page.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\auth\callback\page.tsx ===== 
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -2779,10 +2779,10 @@ export default function AuthCallback() {
   );
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\auth\callback\page.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\auth\callback\page.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\game\page.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\game\page.tsx ===== 
 'use client';
 
 import { useSupabase } from '@/components/auth/SupabaseProvider';
@@ -2843,10 +2843,10 @@ export default function GamePage() {
   return <LLMAlchemyWrapper />;
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\game\page.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\game\page.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\payment\success\page.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\payment\success\page.tsx ===== 
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
@@ -2978,10 +2978,10 @@ export default function PaymentSuccess() {
   );
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\payment\success\page.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\payment\success\page.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\test-captcha\page.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\test-captcha\page.tsx ===== 
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -3313,10 +3313,10 @@ export default function TestCaptchaPage() {
   );
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\test-captcha\page.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\test-captcha\page.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\app\test-openmoji\page.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\app\test-openmoji\page.tsx ===== 
 'use client';
 
 import React, { useState } from 'react';
@@ -3592,10 +3592,10 @@ export default function TestOpenMojiPage() {
   );
 }
  
-===== END: C:\ai\LLM-Alchemy\src\app\test-openmoji\page.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\app\test-openmoji\page.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\auth\AuthModal.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\auth\AuthModal.tsx ===== 
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -3995,20 +3995,20 @@ export default function AuthModal({
   );
 }
  
-===== END: C:\ai\LLM-Alchemy\src\components\auth\AuthModal.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\auth\AuthModal.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\auth\AuthModalClient.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\auth\AuthModalClient.tsx ===== 
 'use client';
 
 import AuthModal from './AuthModal';
 
 export default AuthModal;
  
-===== END: C:\ai\LLM-Alchemy\src\components\auth\AuthModalClient.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\auth\AuthModalClient.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\auth\SupabaseProvider.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\auth\SupabaseProvider.tsx ===== 
 'use client'
 
 import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
@@ -4270,10 +4270,10 @@ export function useSupabase() {
   return context
 }
  
-===== END: C:\ai\LLM-Alchemy\src\components\auth\SupabaseProvider.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\auth\SupabaseProvider.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\ChallengeBar.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\ChallengeBar.tsx ===== 
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -4510,10 +4510,10 @@ export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps
   );
 }
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\ChallengeBar.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\ChallengeBar.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy.tsx ===== 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Sparkles, X, GripHorizontal, User, ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -7543,10 +7543,10 @@ const LLMAlchemy = () => {
 
 export default LLMAlchemy;
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\OpenMojiDisplay.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\OpenMojiDisplay.tsx ===== 
 import React, { memo, useState } from 'react';
 import { unicodeToHexSequence } from '@/lib/openmoji-service';
 
@@ -7607,10 +7607,10 @@ export const OpenMojiDisplay = memo<OpenMojiDisplayProps>(({
 
 OpenMojiDisplay.displayName = 'OpenMojiDisplay';
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\OpenMojiDisplay.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\OpenMojiDisplay.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\LLMAlchemyRefactored.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\LLMAlchemyRefactored.tsx ===== 
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -7654,7 +7654,7 @@ interface ReasoningPopup {
   fromHover: boolean;
 }
 
-interface ShowUnlock extends Element {
+interface ShowUnlockElement extends Element {
   isNew: boolean;
   achievement?: Achievement | null;
 }
@@ -7694,7 +7694,7 @@ const LLMAlchemyRefactored = () => {
 
   // UI-only state (ephemeral - doesn't need to be in global state)
   const [sortMode, setSortMode] = useState<string>('unlock');
-  const [showUnlock, setShowUnlock] = useState<ShowUnlock | null>(null);
+  const [showUnlock, setShowUnlock] = useState<ShowUnlockElement | null>(null);
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [unlockAnimationStartTime, setUnlockAnimationStartTime] = useState<number | null>(null);
@@ -8025,7 +8025,7 @@ const LLMAlchemyRefactored = () => {
       const soundType = soundMap[type] || 'pop';
       playSound(soundType);
     },
-    onShowUnlock: setShowUnlock,
+    onShowUnlock: (element: ShowUnlockElement | null) => setShowUnlock(element),
     onSetShakeElement: (elementId: string | null) => {
       if (elementId) triggerShake(elementId);
     },
@@ -8163,7 +8163,7 @@ const LLMAlchemyRefactored = () => {
     e.preventDefault();
   };
 
-  const handleTouchEnd = async (e: TouchEvent) => {
+  const handleTouchEnd = async (e: TouchEvent | React.TouchEvent<HTMLDivElement>) => {
     if (!touchDragging) return;
     
     const touch = e.changedTouches[0];
@@ -8716,10 +8716,10 @@ const LLMAlchemyRefactored = () => {
 
 export default LLMAlchemyRefactored;
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\LLMAlchemyRefactored.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\LLMAlchemyRefactored.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\LLMAlchemyWrapper.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\LLMAlchemyWrapper.tsx ===== 
 'use client';
 
 import React from 'react';
@@ -8744,10 +8744,10 @@ const LLMAlchemyWrapper: React.FC<LLMAlchemyWrapperProps> = ({
 
 export default LLMAlchemyWrapper;
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\LLMAlchemyWrapper.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\LLMAlchemyWrapper.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\AchievementsModal.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\components\AchievementsModal.tsx ===== 
 import React from 'react';
 import { X } from 'lucide-react';
 import { Achievement } from '@/types';
@@ -8816,10 +8816,10 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
   );
 };
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\AchievementsModal.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\components\AchievementsModal.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\ElementListView.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\components\ElementListView.tsx ===== 
 'use client';
 
 import React from 'react';
@@ -8949,10 +8949,10 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
   );
 };
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\ElementListView.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\components\ElementListView.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\GameHeader.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\components\GameHeader.tsx ===== 
 'use client';
 
 import React from 'react';
@@ -9108,10 +9108,10 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   );
 };
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\GameHeader.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\components\GameHeader.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\index.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\components\index.ts ===== 
 export { UnlockModal } from './UnlockModal';
 export { AchievementsModal } from './AchievementsModal';
 export { ReasoningPopup } from './ReasoningPopup';
@@ -9119,10 +9119,10 @@ export { GameHeader } from './GameHeader';
 export { ElementListView } from './ElementListView';
 export { MixingAreaView } from './MixingAreaView';
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\index.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\components\index.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\MixingAreaView.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\components\MixingAreaView.tsx ===== 
 'use client';
 
 import React from 'react';
@@ -9274,10 +9274,10 @@ export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
   );
 };
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\MixingAreaView.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\components\MixingAreaView.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\ReasoningPopup.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\components\ReasoningPopup.tsx ===== 
 import React from 'react';
 import { X, Zap } from 'lucide-react';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
@@ -9364,10 +9364,10 @@ export const ReasoningPopup: React.FC<ReasoningPopupProps> = ({
   );
 };
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\ReasoningPopup.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\components\ReasoningPopup.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\UnlockModal.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\components\UnlockModal.tsx ===== 
 import React, { useEffect } from 'react';
 import { Achievement } from '@/types';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
@@ -9505,10 +9505,10 @@ export const UnlockModal: React.FC<UnlockModalProps> = ({ showUnlock, onClose })
   );
 };
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\UnlockModal.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\components\UnlockModal.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\contexts\GameStateProvider.tsx ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\contexts\GameStateProvider.tsx ===== 
 'use client';
 
 import React, { createContext, useContext, ReactNode } from 'react';
@@ -9536,6 +9536,15 @@ interface GameStateContextType {
     addAchievements: (achievements: Achievement[]) => void;
     setFailedCombinations: (failedCombinations: string[]) => void;
     addFailedCombination: (combination: string) => void;
+    setDimmedElements: (dimmedElements: Set<string>) => void;
+    addDimmedElement: (elementName: string) => void;
+    removeDimmedElement: (elementName: string) => void;
+    clearDimmedElements: () => void;
+    setAnimatingElements: (animatingElements: Set<string>) => void;
+    addAnimatingElement: (elementName: string) => void;
+    removeAnimatingElement: (elementName: string) => void;
+    clearAnimatingElements: () => void;
+    setIsUndoing: (isUndoing: boolean) => void;
     setLastCombination: (combination: LastCombination | null) => void;
     setUndoAvailable: (available: boolean) => void;
     incrementTotalCombinations: () => void;
@@ -9657,11 +9666,29 @@ export function useGamePersistence() {
     resetGameState: actions.resetGameState,
   };
 }
+
+export function useElementInteractionState() {
+  const { state, actions } = useGameStateContext();
+  return {
+    dimmedElements: state.dimmedElements,
+    animatingElements: state.animatingElements,
+    isUndoing: state.isUndoing,
+    setDimmedElements: actions.setDimmedElements,
+    addDimmedElement: actions.addDimmedElement,
+    removeDimmedElement: actions.removeDimmedElement,
+    clearDimmedElements: actions.clearDimmedElements,
+    setAnimatingElements: actions.setAnimatingElements,
+    addAnimatingElement: actions.addAnimatingElement,
+    removeAnimatingElement: actions.removeAnimatingElement,
+    clearAnimatingElements: actions.clearAnimatingElements,
+    setIsUndoing: actions.setIsUndoing,
+  };
+}
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\contexts\GameStateProvider.tsx ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\contexts\GameStateProvider.tsx ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useElementInteraction.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useElementInteraction.ts ===== 
 import { useCallback, useRef } from 'react';
 import { useMixingArea } from '../contexts/GameStateProvider';
 import { Element, MixingElement } from './useGameState';
@@ -9908,10 +9935,10 @@ export function useElementInteraction({
   };
 }
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useElementInteraction.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useElementInteraction.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useElementMixing.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useElementMixing.ts ===== 
 import { useCallback } from 'react';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
 import { createClient, incrementDailyCount, saveGameState, consumeToken } from '@/lib/supabase';
@@ -10513,10 +10540,10 @@ export function useElementMixing({
   };
 }
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useElementMixing.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useElementMixing.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameAnimations.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameAnimations.ts ===== 
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
@@ -10674,10 +10701,10 @@ export const useGameAnimations = () => {
   };
 };
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameAnimations.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameAnimations.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameAudio.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameAudio.ts ===== 
 'use client';
 
 import { useRef, useEffect, useCallback } from 'react';
@@ -10790,19 +10817,53 @@ export const useGameAudio = () => {
   };
 };
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameAudio.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameAudio.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameState.test.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameState.test.ts ===== 
 import { describe, it, expect } from 'vitest';
-import { GameState, GameAction } from './useGameState';
+import { GameState, GameAction, Element, MixingElement } from './useGameState';
+
+// Initial state factory (copied from the main file)
+const createInitialState = (gameMode: 'science' | 'creative' = 'science'): GameState => {
+  const baseElements = gameMode === 'creative' 
+    ? [
+        { id: 'life', name: 'Life', emoji: '🧬', color: '#32CD32', unlockOrder: 0 },
+        { id: 'earth', name: 'Earth', emoji: '🌍', color: '#8B4513', unlockOrder: 1 },
+        { id: 'air', name: 'Air', emoji: '💨', color: '#87CEEB', unlockOrder: 2 },
+        { id: 'fire', name: 'Fire', emoji: '🔥', color: '#FF4500', unlockOrder: 3 },
+        { id: 'water', name: 'Water', emoji: '💧', color: '#4682B4', unlockOrder: 4 },
+      ]
+    : [
+        { id: 'energy', name: 'Energy', emoji: '〰️', color: '#FFD700', unlockOrder: 0 },
+        { id: 'earth', name: 'Earth', emoji: '🌍', color: '#8B4513', unlockOrder: 1 },
+        { id: 'air', name: 'Air', emoji: '💨', color: '#87CEEB', unlockOrder: 2 },
+        { id: 'fire', name: 'Fire', emoji: '🔥', color: '#FF4500', unlockOrder: 3 },
+        { id: 'water', name: 'Water', emoji: '💧', color: '#4682B4', unlockOrder: 4 },
+      ];
+
+  return {
+    elements: baseElements,
+    endElements: [],
+    combinations: {},
+    gameMode,
+    mixingArea: [],
+    achievements: [],
+    failedCombinations: [],
+    dimmedElements: new Set<string>(),
+    animatingElements: new Set<string>(),
+    isUndoing: false,
+    lastCombination: null,
+    undoAvailable: false,
+    totalCombinationsMade: 0,
+    isStateRestored: false,
+  };
+};
 
 // Import the reducer function directly for testing
-// We'll extract it to test it in isolation
 function gameStateReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'SET_GAME_MODE':
-      // When mode changes, reset to base elements for that mode
       return createInitialState(action.payload);
 
     case 'SET_ELEMENTS':
@@ -10812,15 +10873,6 @@ function gameStateReducer(state: GameState, action: GameAction): GameState {
       return { 
         ...state, 
         elements: [...state.elements, action.payload] 
-      };
-
-    case 'SET_END_ELEMENTS':
-      return { ...state, endElements: action.payload };
-
-    case 'ADD_END_ELEMENT':
-      return { 
-        ...state, 
-        endElements: [...state.endElements, action.payload] 
       };
 
     case 'SET_COMBINATIONS':
@@ -10847,13 +10899,13 @@ function gameStateReducer(state: GameState, action: GameAction): GameState {
     case 'REMOVE_FROM_MIXING_AREA':
       return { 
         ...state, 
-        mixingArea: state.mixingArea.filter(el => !action.payload.includes(el.index)) 
+        mixingArea: state.mixingArea.filter((el: MixingElement) => !action.payload.includes(el.index)) 
       };
 
     case 'UPDATE_MIXING_ELEMENT':
       return {
         ...state,
-        mixingArea: state.mixingArea.map(el => 
+        mixingArea: state.mixingArea.map((el: MixingElement) => 
           el.index === action.payload.index 
             ? { ...el, ...action.payload.updates }
             : el
@@ -10904,41 +10956,8 @@ function gameStateReducer(state: GameState, action: GameAction): GameState {
   }
 }
 
-// Initial state factory (copied from the main file)
-const createInitialState = (gameMode: 'science' | 'creative' = 'science'): GameState => {
-  const baseElements = gameMode === 'creative' 
-    ? [
-        { id: 'life', name: 'Life', emoji: '🧬', color: '#32CD32', unlockOrder: 0 },
-        { id: 'earth', name: 'Earth', emoji: '🌍', color: '#8B4513', unlockOrder: 1 },
-        { id: 'air', name: 'Air', emoji: '💨', color: '#87CEEB', unlockOrder: 2 },
-        { id: 'fire', name: 'Fire', emoji: '🔥', color: '#FF4500', unlockOrder: 3 },
-        { id: 'water', name: 'Water', emoji: '💧', color: '#4682B4', unlockOrder: 4 },
-      ]
-    : [
-        { id: 'energy', name: 'Energy', emoji: '〰️', color: '#FFD700', unlockOrder: 0 },
-        { id: 'earth', name: 'Earth', emoji: '🌍', color: '#8B4513', unlockOrder: 1 },
-        { id: 'air', name: 'Air', emoji: '💨', color: '#87CEEB', unlockOrder: 2 },
-        { id: 'fire', name: 'Fire', emoji: '🔥', color: '#FF4500', unlockOrder: 3 },
-        { id: 'water', name: 'Water', emoji: '💧', color: '#4682B4', unlockOrder: 4 },
-      ];
-
-  return {
-    elements: baseElements,
-    endElements: [],
-    combinations: {},
-    gameMode,
-    mixingArea: [],
-    achievements: [],
-    failedCombinations: [],
-    lastCombination: null,
-    undoAvailable: false,
-    totalCombinationsMade: 0,
-    isStateRestored: false,
-  };
-};
-
 // Test data
-const testElement = {
+const testElement: Element = {
   id: 'steam',
   name: 'Steam',
   emoji: '💨',
@@ -10946,7 +10965,7 @@ const testElement = {
   unlockOrder: 5
 };
 
-const testMixingElement = {
+const testMixingElement: MixingElement = {
   ...testElement,
   x: 100,
   y: 100,
@@ -10998,7 +11017,7 @@ describe('Game State Reducer', () => {
       expect(result.gameMode).toBe('creative');
       expect(result.elements).toHaveLength(5);
       expect(result.elements[0].name).toBe('Life'); // Creative mode starts with Life
-      expect(result.elements.find(e => e.name === 'Energy')).toBeUndefined(); // No Energy in creative
+      expect(result.elements.find((e: Element) => e.name === 'Energy')).toBeUndefined(); // No Energy in creative
     });
 
     it('should reset all state when switching modes', () => {
@@ -11152,10 +11171,10 @@ describe('Game State Reducer', () => {
   });
 });
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameState.test.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameState.test.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameState.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameState.ts ===== 
 import { useReducer, useCallback } from 'react';
 import { GameElement, Achievement } from '@/types/game.types';
 
@@ -11196,6 +11215,11 @@ export interface GameState {
   achievements: Achievement[];
   failedCombinations: string[];
   
+  // Enhanced state for UI restoration
+  dimmedElements: Set<string>;
+  animatingElements: Set<string>;
+  isUndoing: boolean;
+  
   // Undo/redo functionality
   lastCombination: LastCombination | null;
   undoAvailable: boolean;
@@ -11223,6 +11247,15 @@ export type GameAction =
   | { type: 'ADD_ACHIEVEMENTS'; payload: Achievement[] }
   | { type: 'SET_FAILED_COMBINATIONS'; payload: string[] }
   | { type: 'ADD_FAILED_COMBINATION'; payload: string }
+  | { type: 'SET_DIMMED_ELEMENTS'; payload: Set<string> }
+  | { type: 'ADD_DIMMED_ELEMENT'; payload: string }
+  | { type: 'REMOVE_DIMMED_ELEMENT'; payload: string }
+  | { type: 'CLEAR_DIMMED_ELEMENTS' }
+  | { type: 'SET_ANIMATING_ELEMENTS'; payload: Set<string> }
+  | { type: 'ADD_ANIMATING_ELEMENT'; payload: string }
+  | { type: 'REMOVE_ANIMATING_ELEMENT'; payload: string }
+  | { type: 'CLEAR_ANIMATING_ELEMENTS' }
+  | { type: 'SET_IS_UNDOING'; payload: boolean }
   | { type: 'SET_LAST_COMBINATION'; payload: LastCombination | null }
   | { type: 'SET_UNDO_AVAILABLE'; payload: boolean }
   | { type: 'INCREMENT_TOTAL_COMBINATIONS' }
@@ -11256,6 +11289,9 @@ const createInitialState = (gameMode: 'science' | 'creative' = 'science'): GameS
     mixingArea: [],
     achievements: [],
     failedCombinations: [],
+    dimmedElements: new Set<string>(),
+    animatingElements: new Set<string>(),
+    isUndoing: false,
     lastCombination: null,
     undoAvailable: false,
     totalCombinationsMade: 0,
@@ -11345,6 +11381,43 @@ function gameStateReducer(state: GameState, action: GameAction): GameState {
         ...state, 
         failedCombinations: [...state.failedCombinations.slice(-4), action.payload] 
       };
+
+    case 'SET_DIMMED_ELEMENTS':
+      return { ...state, dimmedElements: action.payload };
+
+    case 'ADD_DIMMED_ELEMENT':
+      return { 
+        ...state, 
+        dimmedElements: new Set([...state.dimmedElements, action.payload])
+      };
+
+    case 'REMOVE_DIMMED_ELEMENT':
+      const newDimmedElements = new Set(state.dimmedElements);
+      newDimmedElements.delete(action.payload);
+      return { ...state, dimmedElements: newDimmedElements };
+
+    case 'CLEAR_DIMMED_ELEMENTS':
+      return { ...state, dimmedElements: new Set<string>() };
+
+    case 'SET_ANIMATING_ELEMENTS':
+      return { ...state, animatingElements: action.payload };
+
+    case 'ADD_ANIMATING_ELEMENT':
+      return { 
+        ...state, 
+        animatingElements: new Set([...state.animatingElements, action.payload])
+      };
+
+    case 'REMOVE_ANIMATING_ELEMENT':
+      const newAnimatingElements = new Set(state.animatingElements);
+      newAnimatingElements.delete(action.payload);
+      return { ...state, animatingElements: newAnimatingElements };
+
+    case 'CLEAR_ANIMATING_ELEMENTS':
+      return { ...state, animatingElements: new Set<string>() };
+
+    case 'SET_IS_UNDOING':
+      return { ...state, isUndoing: action.payload };
 
     case 'SET_LAST_COMBINATION':
       return { ...state, lastCombination: action.payload };
@@ -11442,6 +11515,42 @@ export function useGameState(initialGameMode: 'science' | 'creative' = 'science'
       dispatch({ type: 'ADD_FAILED_COMBINATION', payload: combination });
     }, []),
 
+    setDimmedElements: useCallback((dimmedElements: Set<string>) => {
+      dispatch({ type: 'SET_DIMMED_ELEMENTS', payload: dimmedElements });
+    }, []),
+
+    addDimmedElement: useCallback((elementName: string) => {
+      dispatch({ type: 'ADD_DIMMED_ELEMENT', payload: elementName });
+    }, []),
+
+    removeDimmedElement: useCallback((elementName: string) => {
+      dispatch({ type: 'REMOVE_DIMMED_ELEMENT', payload: elementName });
+    }, []),
+
+    clearDimmedElements: useCallback(() => {
+      dispatch({ type: 'CLEAR_DIMMED_ELEMENTS' });
+    }, []),
+
+    setAnimatingElements: useCallback((animatingElements: Set<string>) => {
+      dispatch({ type: 'SET_ANIMATING_ELEMENTS', payload: animatingElements });
+    }, []),
+
+    addAnimatingElement: useCallback((elementName: string) => {
+      dispatch({ type: 'ADD_ANIMATING_ELEMENT', payload: elementName });
+    }, []),
+
+    removeAnimatingElement: useCallback((elementName: string) => {
+      dispatch({ type: 'REMOVE_ANIMATING_ELEMENT', payload: elementName });
+    }, []),
+
+    clearAnimatingElements: useCallback(() => {
+      dispatch({ type: 'CLEAR_ANIMATING_ELEMENTS' });
+    }, []),
+
+    setIsUndoing: useCallback((isUndoing: boolean) => {
+      dispatch({ type: 'SET_IS_UNDOING', payload: isUndoing });
+    }, []),
+
     setLastCombination: useCallback((combination: LastCombination | null) => {
       dispatch({ type: 'SET_LAST_COMBINATION', payload: combination });
     }, []),
@@ -11474,10 +11583,10 @@ export function useGameState(initialGameMode: 'science' | 'creative' = 'science'
   };
 }
  
-===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameState.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useGameState.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\achievements.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\achievements.ts ===== 
 // Achievement system for LLM Alchemy
 // Extracted from LLMAlchemy.tsx for better code organization
 
@@ -11911,10 +12020,10 @@ export function checkAchievements(
   return newAchievements;
 }
  
-===== END: C:\ai\LLM-Alchemy\src\lib\achievements.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\achievements.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\auth-utils.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\auth-utils.ts ===== 
 import { createClient } from '@/lib/supabase-client';
 
 export interface AccountUpgradeResult {
@@ -12102,10 +12211,10 @@ export function shouldShowUpgradeButton(
   return isAnonymous && dailyCount >= Math.floor(dailyLimit * 0.8); // Show at 80% of limit
 }
  
-===== END: C:\ai\LLM-Alchemy\src\lib\auth-utils.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\auth-utils.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\challenge-elements.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\challenge-elements.ts ===== 
 // Curated lists for LLM Alchemy challenge system
 // Daily challenges use categories, weekly challenges use specific elements
 
@@ -12271,10 +12380,10 @@ export function elementMatchesCategoryFromElement(element: { achievementTags?: s
   return elementMatchesCategory(elementTags, targetCategory);
 }
  
-===== END: C:\ai\LLM-Alchemy\src\lib\challenge-elements.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\challenge-elements.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\game-config.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\game-config.ts ===== 
 /**
  * Centralized game configuration constants
  * 
@@ -12295,10 +12404,10 @@ export const GAME_CONFIG = {
   // etc.
 } as const;
  
-===== END: C:\ai\LLM-Alchemy\src\lib\game-config.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\game-config.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\game-logic.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\game-logic.ts ===== 
 import { Element, MixingElement } from '@/components/game/LLMAlchemy/hooks/useGameState';
 
 // Constants for collision detection and UI
@@ -12732,10 +12841,10 @@ export const shouldAllowMixing = (
   return { allowed: true };
 };
  
-===== END: C:\ai\LLM-Alchemy\src\lib\game-logic.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\game-logic.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\llm-prompts.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\llm-prompts.ts ===== 
 // LLM Prompt Building Functions for LLM Alchemy Game
 // Extracted from LLMAlchemy.tsx for better organization
 
@@ -13051,10 +13160,10 @@ Failure or rejection:
 }`;
 };
  
-===== END: C:\ai\LLM-Alchemy\src\lib\llm-prompts.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\llm-prompts.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\OpenMoji-API.md ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\OpenMoji-API.md ===== 
 OpenMoji API
 ========
 
@@ -13144,10 +13253,10 @@ where an array of color strings is structurally similar to:
 
 The current package version string.
  
-===== END: C:\ai\LLM-Alchemy\src\lib\OpenMoji-API.md ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\OpenMoji-API.md ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\openmoji-service.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\openmoji-service.ts ===== 
 import Fuse from 'fuse.js';
 
 // Type definitions for OpenMoji data structure
@@ -13337,10 +13446,10 @@ export function getStaticOpenMoji(emoji: string): string {
   return `/openmoji/${hexcode}.svg`;
 }
  
-===== END: C:\ai\LLM-Alchemy\src\lib\openmoji-service.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\openmoji-service.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\supabase-client.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\supabase-client.ts ===== 
 // DEPRECATED: This file has been refactored into separate files for better security
 // Please update your imports to use:
 // - import { ... } from '@/lib/supabase' for browser-safe functions
@@ -13351,10 +13460,10 @@ console.warn('⚠️ DEPRECATED: Importing from @/lib/supabase-client is depreca
 // Re-export everything from new location for backwards compatibility
 export * from './supabase';
  
-===== END: C:\ai\LLM-Alchemy\src\lib\supabase-client.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\supabase-client.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\turnstile.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\turnstile.ts ===== 
 // Clean, minimal Turnstile implementation using explicit+execute pattern
 // Works reliably on both desktop and mobile without hidden containers or timeouts
 
@@ -13623,10 +13732,10 @@ export function cleanupAutomatedWidget(): void {
   pendingResolve = null;
 }
  
-===== END: C:\ai\LLM-Alchemy\src\lib\turnstile.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\turnstile.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\ui-utils.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\ui-utils.ts ===== 
 /**
  * UI utility functions shared across game components
  */
@@ -13696,10 +13805,10 @@ export const getElementNameSizeClasses = (): string => {
   return 'text-[8px] sm:text-[10px]';
 };
  
-===== END: C:\ai\LLM-Alchemy\src\lib\ui-utils.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\ui-utils.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\supabase\browser.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\supabase\browser.ts ===== 
 // Client-side only Supabase client
 // WARNING: This file MUST NOT import any server-side modules like next/headers
 import { createBrowserClient } from '@supabase/ssr'
@@ -13730,10 +13839,10 @@ export async function signInWithGoogle() {
 // Re-export commonly used types
 export type { SupabaseClient } from '@supabase/supabase-js'
  
-===== END: C:\ai\LLM-Alchemy\src\lib\supabase\browser.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\supabase\browser.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\supabase\helpers.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\supabase\helpers.ts ===== 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { User, GameState, GameProgress } from '@/types'
 
@@ -14262,10 +14371,10 @@ export async function updateChallengePreference(supabase: GenericSupabaseClient,
   }
 }
  
-===== END: C:\ai\LLM-Alchemy\src\lib\supabase\helpers.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\supabase\helpers.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\supabase\index.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\supabase\index.ts ===== 
 // Safe barrel export - only browser-safe symbols
 // This file ensures no server-only code leaks to the client
 
@@ -14312,10 +14421,10 @@ export type {
 //
 // These must be imported directly from './server' in server-side code only
  
-===== END: C:\ai\LLM-Alchemy\src\lib\supabase\index.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\supabase\index.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\supabase\server.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\supabase\server.ts ===== 
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
@@ -14403,20 +14512,20 @@ export function createMiddlewareClient(request: NextRequest) {
   return { supabase, response }
 }
  
-===== END: C:\ai\LLM-Alchemy\src\lib\supabase\server.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\supabase\server.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\lib\supabase\types.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\lib\supabase\types.ts ===== 
 // DEPRECATED: Import types from @/types instead
 console.warn('⚠️ Importing types from @/lib/supabase/types is deprecated. Please import from @/types instead.');
 
 // Re-export from new location for backwards compatibility
 export type { User, UserSession, GameElement, GameState, Achievement, DiscoveredElement, GameProgress } from '@/types'
  
-===== END: C:\ai\LLM-Alchemy\src\lib\supabase\types.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\lib\supabase\types.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\styles\animations.css ===== 
+===== START: C:\AI\LLM-Alchemy\src\styles\animations.css ===== 
 /* LLM Alchemy Game Animations */
 /* Extracted from original component to make them globally available */
 
@@ -14503,6 +14612,35 @@ export type { User, UserSession, GameElement, GameState, Achievement, Discovered
   100% { transform: scale(1); opacity: 1; }
 }
 
+@keyframes element-remove-staggered {
+  0% { transform: scale(1); opacity: 1; }
+  30% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+@keyframes mixing-blur {
+  0%, 100% { backdrop-filter: blur(0px); }
+  50% { backdrop-filter: blur(4px); }
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes element-drop-in {
+  0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+  60% { transform: scale(1.1) rotate(0deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes element-unlock-bounce {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.15); opacity: 1; }
+  75% { transform: scale(0.95); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 @keyframes element-pop {
   0% { transform: scale(0); }
   50% { transform: scale(1.2); }
@@ -14556,6 +14694,11 @@ export type { User, UserSession, GameElement, GameState, Achievement, Discovered
 .animate-element-load-delayed {
   animation: element-load-delayed 0.3s ease-out;
   animation-fill-mode: both;
+  animation-delay: var(--animation-delay, 0ms);
+}
+
+.animate-element-remove-staggered {
+  animation: element-remove-staggered 0.3s ease-out forwards;
 }
 
 .animate-element-shake {
@@ -14564,6 +14707,22 @@ export type { User, UserSession, GameElement, GameState, Achievement, Discovered
 
 .animate-continuous-pulse {
   animation: continuous-pulse 1s ease-in-out infinite;
+}
+
+.animate-mixing-blur {
+  animation: mixing-blur 2s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-element-drop-in {
+  animation: element-drop-in 0.4s ease-out;
+}
+
+.animate-element-unlock-bounce {
+  animation: element-unlock-bounce 0.5s ease-out;
 }
 
 /* Element Dimming for Drag Feedback */
@@ -14602,10 +14761,10 @@ export type { User, UserSession, GameElement, GameState, Achievement, Discovered
   @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4;
 }
  
-===== END: C:\ai\LLM-Alchemy\src\styles\animations.css ===== 
+===== END: C:\AI\LLM-Alchemy\src\styles\animations.css ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\types\challenge.types.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\types\challenge.types.ts ===== 
 // Challenge system types
 export interface Challenge {
   id: string;
@@ -14630,10 +14789,10 @@ export interface ChallengeBarProps {
   currentGameMode?: 'science' | 'creative';
 }
  
-===== END: C:\ai\LLM-Alchemy\src\types\challenge.types.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\types\challenge.types.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\types\db.generated.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\types\db.generated.ts ===== 
 export type Json =
   | string
   | number
@@ -15049,10 +15208,10 @@ export type CompositeTypes<
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
  
-===== END: C:\ai\LLM-Alchemy\src\types\db.generated.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\types\db.generated.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\types\game.types.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\types\game.types.ts ===== 
 // GameElement, GameState, etc. (domain-prefixed)
 
 // Comprehensive game element structure used throughout the game
@@ -15126,10 +15285,10 @@ export interface GameProgress {
   lastMode: 'science' | 'creative'
 }
  
-===== END: C:\ai\LLM-Alchemy\src\types\game.types.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\types\game.types.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\types\index.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\types\index.ts ===== 
 // Barrel export file
 export * from './user.types'
 export * from './game.types'
@@ -15137,10 +15296,10 @@ export * from './challenge.types'
 // TODO: Add db.generated export once Supabase types are generated
 // export * from './db.generated'
  
-===== END: C:\ai\LLM-Alchemy\src\types\index.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\types\index.ts ===== 
  
  
-===== START: C:\ai\LLM-Alchemy\src\types\user.types.ts ===== 
+===== START: C:\AI\LLM-Alchemy\src\types\user.types.ts ===== 
 // User-related interfaces
 export interface User {
   id: string
@@ -15169,6 +15328,6 @@ export interface UserSession {
   updated_at: string
 }
  
-===== END: C:\ai\LLM-Alchemy\src\types\user.types.ts ===== 
+===== END: C:\AI\LLM-Alchemy\src\types\user.types.ts ===== 
  
  

@@ -2,14 +2,7 @@
 
 import React from 'react';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
-
-interface MixingElement {
-  id: string;
-  name: string;
-  emoji: string;
-  x: number;
-  y: number;
-}
+import { MixingElement } from '../hooks/useGameState';
 
 interface MixingAreaViewProps {
   mixingArea: MixingElement[];
