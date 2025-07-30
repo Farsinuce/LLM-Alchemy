@@ -589,7 +589,7 @@ export default function Home() {
         {/* Challenges Preview - Moved to Bottom */}
         {isRegistered && showChallenges && todaysChallenges.length > 0 && (
           <div className="bg-gray-800/50 rounded-lg p-4 mt-6 text-left">
-            <h3 className="text-sm font-semibold mb-3 text-center">Today's Challenges</h3>
+            <h3 className="text-sm font-semibold mb-3 text-center">Today&apos;s Challenges</h3>
             <div className="space-y-2">
               {todaysChallenges.slice(0, 3).map(challenge => (
                 <div key={challenge.id} className="flex items-center justify-between text-xs">

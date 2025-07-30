@@ -38,7 +38,7 @@ export const getRarityHoverColor = (rarity: string = 'common'): string => {
   }
 };
 
-// Collision detection functions
+// Collision detection functions - Fixed to match legacy working implementation
 export const checkCollision = (
   x1: number, 
   y1: number, 
@@ -69,7 +69,7 @@ export const hasCollisionAt = (
   
   // Check collision with existing elements
   return mixingArea.some(el => 
-    el.index !== excludeIndex && checkCollision(x, y, el.x, el.y)
+    el.index !== excludeIndex && checkCollision(x, y, el.x, el.y, elementSize)
   );
 };
 

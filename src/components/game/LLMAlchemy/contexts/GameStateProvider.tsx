@@ -34,6 +34,10 @@ interface GameStateContextType {
     removeAnimatingElement: (elementName: string) => void;
     clearAnimatingElements: () => void;
     setIsUndoing: (isUndoing: boolean) => void;
+    setIsMixing: (isMixing: boolean) => void;
+    setHoveredElement: (elementIndex: number | null) => void;
+    setTouchDragging: (element: MixingElement | null) => void;
+    setTouchOffset: (offset: { x: number; y: number }) => void;
     setLastCombination: (combination: LastCombination | null) => void;
     setUndoAvailable: (available: boolean) => void;
     incrementTotalCombinations: () => void;
@@ -162,6 +166,10 @@ export function useElementInteractionState() {
     dimmedElements: state.dimmedElements,
     animatingElements: state.animatingElements,
     isUndoing: state.isUndoing,
+    isMixing: state.isMixing,
+    hoveredElement: state.hoveredElement,
+    touchDragging: state.touchDragging,
+    touchOffset: state.touchOffset,
     setDimmedElements: actions.setDimmedElements,
     addDimmedElement: actions.addDimmedElement,
     removeDimmedElement: actions.removeDimmedElement,
@@ -171,5 +179,9 @@ export function useElementInteractionState() {
     removeAnimatingElement: actions.removeAnimatingElement,
     clearAnimatingElements: actions.clearAnimatingElements,
     setIsUndoing: actions.setIsUndoing,
+    setIsMixing: actions.setIsMixing,
+    setHoveredElement: actions.setHoveredElement,
+    setTouchDragging: actions.setTouchDragging,
+    setTouchOffset: actions.setTouchOffset,
   };
 }

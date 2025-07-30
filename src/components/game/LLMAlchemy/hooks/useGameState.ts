@@ -38,10 +38,14 @@ export interface GameState {
   achievements: Achievement[];
   failedCombinations: string[];
   
-  // Enhanced state for UI restoration
+  // UI interaction state
   dimmedElements: Set<string>;
   animatingElements: Set<string>;
   isUndoing: boolean;
+  isMixing: boolean;
+  hoveredElement: number | null;
+  touchDragging: MixingElement | null;
+  touchOffset: { x: number; y: number };
   
   // Undo/redo functionality
   lastCombination: LastCombination | null;
@@ -79,6 +83,10 @@ export type GameAction =
   | { type: 'REMOVE_ANIMATING_ELEMENT'; payload: string }
   | { type: 'CLEAR_ANIMATING_ELEMENTS' }
   | { type: 'SET_IS_UNDOING'; payload: boolean }
+  | { type: 'SET_IS_MIXING'; payload: boolean }
+  | { type: 'SET_HOVERED_ELEMENT'; payload: number | null }
+  | { type: 'SET_TOUCH_DRAGGING'; payload: MixingElement | null }
+  | { type: 'SET_TOUCH_OFFSET'; payload: { x: number; y: number } }
   | { type: 'SET_LAST_COMBINATION'; payload: LastCombination | null }
   | { type: 'SET_UNDO_AVAILABLE'; payload: boolean }
   | { type: 'INCREMENT_TOTAL_COMBINATIONS' }
@@ -115,6 +123,10 @@ const createInitialState = (gameMode: 'science' | 'creative' = 'science'): GameS
     dimmedElements: new Set<string>(),
     animatingElements: new Set<string>(),
     isUndoing: false,
+    isMixing: false,
+    hoveredElement: null,
+    touchDragging: null,
+    touchOffset: { x: 0, y: 0 },
     lastCombination: null,
     undoAvailable: false,
     totalCombinationsMade: 0,
@@ -241,6 +253,18 @@ function gameStateReducer(state: GameState, action: GameAction): GameState {
 
     case 'SET_IS_UNDOING':
       return { ...state, isUndoing: action.payload };
+
+    case 'SET_IS_MIXING':
+      return { ...state, isMixing: action.payload };
+
+    case 'SET_HOVERED_ELEMENT':
+      return { ...state, hoveredElement: action.payload };
+
+    case 'SET_TOUCH_DRAGGING':
+      return { ...state, touchDragging: action.payload };
+
+    case 'SET_TOUCH_OFFSET':
+      return { ...state, touchOffset: action.payload };
 
     case 'SET_LAST_COMBINATION':
       return { ...state, lastCombination: action.payload };
@@ -372,6 +396,22 @@ export function useGameState(initialGameMode: 'science' | 'creative' = 'science'
 
     setIsUndoing: useCallback((isUndoing: boolean) => {
       dispatch({ type: 'SET_IS_UNDOING', payload: isUndoing });
+    }, []),
+
+    setIsMixing: useCallback((isMixing: boolean) => {
+      dispatch({ type: 'SET_IS_MIXING', payload: isMixing });
+    }, []),
+
+    setHoveredElement: useCallback((elementIndex: number | null) => {
+      dispatch({ type: 'SET_HOVERED_ELEMENT', payload: elementIndex });
+    }, []),
+
+    setTouchDragging: useCallback((element: MixingElement | null) => {
+      dispatch({ type: 'SET_TOUCH_DRAGGING', payload: element });
+    }, []),
+
+    setTouchOffset: useCallback((offset: { x: number; y: number }) => {
+      dispatch({ type: 'SET_TOUCH_OFFSET', payload: offset });
     }, []),
 
     setLastCombination: useCallback((combination: LastCombination | null) => {

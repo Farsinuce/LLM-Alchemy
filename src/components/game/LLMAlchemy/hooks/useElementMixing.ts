@@ -34,6 +34,7 @@ interface UseElementMixingProps {
   onSetShakeElement: (id: string | null) => void;
   onSetPopElement: (id: string | null) => void;
   onSetUnlockAnimationStartTime: (time: number | null) => void;
+  onSetIsMixing: (isMixing: boolean) => void;
   dropZoneRef: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -46,6 +47,7 @@ export function useElementMixing({
   onSetShakeElement,
   onSetPopElement,
   onSetUnlockAnimationStartTime,
+  onSetIsMixing,
   dropZoneRef
 }: UseElementMixingProps) {
   const { user, dailyCount, tokenBalance, refreshDailyCount, refreshTokenBalance } = useSupabase();
@@ -414,11 +416,13 @@ export function useElementMixing({
     }
 
     // Generate new combination
+    onSetIsMixing(true);
     const result = await generateCombination(
       elementsToMix[0], 
       elementsToMix[1], 
       hasEnergy ? { name: 'Energy' } as Element : null
     );
+    onSetIsMixing(false);
     
     if (result.error) return;
     

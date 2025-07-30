@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Sparkles, GripHorizontal, User, ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
@@ -12,13 +12,13 @@ import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 import { isTouchDevice } from '@/lib/ui-utils';
 
 // Import our new state management
-import { useGameMode, useElements, useMixingArea, useCombinations, useAchievements, useGameUndo, useGameStats, useGamePersistence } from './contexts/GameStateProvider';
+import { useGameMode, useElements, useMixingArea, useCombinations, useAchievements, useGameUndo, useGameStats, useGamePersistence, useElementInteractionState } from './contexts/GameStateProvider';
 import { Element } from '@/types/game.types';
 import { MixingElement } from './hooks/useGameState';
 import { useElementMixing } from './hooks/useElementMixing';
 import { useGameAudio } from './hooks/useGameAudio';
 import { useGameAnimations } from './hooks/useGameAnimations';
-import { UnlockModal, AchievementsModal, ReasoningPopup, ElementListView, MixingAreaView } from './components';
+import { UnlockModal, AchievementsModal, ReasoningPopup, ElementListView } from './components';
 import * as GameLogic from '@/lib/game-logic';
 
 // UI-only interfaces (not moved to state management)
@@ -61,7 +61,7 @@ const LLMAlchemyRefactored = () => {
   // Get state and actions from context
   const { gameMode, setGameMode } = useGameMode();
   const { elements, endElements, setElements, setEndElements } = useElements();
-  const { mixingArea, setMixingArea, addToMixingArea, updateMixingElement, clearMixingArea } = useMixingArea();
+  const { mixingArea, setMixingArea, addToMixingArea, updateMixingElement } = useMixingArea();
   const { combinations, failedCombinations, setCombinations, setFailedCombinations } = useCombinations();
   const { achievements } = useAchievements();
   const { lastCombination, undoAvailable, setLastCombination, setUndoAvailable } = useGameUndo();
@@ -77,7 +77,6 @@ const LLMAlchemyRefactored = () => {
     animatedElements,
     triggerShake,
     triggerPop,
-    animateRemoval,
     playElementLoadAnimation 
   } = useGameAnimations();
 
@@ -88,10 +87,22 @@ const LLMAlchemyRefactored = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [unlockAnimationStartTime, setUnlockAnimationStartTime] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [hoveredElement, setHoveredElement] = useState<number | null>(null);
-  const [isMixing] = useState<boolean>(false);
-  const [touchDragging, setTouchDragging] = useState<MixingElement | null>(null);
-  const [touchOffset, setTouchOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  // Use centralized UI interaction state
+  const {
+    hoveredElement,
+    isMixing,
+    touchDragging,
+    touchOffset,
+    dimmedElements,
+    isUndoing,
+    setHoveredElement,
+    setIsMixing,
+    setTouchDragging,
+    setTouchOffset,
+    setDimmedElements,
+    clearDimmedElements,
+    setIsUndoing,
+  } = useElementInteractionState();
   const [listHeight, setListHeight] = useState<number>(192);
   const [isDraggingDivider, setIsDraggingDivider] = useState<boolean>(false);
   const [touchStartTime, setTouchStartTime] = useState<number | null>(null);
@@ -104,8 +115,6 @@ const LLMAlchemyRefactored = () => {
   const [reasoningPopup, setReasoningPopup] = useState<ReasoningPopup | null>(null);
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
-  const [dimmedElements, setDimmedElements] = useState<Set<string>>(new Set());
-  const [isUndoing, setIsUndoing] = useState<boolean>(false);
   
   
   // Refs
@@ -113,7 +122,7 @@ const LLMAlchemyRefactored = () => {
   const dropZoneRef = useRef<HTMLDivElement | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const floatingEmojiId = useRef<number>(0);
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load API key from localStorage on mount
   useEffect(() => {
@@ -189,7 +198,7 @@ const LLMAlchemyRefactored = () => {
     };
 
     loadSavedStateEffect();
-  }, [user, gameMode, loadSavedState, setStateRestored]);
+  }, [user, gameMode, loadSavedState, setStateRestored, playElementLoadAnimation]);
 
   // Auto-save game state when state changes
   useEffect(() => {
@@ -225,174 +234,22 @@ const LLMAlchemyRefactored = () => {
     audioContext.current = new (window.AudioContext || (window as WindowWithWebkit).webkitAudioContext!)();
   }, []);
 
-  // Mode switching logic - reset to base elements when switching modes
-  useEffect(() => {
-    const isCurrentlyCreative = gameMode === 'creative';
-    const isCurrentlyScience = gameMode === 'science';
-    
-    // Only reset if we're actually switching modes (not on initial load with saved state)
-    const isModeSwitching = (isCurrentlyCreative && elements.find(e => e.name === 'Energy')) ||
-                           (isCurrentlyScience && elements.find(e => e.name === 'Life'));
-    
-    if (isModeSwitching) {
-      resetGameState(gameMode);
-      // Clear UI state
-      setFloatingEmojis([]);
-      setShowUnlock(null);
-      setReasoningPopup(null);
-      // Clear animations handled by useGameAnimations hook
-    }
-  }, [gameMode, elements, resetGameState]);
-
-  // Global touch handlers
-  useEffect(() => {
-    const handleGlobalTouchMove = (e: TouchEvent) => {
-      handleTouchMove(e);
-      handleDividerTouchMove(e);
-    };
-    
-    const handleGlobalTouchEnd = (e: TouchEvent) => {
-      handleTouchEnd(e);
-      handleDividerTouchEnd();
-    };
-    
-    if (touchDragging || isDraggingDivider) {
-      document.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
-      document.addEventListener('touchend', handleGlobalTouchEnd);
-      
-      return () => {
-        document.removeEventListener('touchmove', handleGlobalTouchMove);
-        document.removeEventListener('touchend', handleGlobalTouchEnd);
-      };
-    }
-  }, [touchDragging, isDraggingDivider, mixingArea]);
-
-  // Cleanup effects
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Divider dragging
-  useEffect(() => {
-    if (isDraggingDivider) {
-      const handleDividerDrag = (e: MouseEvent) => {
-        const deltaY = e.clientY - dragStartY;
-        const newHeight = dragStartHeight + deltaY;
-        setListHeight(Math.max(100, Math.min(400, newHeight)));
-      };
-
-      const handleDividerMouseUp = () => {
-        setIsDraggingDivider(false);
-      };
-
-      document.addEventListener('mousemove', handleDividerDrag);
-      document.addEventListener('mouseup', handleDividerMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleDividerDrag);
-        document.removeEventListener('mouseup', handleDividerMouseUp);
-      };
-    }
-  }, [isDraggingDivider, dragStartY, dragStartHeight]);
-
-  // Floating emoji management
-  useEffect(() => {
-    if (elements.length < 5) return;
-
-    const createFloatingEmoji = () => {
-      const randomElement = elements[Math.floor(Math.random() * elements.length)];
-      return {
-        id: floatingEmojiId.current++,
-        emoji: randomElement.emoji,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        directionX: (Math.random() - 0.5) * 2,
-        directionY: (Math.random() - 0.5) * 2,
-        speed: 0.3 + Math.random() * 0.4,
-        opacity: 0,
-        maxOpacity: 0.005 + Math.random() * 0.005,
-        lifespan: 8000 + Math.random() * 6000,
-        age: 0
-      };
-    };
-
-    if (floatingEmojis.length === 0) {
-      const initialCount = 1 + Math.floor(Math.random() * 3);
-      setFloatingEmojis(Array.from({ length: initialCount }, createFloatingEmoji));
-    }
-
-    const animationLoop = setInterval(() => {
-      setFloatingEmojis(prevEmojis => {
-        let newEmojis = prevEmojis.map(emoji => {
-          const newAge = emoji.age + 100;
-          const lifeProgress = newAge / emoji.lifespan;
-          
-          let newOpacity;
-          if (lifeProgress < 0.2) {
-            newOpacity = (lifeProgress / 0.2) * emoji.maxOpacity;
-          } else if (lifeProgress < 0.8) {
-            newOpacity = emoji.maxOpacity;
-          } else {
-            newOpacity = emoji.maxOpacity * ((1 - lifeProgress) / 0.2);
-          }
-
-          return {
-            ...emoji,
-            x: emoji.x + emoji.directionX * emoji.speed,
-            y: emoji.y + emoji.directionY * emoji.speed,
-            opacity: Math.max(0, newOpacity),
-            age: newAge
-          };
-        });
-
-        newEmojis = newEmojis.filter(emoji => emoji.age < emoji.lifespan);
-        
-        while (newEmojis.length < 1 || (newEmojis.length < 3 && Math.random() < 0.3)) {
-          newEmojis.push(createFloatingEmoji());
-        }
-
-        return newEmojis;
-      });
-    }, 100);
-
-    return () => clearInterval(animationLoop);
-  }, [elements.length]);
-
-  // Handle reasoning popup dismissal
-  useEffect(() => {
-    const handleGlobalClick = (e: MouseEvent) => {
-      if (reasoningPopup && !reasoningPopup.fromHover) {
-        const popup = document.querySelector('.reasoning-popup');
-        if (!popup || !popup.contains(e.target as Node)) {
-          hideReasoningPopup();
-        }
-      }
-    };
-
-    const handleEscapeKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && reasoningPopup) {
-        hideReasoningPopup();
-      }
-    };
-
-    if (reasoningPopup) {
-      document.addEventListener('click', handleGlobalClick);
-      document.addEventListener('keydown', handleEscapeKey);
-      return () => {
-        document.removeEventListener('click', handleGlobalClick);
-        document.removeEventListener('keydown', handleEscapeKey);
-      };
-    }
-  }, [reasoningPopup]);
-
   // Helper functions using game logic
-
   const showToast = (message: string) => {
     setToast(message);
     setTimeout(() => setToast(''), 3000);
+  };
+
+  const showReasoningPopup = (element: Element, event: React.MouseEvent | React.TouchEvent) => {
+    if (!element.reasoning) return;
+    
+    const rect = event.currentTarget.getBoundingClientRect();
+    setReasoningPopup({
+      element,
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10,
+      fromHover: event.type === 'mouseenter'
+    });
   };
 
   // Initialize our custom hooks
@@ -422,93 +279,12 @@ const LLMAlchemyRefactored = () => {
       if (elementId) triggerPop(elementId);
     },
     onSetUnlockAnimationStartTime: setUnlockAnimationStartTime,
+    onSetIsMixing: setIsMixing,
     dropZoneRef
   });
 
-  const showReasoningPopup = (element: Element, event: React.MouseEvent | React.TouchEvent) => {
-    if (!element.reasoning) return;
-    
-    const rect = event.currentTarget.getBoundingClientRect();
-    setReasoningPopup({
-      element,
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10,
-      fromHover: event.type === 'mouseenter'
-    });
-  };
-
-  const hideReasoningPopup = () => {
-    setReasoningPopup(null);
-  };
-
-
-  const handleElementClick = (element: Element, event: React.MouseEvent) => {
-    if (element.reasoning) {
-      event.preventDefault();
-      event.stopPropagation();
-      showReasoningPopup(element, event);
-    }
-  };
-
-  const handleElementMouseEnter = (element: Element, event: React.MouseEvent) => {
-    // Simply show the reasoning popup - no 500ms delay needed here since child handles it
-    showReasoningPopup(element, event);
-  };
-
-  const handleElementMouseLeave = () => {
-    // Hide popup if it was from hover
-    if (reasoningPopup && reasoningPopup.fromHover) {
-      hideReasoningPopup();
-    }
-  };
-
-  const handleBackToHome = () => {
-    router.push('/');
-  };
-
-  const handleGameModeToggle = () => {
-    if (!isMixing) {
-      const newMode = gameMode === 'science' ? 'creative' : 'science';
-      playSound('click');
-      
-      setMixingArea([]);
-      
-      const url = new URL(window.location.href);
-      url.searchParams.set('mode', newMode);
-      window.history.replaceState({}, '', url);
-      
-      setGameMode(newMode);
-    }
-  };
-
-  // Optimized element sorting with search filtering
-  const sortedElements = useMemo(() => {
-    return GameLogic.sortElements(elements, sortMode as 'unlock' | 'alpha', searchTerm);
-  }, [elements, sortMode, searchTerm]);
-
-  const regularElementCount = elements.length;
-  const endElementCount = endElements.length;
-
-  // Touch handlers for dividers
-  const handleDividerTouchStart = (e: React.TouchEvent) => {
-    e.preventDefault();
-    setIsDraggingDivider(true);
-  };
-
-  const handleDividerTouchMove = (e: TouchEvent) => {
-    if (!isDraggingDivider) return;
-    
-    const touch = e.touches[0];
-    const newHeight = touch.clientY - 100;
-    setListHeight(Math.max(100, Math.min(400, newHeight)));
-  };
-
-  const handleDividerTouchEnd = () => {
-    setIsDraggingDivider(false);
-  };
-
   // Touch event handlers
-  const handleTouchMove = (e: TouchEvent) => {
+  const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!touchDragging) return;
     
     const touch = e.touches[0];
@@ -534,9 +310,10 @@ const LLMAlchemyRefactored = () => {
     }
     
     e.preventDefault();
-  };
+  }, [touchDragging, touchOffset, mixingArea]);
 
-  const handleTouchEnd = async (e: TouchEvent | React.TouchEvent<HTMLDivElement>) => {
+
+  const handleTouchEnd = useCallback(async (e: TouchEvent | React.TouchEvent<HTMLDivElement>) => {
     if (!touchDragging) return;
     
     const touch = e.changedTouches[0];
@@ -622,15 +399,241 @@ const LLMAlchemyRefactored = () => {
     setTouchStartTime(null);
     setTouchStartPos(null);
     setDimmedElements(new Set());
+  }, [touchDragging, touchStartTime, touchStartPos, mixingArea, mixElements, playSound, updateMixingElement, addToMixingArea, showReasoningPopup]);
+
+  const handleDividerTouchEnd = useCallback(() => {
+    setIsDraggingDivider(false);
+  }, []);
+
+  const handleDividerTouchMove = useCallback((e: TouchEvent) => {
+    if (!isDraggingDivider) return;
+    
+    const touch = e.touches[0];
+    const newHeight = touch.clientY - 100;
+    setListHeight(Math.max(100, Math.min(400, newHeight)));
+  }, [isDraggingDivider]);
+
+  // Mode switching logic - reset to base elements when switching modes
+  useEffect(() => {
+    const isCurrentlyCreative = gameMode === 'creative';
+    const isCurrentlyScience = gameMode === 'science';
+    
+    // Only reset if we're actually switching modes (not on initial load with saved state)
+    const isModeSwitching = (isCurrentlyCreative && elements.find(e => e.name === 'Energy')) ||
+                           (isCurrentlyScience && elements.find(e => e.name === 'Life'));
+    
+    if (isModeSwitching) {
+      resetGameState(gameMode);
+      // Clear UI state
+      setFloatingEmojis([]);
+      setShowUnlock(null);
+      setReasoningPopup(null);
+      // Clear animations handled by useGameAnimations hook
+    }
+  }, [gameMode, elements, resetGameState]);
+
+  // Global touch handlers
+  useEffect(() => {
+    const handleGlobalTouchMove = (e: TouchEvent) => {
+      handleTouchMove(e);
+      handleDividerTouchMove(e);
+    };
+    
+    const handleGlobalTouchEnd = (e: TouchEvent) => {
+      handleTouchEnd(e);
+      handleDividerTouchEnd();
+    };
+    
+    if (touchDragging || isDraggingDivider) {
+      document.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+      document.addEventListener('touchend', handleGlobalTouchEnd);
+      
+      return () => {
+        document.removeEventListener('touchmove', handleGlobalTouchMove);
+        document.removeEventListener('touchend', handleGlobalTouchEnd);
+      };
+    }
+  }, [touchDragging, isDraggingDivider, handleTouchMove, handleDividerTouchMove, handleTouchEnd, handleDividerTouchEnd]);
+
+  // Cleanup effects
+  useEffect(() => {
+    const timeoutRef = hoverTimeoutRef.current;
+    return () => {
+      if (timeoutRef) {
+        clearTimeout(timeoutRef);
+      }
+    };
+  }, [elements, floatingEmojis.length]);
+
+
+  // Handle reasoning popup dismissal
+  useEffect(() => {
+    if (isDraggingDivider) {
+      const handleDividerDrag = (e: MouseEvent) => {
+        const deltaY = e.clientY - dragStartY;
+        const newHeight = dragStartHeight + deltaY;
+        setListHeight(Math.max(100, Math.min(400, newHeight)));
+      };
+
+      const handleDividerMouseUp = () => {
+        setIsDraggingDivider(false);
+      };
+
+      document.addEventListener('mousemove', handleDividerDrag);
+      document.addEventListener('mouseup', handleDividerMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleDividerDrag);
+        document.removeEventListener('mouseup', handleDividerMouseUp);
+      };
+    }
+  }, [isDraggingDivider, dragStartY, dragStartHeight]);
+
+  // Floating emoji management
+  useEffect(() => {
+    if (elements.length < 5) return;
+
+    const createFloatingEmoji = () => {
+      const randomElement = elements[Math.floor(Math.random() * elements.length)];
+      return {
+        id: floatingEmojiId.current++,
+        emoji: randomElement.emoji,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        directionX: (Math.random() - 0.5) * 2,
+        directionY: (Math.random() - 0.5) * 2,
+        speed: 0.3 + Math.random() * 0.4,
+        opacity: 0,
+        maxOpacity: 0.005 + Math.random() * 0.005,
+        lifespan: 8000 + Math.random() * 6000,
+        age: 0
+      };
+    };
+
+    if (floatingEmojis.length === 0) {
+      const initialCount = 1 + Math.floor(Math.random() * 3);
+      setFloatingEmojis(Array.from({ length: initialCount }, createFloatingEmoji));
+    }
+
+    const animationLoop = setInterval(() => {
+      setFloatingEmojis(prevEmojis => {
+        let newEmojis = prevEmojis.map(emoji => {
+          const newAge = emoji.age + 100;
+          const lifeProgress = newAge / emoji.lifespan;
+          
+          let newOpacity;
+          if (lifeProgress < 0.2) {
+            newOpacity = (lifeProgress / 0.2) * emoji.maxOpacity;
+          } else if (lifeProgress < 0.8) {
+            newOpacity = emoji.maxOpacity;
+          } else {
+            newOpacity = emoji.maxOpacity * ((1 - lifeProgress) / 0.2);
+          }
+
+          return {
+            ...emoji,
+            x: emoji.x + emoji.directionX * emoji.speed,
+            y: emoji.y + emoji.directionY * emoji.speed,
+            opacity: Math.max(0, newOpacity),
+            age: newAge
+          };
+        });
+
+        newEmojis = newEmojis.filter(emoji => emoji.age < emoji.lifespan);
+        
+        while (newEmojis.length < 1 || (newEmojis.length < 3 && Math.random() < 0.3)) {
+          newEmojis.push(createFloatingEmoji());
+        }
+
+        return newEmojis;
+      });
+    }, 100);
+
+    return () => clearInterval(animationLoop);
+  }, [elements, floatingEmojis.length]);
+
+  // Handle reasoning popup dismissal
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      if (reasoningPopup && !reasoningPopup.fromHover) {
+        const popup = document.querySelector('.reasoning-popup');
+        if (!popup || !popup.contains(e.target as Node)) {
+          hideReasoningPopup();
+        }
+      }
+    };
+
+    const handleEscapeKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && reasoningPopup) {
+        hideReasoningPopup();
+      }
+    };
+
+    if (reasoningPopup) {
+      document.addEventListener('click', handleGlobalClick);
+      document.addEventListener('keydown', handleEscapeKey);
+      return () => {
+        document.removeEventListener('click', handleGlobalClick);
+        document.removeEventListener('keydown', handleEscapeKey);
+      };
+    }
+  }, [reasoningPopup]);
+
+
+  const hideReasoningPopup = () => {
+    setReasoningPopup(null);
   };
 
-  // Clear mixing area with animation
-  const clearMixingAreaWithAnimation = () => {
-    if (!isMixing && mixingArea.length > 0) {
-      playSound('click');
-      animateRemoval(mixingArea, () => clearMixingArea());
+
+  const handleElementClick = (element: Element, event: React.MouseEvent) => {
+    if (element.reasoning) {
+      event.preventDefault();
+      event.stopPropagation();
+      showReasoningPopup(element, event);
     }
   };
+
+  const handleElementMouseEnter = (element: Element, event: React.MouseEvent) => {
+    // Simply show the reasoning popup - no 500ms delay needed here since child handles it
+    showReasoningPopup(element, event);
+  };
+
+  const handleElementMouseLeave = () => {
+    // Hide popup if it was from hover
+    if (reasoningPopup && reasoningPopup.fromHover) {
+      hideReasoningPopup();
+    }
+  };
+
+  const handleBackToHome = () => {
+    router.push('/');
+  };
+
+  const handleGameModeToggle = () => {
+    if (!isMixing) {
+      const newMode = gameMode === 'science' ? 'creative' : 'science';
+      playSound('click');
+      
+      setMixingArea([]);
+      
+      const url = new URL(window.location.href);
+      url.searchParams.set('mode', newMode);
+      window.history.replaceState({}, '', url);
+      
+      setGameMode(newMode);
+    }
+  };
+
+  const sortedElements = GameLogic.sortElements(elements, sortMode as 'unlock' | 'alpha', searchTerm);
+
+  const regularElementCount = elements.length;
+  const endElementCount = endElements.length;
+
+  // Touch handlers for dividers
+  const handleDividerTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    setIsDraggingDivider(true);
+  };
+
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col relative overflow-hidden select-none" style={{ touchAction: touchDragging || isDraggingDivider ? 'none' : 'auto' }}>
@@ -862,7 +865,7 @@ const LLMAlchemyRefactored = () => {
             onElementDragEnd={() => {
               setIsDragging(false);
               setHoveredElement(null);
-              setDimmedElements(new Set()); // Clear dimming
+              clearDimmedElements(); // Clear dimming
             }}
             onElementTouchStart={(e, element) => {
               const touch = e.touches[0];
@@ -919,9 +922,9 @@ const LLMAlchemyRefactored = () => {
           ref={dropZoneRef}
           className="flex-1 bg-gray-800/30 backdrop-blur-sm relative"
           style={{ minHeight: '200px', touchAction: 'none' }}
-          onDragOver={(e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'copy';
+          onDragOver={(_e) => {
+            _e.preventDefault();
+            _e.dataTransfer.dropEffect = 'copy';
           }}
           onDrop={async (e) => {
             e.preventDefault();
@@ -962,7 +965,7 @@ const LLMAlchemyRefactored = () => {
             draggedElement.current = null;
             setIsDragging(false);
             setHoveredElement(null);
-            setDimmedElements(new Set()); // Fix: Clear dimming on drop
+            clearDimmedElements(); // Fix: Clear dimming on drop
           }}
           onTouchEnd={handleTouchEnd}
         >
@@ -979,7 +982,7 @@ const LLMAlchemyRefactored = () => {
               key={`${element.id}-${element.index}`}
               id={`mixing-${element.id}-${element.index}`}
               draggable={!isTouchDevice && !isMixing}
-              onDragStart={(e) => {
+              onDragStart={() => {
                 draggedElement.current = {
                   ...element,
                   fromMixingArea: true,
@@ -1020,10 +1023,7 @@ const LLMAlchemyRefactored = () => {
               onMouseEnter={() => setHoveredElement(element.index)}
               onMouseLeave={() => setHoveredElement(null)}
               onContextMenu={(e) => e.preventDefault()}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setHoveredElement(element.index);
-              }}
+              onDragOver={() => setHoveredElement(element.index)}
               onDragEnter={() => setHoveredElement(element.index)}
               onDragLeave={() => setHoveredElement(null)}
               className={`absolute flex flex-col items-center justify-center rounded-lg cursor-move ${
