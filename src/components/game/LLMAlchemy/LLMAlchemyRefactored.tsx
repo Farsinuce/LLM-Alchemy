@@ -923,9 +923,13 @@ const LLMAlchemyRefactored = () => {
           ref={dropZoneRef}
           className="flex-1 bg-gray-800/30 backdrop-blur-sm relative"
           style={{ minHeight: '200px', touchAction: 'none' }}
-          onDragOver={(_e) => {
-            _e.preventDefault();
-            _e.dataTransfer.dropEffect = 'copy';
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (draggedElement.current?.fromMixingArea) {
+              e.dataTransfer.dropEffect = 'move';
+            } else {
+              e.dataTransfer.dropEffect = 'copy';
+            }
           }}
           onDrop={async (e) => {
             e.preventDefault();
@@ -983,12 +987,13 @@ const LLMAlchemyRefactored = () => {
               key={`${element.id}-${element.index}`}
               id={`mixing-${element.id}-${element.index}`}
               draggable={!isTouchDevice && !isMixing}
-              onDragStart={() => {
+              onDragStart={(e) => {
                 draggedElement.current = {
                   ...element,
                   fromMixingArea: true,
                   mixIndex: element.index
                 };
+                e.dataTransfer.effectAllowed = 'move';
                 setIsDragging(true);
                 playSound('press');
               }}
@@ -1021,11 +1026,18 @@ const LLMAlchemyRefactored = () => {
                   }
                 }, 100);
               }}
-              onMouseEnter={() => setHoveredElement(element.index)}
+              onMouseEnter={() => {
+                if (isDragging) setHoveredElement(element.index);
+              }}
               onMouseLeave={() => setHoveredElement(null)}
               onContextMenu={(e) => e.preventDefault()}
-              onDragOver={() => setHoveredElement(element.index)}
-              onDragEnter={() => setHoveredElement(element.index)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (isDragging) setHoveredElement(element.index);
+              }}
+              onDragEnter={() => {
+                if (isDragging) setHoveredElement(element.index);
+              }}
               onDragLeave={() => setHoveredElement(null)}
               className={`absolute flex flex-col items-center justify-center rounded-lg cursor-move ${
                 element.energized ? 'animate-shake' : ''
