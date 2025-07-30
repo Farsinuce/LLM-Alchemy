@@ -343,6 +343,7 @@ const LLMAlchemyRefactored = () => {
       setTouchOffset({ x: 0, y: 0 });
       setTouchStartTime(null);
       setTouchStartPos(null);
+      setDimmedElements(new Set()); // Fix: Clear dimming for quick taps
       
       setTimeout(() => {
         showReasoningPopup(touchDragging, syntheticEvent as React.TouchEvent);
