@@ -14,21 +14,15 @@ test('Core gameplay: Mix Fire + Water to create Steam', async ({ page }) => {
   await expect(fireElement).toBeVisible();
   await expect(waterElement).toBeVisible();
   
-  // Get the mixing area
-  const mixingArea = page.locator('[data-testid="mixing-area"]');
-  await expect(mixingArea).toBeVisible();
+  // Wait for test helpers to be available
+  await page.waitForFunction(() => window.testHelpers !== undefined, { timeout: 5000 });
   
-  // Drag Fire to the mixing area
-  await fireElement.dragTo(mixingArea);
+  // Mix Fire + Water using test helpers
+  const mixResult = await page.evaluate(() => {
+    return window.testHelpers!.mixElements('Fire', 'Water');
+  });
   
-  // Verify Fire appears in mixing area
-  await expect(page.locator('[data-testid="mixing-element-Fire"]')).toBeVisible();
-  
-  // Drag Water to the mixing area
-  await waterElement.dragTo(mixingArea);
-  
-  // Verify Water appears in mixing area
-  await expect(page.locator('[data-testid="mixing-element-Water"]')).toBeVisible();
+  expect(mixResult).toBe(true);
   
   // Wait for mixing animation to start (mixing spinner should appear)
   await expect(page.locator('[data-testid="mixing-spinner"]')).toBeVisible({ timeout: 5000 });

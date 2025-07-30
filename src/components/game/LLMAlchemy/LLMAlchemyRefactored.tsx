@@ -53,6 +53,18 @@ interface WindowWithWebkit extends Window {
   webkitAudioContext?: typeof AudioContext;
 }
 
+// Type for test helpers
+declare global {
+  interface Window {
+    testHelpers?: {
+      mixElements: (element1Name: string, element2Name: string) => Promise<boolean>;
+      isMixing: () => boolean;
+      getElements: () => Element[];
+      hasElement: (elementName: string) => boolean;
+    };
+  }
+}
+
 const LLMAlchemyRefactored = () => {
   const { user, dbUser, dailyCount, tokenBalance, refreshTokenBalance } = useSupabase();
   const router = useRouter();
@@ -256,7 +268,7 @@ const LLMAlchemyRefactored = () => {
   };
 
   // Initialize our custom hooks
-  const { mixElements } = useElementMixing({
+  const { mixElements, performMix } = useElementMixing({
     userApiKey,
     selectedModel,
     onShowToast: showToast,
@@ -285,6 +297,37 @@ const LLMAlchemyRefactored = () => {
     onSetIsMixing: setIsMixing,
     dropZoneRef
   });
+  
+  // Expose test helpers for E2E testing (non-production only)
+  React.useEffect(() => {
+    if (process.env.NODE_ENV !== 'production') {
+      const testHelpers = {
+        mixElements: async (element1Name: string, element2Name: string) => {
+          const elem1 = elements.find(e => e.name === element1Name);
+          const elem2 = elements.find(e => e.name === element2Name);
+          
+          if (!elem1 || !elem2) {
+            console.error(`[TEST] Elements not found: ${element1Name}, ${element2Name}`);
+            return false;
+          }
+          
+          // Call performMix directly with the elements
+          await performMix([elem1, elem2], false);
+          return true;
+        },
+        
+        isMixing: () => isMixing,
+        
+        getElements: () => elements,
+        
+        hasElement: (elementName: string) => {
+          return elements.some(e => e.name === elementName) || endElements.some(e => e.name === elementName);
+        }
+      };
+      
+      window.testHelpers = testHelpers;
+    }
+  }, [elements, endElements, performMix, isMixing]);
 
   // Touch event handlers with performance throttling
   const handleTouchMove = useCallback((e: TouchEvent) => {
