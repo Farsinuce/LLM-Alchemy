@@ -8,6 +8,8 @@ import { useDelayedHover } from '../hooks/useDelayedHover';
 
 interface ElementListViewProps {
   elements: Element[];
+  energyElement?: Element;
+  gameMode: 'science' | 'creative';
   searchTerm: string;
   sortMode: string;
   shakeElement: string | null;
@@ -27,6 +29,8 @@ interface ElementListViewProps {
 
 export const ElementListView: React.FC<ElementListViewProps> = ({
   elements,
+  energyElement,
+  gameMode,
   searchTerm,
   sortMode,
   shakeElement,
@@ -68,53 +72,66 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
     }
   }, [elements, searchTerm, sortMode]);
 
+  const renderElement = (element: Element) => (
+    <div
+      key={element.id}
+      data-testid={`element-${element.name}`}
+      draggable={!isTouchDevice()}
+      onDragStart={(e) => onElementDragStart(e, element)}
+      onTouchStart={(e) => onElementTouchStart(e, element)}
+      onMouseEnter={(e) => handleMouseEnter(element, e)}
+      onMouseLeave={handleElementMouseLeave}
+      onClick={(e) => onElementClick(element, e)}
+      onContextMenu={(e) => e.preventDefault()}
+      className={`
+        ${getElementSizeClasses()} flex flex-col items-center justify-center rounded-lg cursor-move 
+        hover:scale-110 transition-transform select-none
+        ${popElement === element.id ? 'animate-element-pop-in' : ''}
+        ${shakeElement === element.id ? 'animate-element-shake' : ''}
+        ${isPlayingLoadAnimation && animatedElements.has(element.id) ? 'animate-element-load-delayed' : ''}
+        ${dimmedElements.has(element.name) ? 'element-dimmed' : ''}
+      `}
+      style={{ 
+        backgroundColor: element.color,
+        color: getContrastColor(element.color),
+        boxShadow: !isDragging && hoveredElement === element.id ? `0 0 0 2px ${getRarityHoverColor(element.rarity)}` : '',
+        touchAction: 'none',
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        animationDelay: isPlayingLoadAnimation && animatedElements.has(element.id) 
+          ? `${(element.unlockOrder || 0) * 25}ms` 
+          : undefined
+      }}
+    >
+      <OpenMojiDisplay 
+        emoji={element.emoji} 
+        hexcode={element.openmojiHex}
+        name={element.name} 
+        size="md" 
+      />
+      <div className="text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight">
+        {element.name}
+      </div>
+    </div>
+  );
+
   return (
     <div data-testid="element-list" className="flex-1 overflow-y-auto p-4 scrollbar-mobile">
-      {/* Use flex-wrap layout for natural responsiveness */}
-      <div className="flex flex-wrap gap-2">
-        {sortedElements.map((element) => (
-          <div
-            key={element.id}
-            data-testid={`element-${element.name}`}
-            draggable={!isTouchDevice()}
-            onDragStart={(e) => onElementDragStart(e, element)}
-            onTouchStart={(e) => onElementTouchStart(e, element)}
-            onMouseEnter={(e) => handleMouseEnter(element, e)}
-            onMouseLeave={handleElementMouseLeave}
-            onClick={(e) => onElementClick(element, e)}
-            onContextMenu={(e) => e.preventDefault()}
-            className={`
-              ${getElementSizeClasses()} flex flex-col items-center justify-center rounded-lg cursor-move 
-              hover:scale-110 transition-transform select-none
-              ${popElement === element.id ? 'animate-element-pop-in' : ''}
-              ${shakeElement === element.id ? 'animate-element-shake' : ''}
-              ${isPlayingLoadAnimation && animatedElements.has(element.id) ? 'animate-element-load-delayed' : ''}
-              ${dimmedElements.has(element.name) ? 'element-dimmed' : ''}
-            `}
-            style={{ 
-              backgroundColor: element.color,
-              color: getContrastColor(element.color),
-              boxShadow: !isDragging && hoveredElement === element.id ? `0 0 0 2px ${getRarityHoverColor(element.rarity)}` : '',
-              touchAction: 'none',
-              WebkitTouchCallout: 'none',
-              WebkitUserSelect: 'none',
-              animationDelay: isPlayingLoadAnimation && animatedElements.has(element.id) 
-                ? `${(element.unlockOrder || 0) * 25}ms` 
-                : undefined
-            }}
-          >
-            
-            <OpenMojiDisplay 
-              emoji={element.emoji} 
-              hexcode={element.openmojiHex}
-              name={element.name} 
-              size="md" 
-            />
-            <div className="text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight">
-              {element.name}
-            </div>
+      {/* Energy Element Section (Science Mode Only) */}
+      {gameMode === 'science' && energyElement && (
+        <>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {renderElement(energyElement)}
           </div>
-        ))}
+          <div className="border-t border-gray-600 mb-3 pt-3">
+            <div className="text-xs text-gray-400 mb-2 font-medium">Elements</div>
+          </div>
+        </>
+      )}
+      
+      {/* Regular Elements */}
+      <div className="flex flex-wrap gap-2">
+        {sortedElements.map((element) => renderElement(element))}
       </div>
 
       {sortedElements.length === 0 && searchTerm && (

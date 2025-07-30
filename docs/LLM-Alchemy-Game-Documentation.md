@@ -11,8 +11,8 @@ The project is built on a robust, production-ready tech stack designed for scala
 
 *   **🚀 LIVE GAME**: https://llm-alchemy-beta2.vercel.app
 *   **📂 REPOSITORY**: https://github.com/Farsinuce/LLM-Alchemy
-*   **⚡ STATUS**: **Phase 2 Refactoring Complete** - Modular architecture ready for upcoming visual redesign.
-*   **⚠️ BUILD FAILING**: A critical TypeScript error is currently blocking Vercel deployments.
+*   **⚡ STATUS**: **Phase 2 Refactoring Complete** - The modular architecture is stable and ready for the upcoming visual redesign.
+*   **✅ BUILD PASSING**: Vercel deployments are now stable.
 
 ## 2. Core Gameplay
 
@@ -33,7 +33,7 @@ All discoveries are automatically saved to the player's account, persisting acro
 - **LLM Provider**: OpenRouter (currently using Google's Gemini Flash & Pro models)
 - **Visuals**: OpenMoji for a consistent, high-quality emoji style
 - **Hosting**: Vercel (with CI/CD from GitHub)
-- **Payments**: Stripe (integration in progress)
+- **Payments**: Stripe (fully integrated for tokens & subscriptions)
 - **Testing**: ✨ **NEW** Vitest with @vitest/ui for interactive testing
 
 ### Modular Game Architecture ✨ **NEW**
@@ -87,10 +87,10 @@ To ensure a consistent and charming visual style, all emojis in the game are ren
 - **UI Integration**: A `ChallengeBar` component displays active challenges to the player.
 
 ### User & Monetization System
-- **Anonymous Play**: New players can start immediately without an account. Progress is saved locally, and a secure anonymous user is created in the backend.
-- **Registered Users**: Players can register to sync their progress across devices and access premium features.
-- **Daily Limits**: Anonymous and free users have a daily limit on free combinations.
-- **Monetization (Stripe)**: A system for purchasing token packs and monthly subscriptions is implemented.
+- **Anonymous Play**: New players can start immediately. Progress is saved locally via a secure anonymous user account in the backend, protected by Cloudflare Turnstile.
+- **Seamless Account Upgrades**: Anonymous users can register at any time to a full account, seamlessly migrating their progress.
+- **Registered Users**: Full accounts sync progress across devices and can access premium features.
+- **Monetization (Stripe)**: A complete payment system is integrated for purchasing token packs and monthly subscriptions.
     *   **Subscription**: €5.99/month for unlimited combinations.
     *   **Token Packs**: Starting from €0.40 for 100 tokens.
 
@@ -119,7 +119,7 @@ The codebase is organized following Next.js best practices with enhanced modular
 | **`src/components/game/LLMAlchemy/contexts/GameStateProvider.tsx`** ✨ | **NEW**: React Context provider managing all game state with useReducer pattern. |
 | **`src/components/game/LLMAlchemy/hooks/`** ✨ | **NEW**: Custom hooks for game logic, mixing, interactions, audio, animations. |
 | **`src/components/game/LLMAlchemy/components/`** ✨ | **NEW**: Extracted UI components (GameHeader, ElementListView, MixingAreaView, Modals). |
-| **`src/components/game/LLMAlchemy/LLMAlchemyRefactored.tsx`** ✨ | **NEW**: Main game component using the new modular architecture. **(CURRENTLY HAS BUILD ERROR)** |
+| **`src/components/game/LLMAlchemy/LLMAlchemyRefactored.tsx`** ✨ | **NEW**: Main game component using the new modular architecture. |
 | `src/lib/` | Core application logic, including Supabase helpers, LLM prompt builders, and the OpenMoji service. |
 | **`src/lib/game-logic.ts`** ✨ | **NEW**: Pure functions for game logic (collision detection, sorting, validation). |
 | `src/types/` | Centralized TypeScript type definitions. |

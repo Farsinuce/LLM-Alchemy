@@ -670,7 +670,9 @@ const LLMAlchemyRefactored = () => {
     });
   };
 
-  const sortedElements = GameLogic.sortElements(elements, sortMode as 'unlock' | 'alpha', searchTerm);
+  // Separate Energy element for Science mode
+  const energyElement = gameMode === 'science' ? elements.find(e => e.name === 'Energy') : undefined;
+  const sortedElements = GameLogic.sortElements(elements.filter(e => e.name !== 'Energy'), sortMode as 'unlock' | 'alpha', searchTerm);
 
   const regularElementCount = elements.length;
   const endElementCount = endElements.length;
@@ -860,6 +862,8 @@ const LLMAlchemyRefactored = () => {
         >
           <ElementListView
             elements={sortedElements}
+            energyElement={energyElement}
+            gameMode={gameMode}
             searchTerm={searchTerm}
             sortMode={sortMode}
             shakeElement={shakeElement}

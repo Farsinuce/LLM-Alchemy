@@ -83,7 +83,7 @@ Note: The game deploys on Vercel. We don't do npm run build.
 | **src/components/auth/SupabaseProvider.tsx** | React context supplying `user`, `dbUser`, `dailyCount` + helpers. |
 | **src/components/game/LLMAlchemy.tsx** | **(LEGACY)** Original monolithic game component - deprecated. |
 | **src/components/game/LLMAlchemy/LLMAlchemyWrapper.tsx** | ✨ **Main entry point** for refactored game - wraps components in GameStateProvider. |
-| **src/components/game/LLMAlchemy/LLMAlchemyRefactored.tsx** | ✨ **NEW** Modular game component using React Context state management. |
+| **src/components/game/LLMAlchemy/LLMAlchemyRefactored.tsx** | ✨ **NEW** Main game component using the new modular architecture. |
 | **src/components/game/LLMAlchemy/contexts/GameStateProvider.tsx** | ✨ React Context provider managing all game state with useReducer pattern. |
 | **src/components/game/LLMAlchemy/hooks/useGameState.ts** | ✨ Core reducer and state management logic extracted from main component. |
 | **src/components/game/LLMAlchemy/hooks/useElementMixing.ts** | ✨ Element combining logic and LLM API interactions. |
@@ -157,7 +157,7 @@ Tokens & subscriptions move through `/api/stripe/*` → Stripe → webhook → S
 - ✅ **Pure Logic**: Game logic extracted to testable pure functions
 - ✅ **Testing Infrastructure**: Vitest setup with 12 passing tests for core game mechanics
 - ✅ **TypeScript**: Clean interfaces and proper typing throughout
-- ⚠️ **Vercel Build Failing**: A critical TypeScript error is currently blocking Vercel deployments. See `ui-restoration-plan.md` for details.
+- ✅ **Vercel Build Passing**: The build is now stable and deployments are succeeding.
 
 **Benefits**:
 - **Maintainability**: Small, focused components instead of 2000+ line monolith
