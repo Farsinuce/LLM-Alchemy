@@ -1,90 +1,3 @@
-===== START: C:\ai\LLM-Alchemy\src\consolidate-files.bat ===== 
-@echo off
-setlocal enabledelayedexpansion
-
-:: Prompt user for search pattern
-echo File Consolidator - Combines multiple files into one text file
-echo.
-set /p "pattern=Enter file pattern (e.g., *.txt, *.java, main.*, *.*): "
-
-:: Ask whether to exclude media files (only for wildcard patterns)
-set "excludeMedia=false"
-echo.
-if "%pattern%"=="*.*" (
-    set /p "choice=Do you want to exclude common media files (jpg, png, mp3, etc)? [Y/N]: "
-    if /I "!choice!"=="Y" set "excludeMedia=true"
-) else (
-    :: Check if pattern ends with .* (but not *.*)
-    set "checkPattern=%pattern%"
-    if "!checkPattern:~-2!"==".*" (
-        set /p "choice=Do you want to exclude common media files? [Y/N]: "
-        if /I "!choice!"=="Y" set "excludeMedia=true"
-    )
-)
-
-:: Define media extensions to exclude
-set "mediaExt=.png .jpg .jpeg .gif .ico .bmp .tiff .tif .svg .webp"
-set "mediaExt=!mediaExt! .mp4 .mp3 .wav .avi .mkv .mov .flac .ogg .m4a .wma"
-set "mediaExt=!mediaExt! .zip .rar .7z .tar .gz .exe .dll .bin .iso"
-set "mediaExt=!mediaExt! .pdf .doc .docx .xls .xlsx .ppt .pptx"
-
-:: Output filename
-set "outputFile=combined_output.txt"
-
-:: Remove existing output file
-if exist "%outputFile%" del "%outputFile%"
-
-:: Count files
-set "fileCount=0"
-set "skippedCount=0"
-
-echo.
-echo Processing files matching pattern: %pattern%
-echo.
-
-:: Process matching files
-for /R %%F in (%pattern%) do (
-    set "ext=%%~xF"
-    set "includeFile=true"
-    
-    :: Skip if it's the output file itself
-    if /I "%%~nxF"=="%outputFile%" set "includeFile=false"
-    
-    :: Check if we should exclude this file type
-    if /I "!excludeMedia!"=="true" if "!includeFile!"=="true" (
-        for %%M in (%mediaExt%) do (
-            if /I "%%~xF"=="%%M" (
-                set "includeFile=false"
-                set /a skippedCount+=1
-            )
-        )
-    )
-    
-    :: Add file to output
-    if "!includeFile!"=="true" (
-        echo Processing: %%~nxF
-        echo ===== START: %%F ===== >> "%outputFile%"
-        type "%%F" >> "%outputFile%" 2>nul
-        echo. >> "%outputFile%"
-        echo ===== END: %%F ===== >> "%outputFile%"
-        echo. >> "%outputFile%"
-        echo. >> "%outputFile%"
-        set /a fileCount+=1
-    )
-)
-
-:: Summary
-echo.
-echo ========================================
-echo Done! Results saved to: %outputFile%
-echo Files processed: !fileCount!
-if !skippedCount! GTR 0 echo Files skipped (media/binary): !skippedCount!
-echo ========================================
-echo.
-pause 
-===== END: C:\ai\LLM-Alchemy\src\consolidate-files.bat ===== 
- 
- 
 ===== START: C:\ai\LLM-Alchemy\src\app\globals.css ===== 
 @import "tailwindcss";
 @import "../styles/animations.css";
@@ -4686,7 +4599,9 @@ const LLMAlchemyRefactored = () => {
     animatedElements,
     triggerShake,
     triggerPop,
-    playElementLoadAnimation 
+    animateRemoval,
+    playElementLoadAnimation,
+    isElementRemoving
   } = useGameAnimations();
 
   // UI-only state (ephemeral - doesn't need to be in global state)
@@ -4695,17 +4610,18 @@ const LLMAlchemyRefactored = () => {
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [unlockAnimationStartTime, setUnlockAnimationStartTime] = useState<number | null>(null);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
   // Use centralized UI interaction state
   const {
     hoveredElement,
     isMixing,
+    isDragging,
     touchDragging,
     touchOffset,
     dimmedElements,
     isUndoing,
     setHoveredElement,
     setIsMixing,
+    setIsDragging,
     setTouchDragging,
     setTouchOffset,
     setDimmedElements,
@@ -5233,6 +5149,13 @@ const LLMAlchemyRefactored = () => {
     }
   };
 
+  const handleClear = () => {
+    playSound('click');
+    animateRemoval(mixingArea, () => {
+      setMixingArea([]);
+    });
+  };
+
   const sortedElements = GameLogic.sortElements(elements, sortMode as 'unlock' | 'alpha', searchTerm);
 
   const regularElementCount = elements.length;
@@ -5591,6 +5514,18 @@ const LLMAlchemyRefactored = () => {
             </div>
           )}
           
+          {/* Clear Button */}
+          {mixingArea.length > 0 && (
+            <button
+              onClick={handleClear}
+              disabled={isMixing}
+              className="absolute top-2 right-2 px-3 py-1 bg-red-600 hover:bg-red-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded text-white text-sm font-medium transition-colors z-10"
+              title="Clear mixing area"
+            >
+              Clear
+            </button>
+          )}
+          
           {mixingArea.map((element) => (
             <div
               key={`${element.id}-${element.index}`}
@@ -5665,6 +5600,8 @@ const LLMAlchemyRefactored = () => {
                 touchDragging?.mixIndex === element.index && touchDragging?.fromMixingArea ? 'opacity-30' : ''
               } ${
                 dimmedElements.has(element.name) ? 'element-dimmed' : ''
+              } ${
+                isElementRemoving(element.id, element.index) ? 'animate-pulse opacity-0' : ''
               }`}
               style={{ 
                 left: element.x, 
@@ -5869,10 +5806,11 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
 ===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\ElementListView.tsx ===== 
 'use client';
 
-import React, { useRef } from 'react';
+import React from 'react';
 import { Element } from '@/types/game.types';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 import { getContrastColor, getRarityHoverColor, getElementSizeClasses, isTouchDevice } from '@/lib/ui-utils';
+import { useDelayedHover } from '../hooks/useDelayedHover';
 
 interface ElementListViewProps {
   elements: Element[];
@@ -5910,53 +5848,17 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
   onElementMouseEnter,
   onElementMouseLeave
 }) => {
-  const isTouch = isTouchDevice();
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Use the unified delayed hover hook
+  const { handleMouseEnter, handleMouseLeave } = useDelayedHover({
+    onHover: onElementMouseEnter,
+    delay: 500
+  });
 
-  // Handle mouse enter with 500ms delay for reasoning popup
-  const handleElementMouseEnter = (element: Element, event: React.MouseEvent) => {
-    // Show popup on hover for desktop with 500ms delay
-    if (!isTouch && element.reasoning) {
-      // Clear any existing timeout
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-      // Capture the bounding rect immediately
-      const rect = event.currentTarget.getBoundingClientRect();
-      // Set 500ms delay
-      hoverTimeoutRef.current = setTimeout(() => {
-        // Create a synthetic event with the captured rect
-        const syntheticEvent = {
-          ...event,
-          currentTarget: {
-            getBoundingClientRect: () => rect
-          },
-          type: 'mouseenter'
-        };
-        onElementMouseEnter(element, syntheticEvent as React.MouseEvent);
-      }, 500);
-    }
-  };
-
-  // Handle mouse leave - clear timeout and call parent handler
+  // Combined mouse leave handler that calls both the unified hook and parent handler
   const handleElementMouseLeave = () => {
-    // Clear timeout if leaving before 500ms
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-    // Call parent handler
-    onElementMouseLeave();
+    handleMouseLeave(); // Clear timeout from unified hook
+    onElementMouseLeave(); // Call parent handler
   };
-
-  // Cleanup timeout on unmount
-  React.useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // Sort elements based on sortMode
   const sortedElements = React.useMemo(() => {
@@ -5979,10 +5881,10 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
         {sortedElements.map((element) => (
           <div
             key={element.id}
-            draggable={!isTouch}
+            draggable={!isTouchDevice()}
             onDragStart={(e) => onElementDragStart(e, element)}
             onTouchStart={(e) => onElementTouchStart(e, element)}
-            onMouseEnter={(e) => handleElementMouseEnter(element, e)}
+            onMouseEnter={(e) => handleMouseEnter(element, e)}
             onMouseLeave={handleElementMouseLeave}
             onClick={(e) => onElementClick(element, e)}
             onContextMenu={(e) => e.preventDefault()}
@@ -6637,6 +6539,7 @@ interface GameStateContextType {
     clearAnimatingElements: () => void;
     setIsUndoing: (isUndoing: boolean) => void;
     setIsMixing: (isMixing: boolean) => void;
+    setIsDragging: (isDragging: boolean) => void;
     setHoveredElement: (elementIndex: number | null) => void;
     setTouchDragging: (element: MixingElement | null) => void;
     setTouchOffset: (offset: { x: number; y: number }) => void;
@@ -6769,6 +6672,7 @@ export function useElementInteractionState() {
     animatingElements: state.animatingElements,
     isUndoing: state.isUndoing,
     isMixing: state.isMixing,
+    isDragging: state.isDragging,
     hoveredElement: state.hoveredElement,
     touchDragging: state.touchDragging,
     touchOffset: state.touchOffset,
@@ -6782,6 +6686,7 @@ export function useElementInteractionState() {
     clearAnimatingElements: actions.clearAnimatingElements,
     setIsUndoing: actions.setIsUndoing,
     setIsMixing: actions.setIsMixing,
+    setIsDragging: actions.setIsDragging,
     setHoveredElement: actions.setHoveredElement,
     setTouchDragging: actions.setTouchDragging,
     setTouchOffset: actions.setTouchOffset,
@@ -6789,6 +6694,84 @@ export function useElementInteractionState() {
 }
  
 ===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\contexts\GameStateProvider.tsx ===== 
+ 
+ 
+===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useDelayedHover.ts ===== 
+import { useRef, useCallback, useEffect } from 'react';
+import { Element } from '@/types/game.types';
+import { isTouchDevice } from '@/lib/ui-utils';
+
+interface UseDelayedHoverProps {
+  onHover: (element: Element, event: React.MouseEvent) => void;
+  delay?: number;
+}
+
+interface UseDelayedHoverReturn {
+  handleMouseEnter: (element: Element, event: React.MouseEvent) => void;
+  handleMouseLeave: () => void;
+}
+
+/**
+ * Unified hook for handling delayed hover effects with reasoning popups
+ * Encapsulates the 500ms timer logic used by both ElementListView and MixingAreaView
+ */
+export function useDelayedHover({
+  onHover,
+  delay = 500
+}: UseDelayedHoverProps): UseDelayedHoverReturn {
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isTouch = isTouchDevice();
+
+  const handleMouseEnter = useCallback((element: Element, event: React.MouseEvent) => {
+    // Only show popup on hover for desktop with delay, and only if element has reasoning
+    if (!isTouch && element.reasoning) {
+      // Clear any existing timeout
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+
+      // Capture the bounding rect immediately
+      const rect = event.currentTarget.getBoundingClientRect();
+
+      // Set delay before showing popup
+      hoverTimeoutRef.current = setTimeout(() => {
+        // Create a synthetic event with the captured rect
+        const syntheticEvent = {
+          ...event,
+          currentTarget: {
+            getBoundingClientRect: () => rect
+          },
+          type: 'mouseenter'
+        };
+        onHover(element, syntheticEvent as React.MouseEvent);
+      }, delay);
+    }
+  }, [onHover, delay, isTouch]);
+
+  const handleMouseLeave = useCallback(() => {
+    // Clear timeout if leaving before delay completes
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  return {
+    handleMouseEnter,
+    handleMouseLeave
+  };
+}
+ 
+===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useDelayedHover.ts ===== 
  
  
 ===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\hooks\useElementInteraction.ts ===== 
@@ -7965,6 +7948,7 @@ const createInitialState = (gameMode: 'science' | 'creative' = 'science'): GameS
     animatingElements: new Set<string>(),
     isUndoing: false,
     isMixing: false,
+    isDragging: false,
     hoveredElement: null,
     touchDragging: null,
     touchOffset: { x: 0, y: 0 },
@@ -8335,6 +8319,7 @@ export interface GameState {
   animatingElements: Set<string>;
   isUndoing: boolean;
   isMixing: boolean;
+  isDragging: boolean;
   hoveredElement: number | null;
   touchDragging: MixingElement | null;
   touchOffset: { x: number; y: number };
@@ -8376,6 +8361,7 @@ export type GameAction =
   | { type: 'CLEAR_ANIMATING_ELEMENTS' }
   | { type: 'SET_IS_UNDOING'; payload: boolean }
   | { type: 'SET_IS_MIXING'; payload: boolean }
+  | { type: 'SET_IS_DRAGGING'; payload: boolean }
   | { type: 'SET_HOVERED_ELEMENT'; payload: number | null }
   | { type: 'SET_TOUCH_DRAGGING'; payload: MixingElement | null }
   | { type: 'SET_TOUCH_OFFSET'; payload: { x: number; y: number } }
@@ -8416,6 +8402,7 @@ const createInitialState = (gameMode: 'science' | 'creative' = 'science'): GameS
     animatingElements: new Set<string>(),
     isUndoing: false,
     isMixing: false,
+    isDragging: false,
     hoveredElement: null,
     touchDragging: null,
     touchOffset: { x: 0, y: 0 },
@@ -8548,6 +8535,9 @@ function gameStateReducer(state: GameState, action: GameAction): GameState {
 
     case 'SET_IS_MIXING':
       return { ...state, isMixing: action.payload };
+
+    case 'SET_IS_DRAGGING':
+      return { ...state, isDragging: action.payload };
 
     case 'SET_HOVERED_ELEMENT':
       return { ...state, hoveredElement: action.payload };
@@ -8692,6 +8682,10 @@ export function useGameState(initialGameMode: 'science' | 'creative' = 'science'
 
     setIsMixing: useCallback((isMixing: boolean) => {
       dispatch({ type: 'SET_IS_MIXING', payload: isMixing });
+    }, []),
+
+    setIsDragging: useCallback((isDragging: boolean) => {
+      dispatch({ type: 'SET_IS_DRAGGING', payload: isDragging });
     }, []),
 
     setHoveredElement: useCallback((elementIndex: number | null) => {

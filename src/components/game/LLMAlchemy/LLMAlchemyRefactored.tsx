@@ -77,7 +77,9 @@ const LLMAlchemyRefactored = () => {
     animatedElements,
     triggerShake,
     triggerPop,
-    playElementLoadAnimation 
+    animateRemoval,
+    playElementLoadAnimation,
+    isElementRemoving
   } = useGameAnimations();
 
   // UI-only state (ephemeral - doesn't need to be in global state)
@@ -284,33 +286,38 @@ const LLMAlchemyRefactored = () => {
     dropZoneRef
   });
 
-  // Touch event handlers
+  // Touch event handlers with performance throttling
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!touchDragging) return;
     
-    const touch = e.touches[0];
-    const draggedEl = document.getElementById('touch-drag-element');
-    if (draggedEl) {
-      draggedEl.style.left = `${touch.clientX - touchOffset.x}px`;
-      draggedEl.style.top = `${touch.clientY - touchOffset.y}px`;
-    }
-    
-    // Check if hovering over a mixing area element
-    const hoverTarget = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (hoverTarget) {
-      const mixingEl = mixingArea.find(el => {
-        const elNode = document.getElementById(`mixing-${el.id}-${el.index}`);
-        return elNode && (elNode === hoverTarget || elNode.contains(hoverTarget));
-      });
-      
-      if (mixingEl && mixingEl.index !== touchDragging.mixIndex) {
-        setHoveredElement(mixingEl.index);
-      } else {
-        setHoveredElement(null);
-      }
-    }
-    
     e.preventDefault();
+    
+    // Throttle position updates using requestAnimationFrame
+    requestAnimationFrame(() => {
+      if (!touchDragging) return; // Check again in case drag ended
+      
+      const touch = e.touches[0];
+      const draggedEl = document.getElementById('touch-drag-element');
+      if (draggedEl) {
+        draggedEl.style.left = `${touch.clientX - touchOffset.x}px`;
+        draggedEl.style.top = `${touch.clientY - touchOffset.y}px`;
+      }
+      
+      // Check if hovering over a mixing area element
+      const hoverTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (hoverTarget) {
+        const mixingEl = mixingArea.find(el => {
+          const elNode = document.getElementById(`mixing-${el.id}-${el.index}`);
+          return elNode && (elNode === hoverTarget || elNode.contains(hoverTarget));
+        });
+        
+        if (mixingEl && mixingEl.index !== touchDragging.mixIndex) {
+          setHoveredElement(mixingEl.index);
+        } else {
+          setHoveredElement(null);
+        }
+      }
+    });
   }, [touchDragging, touchOffset, mixingArea]);
 
 
@@ -434,7 +441,7 @@ const LLMAlchemyRefactored = () => {
     }
   }, [gameMode, elements, resetGameState]);
 
-  // Global touch handlers
+  // Global touch handlers and drag cleanup
   useEffect(() => {
     const handleGlobalTouchMove = (e: TouchEvent) => {
       handleTouchMove(e);
@@ -446,6 +453,25 @@ const LLMAlchemyRefactored = () => {
       handleDividerTouchEnd();
     };
     
+    // Global cleanup for cancelled drags
+    const handleGlobalMouseUp = () => {
+      if (isDragging) {
+        // Clean up drag state if mouse is released anywhere
+        draggedElement.current = null;
+        setIsDragging(false);
+        setHoveredElement(null);
+        clearDimmedElements();
+      }
+    };
+    
+    const handleGlobalDragEnd = () => {
+      // Ensure cleanup happens on any drag end
+      draggedElement.current = null;
+      setIsDragging(false);
+      setHoveredElement(null);
+      clearDimmedElements();
+    };
+    
     if (touchDragging || isDraggingDivider) {
       document.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
       document.addEventListener('touchend', handleGlobalTouchEnd);
@@ -455,7 +481,17 @@ const LLMAlchemyRefactored = () => {
         document.removeEventListener('touchend', handleGlobalTouchEnd);
       };
     }
-  }, [touchDragging, isDraggingDivider, handleTouchMove, handleDividerTouchMove, handleTouchEnd, handleDividerTouchEnd]);
+    
+    if (isDragging) {
+      document.addEventListener('mouseup', handleGlobalMouseUp);
+      document.addEventListener('dragend', handleGlobalDragEnd);
+      
+      return () => {
+        document.removeEventListener('mouseup', handleGlobalMouseUp);
+        document.removeEventListener('dragend', handleGlobalDragEnd);
+      };
+    }
+  }, [touchDragging, isDraggingDivider, isDragging, handleTouchMove, handleDividerTouchMove, handleTouchEnd, handleDividerTouchEnd]);
 
   // Cleanup effects
   useEffect(() => {
@@ -623,6 +659,13 @@ const LLMAlchemyRefactored = () => {
       
       setGameMode(newMode);
     }
+  };
+
+  const handleClear = () => {
+    playSound('click');
+    animateRemoval(mixingArea, () => {
+      setMixingArea([]);
+    });
   };
 
   const sortedElements = GameLogic.sortElements(elements, sortMode as 'unlock' | 'alpha', searchTerm);
@@ -983,6 +1026,18 @@ const LLMAlchemyRefactored = () => {
             </div>
           )}
           
+          {/* Clear Button */}
+          {mixingArea.length > 0 && (
+            <button
+              onClick={handleClear}
+              disabled={isMixing}
+              className="absolute top-2 right-2 px-3 py-1 bg-red-600 hover:bg-red-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded text-white text-sm font-medium transition-colors z-10"
+              title="Clear mixing area"
+            >
+              Clear
+            </button>
+          )}
+          
           {mixingArea.map((element) => (
             <div
               key={`${element.id}-${element.index}`}
@@ -1057,6 +1112,8 @@ const LLMAlchemyRefactored = () => {
                 touchDragging?.mixIndex === element.index && touchDragging?.fromMixingArea ? 'opacity-30' : ''
               } ${
                 dimmedElements.has(element.name) ? 'element-dimmed' : ''
+              } ${
+                isElementRemoving(element.id, element.index) ? 'animate-pulse opacity-0' : ''
               }`}
               style={{ 
                 left: element.x, 

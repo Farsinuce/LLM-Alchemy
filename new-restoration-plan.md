@@ -68,34 +68,24 @@
 
 *Goal: Optimize the experience to ensure it feels smooth, responsive, and professional.*
 
-### 1. Restore Mixing & Clearing Animations
-*   **Why:** The lack of animations makes the game feel clunky.
-*   **How:** Ensure the `isMixing` state from the provider correctly triggers the loading spinner overlay. The "Clear" button's `onClick` handler must call the `animateRemoval` function from `useGameAnimations`.
-*   **Code Example (in `LLMAlchemyRefactored.tsx`):**
-    ```typescript
-    const handleClear = () => {
-      // First, trigger the animation, then clear the state in the callback
-      animateRemoval(mixingArea, () => {
-        clearMixingArea();
-      });
-    };
-    ```
+### 1. ✅ Restore Mixing & Clearing Animations - COMPLETED
+*   **Status:** The "Clear" button and its animations have been successfully implemented.
+*   **Implementation:** The `onClick` handler for the "Clear" button now calls the `animateRemoval` function from `useGameAnimations`, ensuring a smooth visual transition before clearing the state.
+*   **Result:** The game feels more polished and responsive, addressing the "clunky" feel of the previous implementation.
 
-### 2. Optimize State & Renders (Friend's Suggestion)
-*   **Why:** Storing mutable objects like `Set` directly in `useReducer` state can cause frequent, unnecessary re-renders.
-*   **How:** In `useGameState.ts`, store `dimmedElements` and `animatingElements` in a `useRef`. The reducer will mutate the `.current` value of the ref, and a separate state counter will trigger re-renders only when the sets change.
-
-### 3. Throttle Intensive Calculations (Friend's Suggestion)
-*   **Why:** Running collision checks on every pixel of a drag movement can cause lag on mobile.
-*   **How:** In `useElementInteraction.ts`, wrap the `resolveCollisions` call inside a `requestAnimationFrame` callback to ensure it runs at most once per frame.
-
-### 4. Consolidate to Pointer Events & Clean Up CSS (Friend's Suggestion)
-*   **Why:** Using modern `onPointerDown` events simplifies code and works for both mouse and touch. Old, touch-specific CSS can cause conflicts.
-*   **How:** Refactor drag/touch handlers in `useElementInteraction.ts` to use `onPointerDown`, `onPointerMove`, and `onPointerUp`. Afterwards, search for and remove redundant CSS like `touchAction:` and `WebkitTouchCallout:`.
-
-### 3.5: Fix Drag-and-Drop State Cleanup
+### 2. Fix Drag-and-Drop State Cleanup
 *   **Why:** A cancelled or invalid drag operation (e.g., releasing an element outside the mixing area) leaves the UI in a broken state: dimmed elements remain dimmed, and hover effects trigger incorrectly.
 *   **How:** Investigate the `onDragEnd` handlers in `LLMAlchemyRefactored.tsx`. Ensure that state cleanup functions (`clearDimmedElements`, `setIsDragging(false)`, `setHoveredElement(null)`) are called reliably in all scenarios, especially when a drag operation does not result in a valid drop.
+
+### 3. Optimize Performance and Event Handling
+*   **Why:** Running collision checks on every pixel of a drag movement can cause lag on mobile. Additionally, using modern `onPointerDown` events simplifies code and works for both mouse and touch.
+*   **How:**
+    *   **Throttle Calculations:** In `useElementInteraction.ts`, wrap the `resolveCollisions` call inside a `requestAnimationFrame` callback to ensure it runs at most once per frame.
+    *   **Consolidate to Pointer Events:** Refactor drag/touch handlers in `useElementInteraction.ts` to use `onPointerDown`, `onPointerMove`, and `onPointerUp`.
+    *   **Clean Up CSS:** After refactoring, search for and remove redundant CSS like `touchAction:` and `WebkitTouchCallout:`.
+
+### 4. ❌ Optimize State & Renders (Friend's Suggestion) - SKIPPED
+*   **Reason for Skipping:** This suggestion was based on a misunderstanding of how the `dimmedElements` and `animatingElements` Sets are used. They are essential for triggering re-renders to apply conditional CSS classes. Moving them to `useRef` would break the UI's visual feedback system.
 
 ## Phase 4: Verification & Future-Proofing
 

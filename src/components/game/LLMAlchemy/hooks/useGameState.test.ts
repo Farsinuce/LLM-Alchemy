@@ -31,6 +31,7 @@ const createInitialState = (gameMode: 'science' | 'creative' = 'science'): GameS
     animatingElements: new Set<string>(),
     isUndoing: false,
     isMixing: false,
+    isDragging: false,
     hoveredElement: null,
     touchDragging: null,
     touchOffset: { x: 0, y: 0 },
