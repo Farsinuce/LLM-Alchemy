@@ -732,53 +732,6 @@ const LLMAlchemyRefactored = () => {
           </button>
           
           <div className="text-sm text-gray-400 flex items-center gap-2">
-            {/* Undo Button */}
-            {undoAvailable && !isUndoing && (
-              <button
-                onClick={async () => {
-                  if (lastCombination) {
-                    setIsUndoing(true);
-                    playSound('reverse-pop');
-                    
-                    // Remove the created element
-                    if (lastCombination.createdElement.isEndElement) {
-                      const newEndElements = endElements.filter(e => e.id !== lastCombination.createdElement.element.id);
-                      setEndElements(newEndElements);
-                    } else {
-                      const newElements = elements.filter(e => e.id !== lastCombination.createdElement.element.id);
-                      setElements(newElements);
-                    }
-                    
-                    // Restore the mixing area
-                    setMixingArea(lastCombination.mixingAreaState);
-                    
-                    // Remove from combinations
-                    const newCombinations = { ...combinations };
-                    delete newCombinations[lastCombination.combinationKey];
-                    setCombinations(newCombinations);
-                    
-                    // Remove from failed combinations if it was there
-                    const newFailedCombinations = failedCombinations.filter(key => key !== lastCombination.combinationKey);
-                    setFailedCombinations(newFailedCombinations);
-                    
-                    // Clear undo state
-                    setLastCombination(null);
-                    setUndoAvailable(false);
-                    
-                    showToast('Undid last combination');
-                    
-                    setTimeout(() => {
-                      setIsUndoing(false);
-                    }, 300);
-                  }
-                }}
-                className="px-2 py-1 bg-orange-600 hover:bg-orange-500 rounded text-white font-medium transition-colors text-xs"
-                title="Undo last combination"
-              >
-                ↶ Undo
-              </button>
-            )}
-            
             {userApiKey ? (
               <span className="text-green-400">Using your API key</span>
             ) : tokenBalance > 0 ? (
@@ -1031,6 +984,53 @@ const LLMAlchemyRefactored = () => {
                 Drag elements here to mix them!
               </p>
             </div>
+          )}
+          
+          {/* Undo Button */}
+          {undoAvailable && !isUndoing && (
+            <button
+              onClick={async () => {
+                if (lastCombination) {
+                  setIsUndoing(true);
+                  playSound('reverse-pop');
+                  
+                  // Remove the created element
+                  if (lastCombination.createdElement.isEndElement) {
+                    const newEndElements = endElements.filter(e => e.id !== lastCombination.createdElement.element.id);
+                    setEndElements(newEndElements);
+                  } else {
+                    const newElements = elements.filter(e => e.id !== lastCombination.createdElement.element.id);
+                    setElements(newElements);
+                  }
+                  
+                  // Restore the mixing area
+                  setMixingArea(lastCombination.mixingAreaState);
+                  
+                  // Remove from combinations
+                  const newCombinations = { ...combinations };
+                  delete newCombinations[lastCombination.combinationKey];
+                  setCombinations(newCombinations);
+                  
+                  // Remove from failed combinations if it was there
+                  const newFailedCombinations = failedCombinations.filter(key => key !== lastCombination.combinationKey);
+                  setFailedCombinations(newFailedCombinations);
+                  
+                  // Clear undo state
+                  setLastCombination(null);
+                  setUndoAvailable(false);
+                  
+                  showToast('Undid last combination');
+                  
+                  setTimeout(() => {
+                    setIsUndoing(false);
+                  }, 300);
+                }
+              }}
+              className="absolute top-2 left-2 px-2 py-1 bg-orange-600 hover:bg-orange-500 rounded text-white font-medium transition-colors text-xs z-10"
+              title="Undo last combination"
+            >
+              ↶ Undo
+            </button>
           )}
           
           {/* Clear Button */}
