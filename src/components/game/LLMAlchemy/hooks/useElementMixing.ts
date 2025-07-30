@@ -386,6 +386,9 @@ export function useElementMixing({
     hasEnergy: boolean = false, 
     ...indicesToRemove: number[]
   ) => {
+    // Capture the mixing area state BEFORE removing elements for undo functionality
+    const mixingAreaSnapshot = [...mixingArea];
+    
     // Remove elements from mixing area immediately
     removeFromMixingArea(indicesToRemove);
     
@@ -508,7 +511,7 @@ export function useElementMixing({
             isEndElement: isEndElement
           },
           combinationKey: mixKey,
-          mixingAreaState: mixingArea, // Capture current mixing area state
+          mixingAreaState: mixingAreaSnapshot, // Use the captured state from before mixing
           achievementsGained: allAchievements,
           endElementsGained: isEndElement ? [newElement] : [],
           timestamp: Date.now()
