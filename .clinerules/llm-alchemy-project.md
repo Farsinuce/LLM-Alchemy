@@ -4,6 +4,7 @@ Project-specific guidelines for the LLM Alchemy game restoration and development
 ## Development approach
 - Follow established restoration plan step-by-step (new-restoration-plan.md)
 - Don't build locally with "npm run build", but instead commit and push to git (for vercel to auto-redeploy) when something needs testing
+- E2E tests run via GitHub Actions (`.github/workflows/e2e.yml`) against live deployment to avoid Windows issues
 
 ## Documentation Requirements
 -   Update relevant documentation in /docs when modifying features

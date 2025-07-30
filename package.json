@@ -10,6 +10,7 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
+    "test:e2e": "playwright test -c e2e/playwright.config.ts",
     "postinstall": "node scripts/copy-openmoji.js",
     "gen:types": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > src/types/db.generated.ts",
     "typecheck": "tsc --noEmit",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.54.1",
     "@tailwindcss/postcss": "^4.1.11",
     "@types/node": "^20",
     "@types/react": "^19",

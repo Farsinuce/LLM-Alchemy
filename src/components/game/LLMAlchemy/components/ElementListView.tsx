@@ -69,12 +69,13 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
   }, [elements, searchTerm, sortMode]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 scrollbar-mobile">
+    <div data-testid="element-list" className="flex-1 overflow-y-auto p-4 scrollbar-mobile">
       {/* Use flex-wrap layout for natural responsiveness */}
       <div className="flex flex-wrap gap-2">
         {sortedElements.map((element) => (
           <div
             key={element.id}
+            data-testid={`element-${element.name}`}
             draggable={!isTouchDevice()}
             onDragStart={(e) => onElementDragStart(e, element)}
             onTouchStart={(e) => onElementTouchStart(e, element)}

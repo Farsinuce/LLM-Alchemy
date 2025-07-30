@@ -965,6 +965,7 @@ const LLMAlchemyRefactored = () => {
         {/* Mixing Area - Direct implementation without overflow hidden */}
         <div 
           ref={dropZoneRef}
+          data-testid="mixing-area"
           className="flex-1 bg-gray-800/30 backdrop-blur-sm relative"
           style={{ minHeight: '200px', touchAction: 'none' }}
           onDragOver={(e) => {
@@ -1042,6 +1043,7 @@ const LLMAlchemyRefactored = () => {
             <div
               key={`${element.id}-${element.index}`}
               id={`mixing-${element.id}-${element.index}`}
+              data-testid={`mixing-element-${element.name}`}
               draggable={!isTouchDevice && !isMixing}
               onDragStart={(e) => {
                 draggedElement.current = {
@@ -1143,7 +1145,7 @@ const LLMAlchemyRefactored = () => {
           ))}
           
           {isMixing && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+            <div data-testid="mixing-spinner" className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm">
               <div className="bg-gray-800/90 rounded-xl p-6 flex flex-col items-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mb-3"></div>
                 <div className="text-sm">Mixing...</div>
