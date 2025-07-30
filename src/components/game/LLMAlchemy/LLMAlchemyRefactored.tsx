@@ -775,14 +775,13 @@ const LLMAlchemyRefactored = () => {
               <span>🏆</span>
               <span className="hidden sm:inline text-sm">Achievements</span>
             </button>
-            <select
-              value={sortMode}
-              onChange={(e) => setSortMode(e.target.value)}
-              className="px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-purple-500"
+            <button
+              onClick={() => setSortMode(sortMode === 'unlock' ? 'alpha' : 'unlock')}
+              className="px-2 py-1 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded text-white text-sm transition-colors focus:outline-none focus:border-purple-500"
+              title={`Currently sorting: ${sortMode === 'unlock' ? 'By Discovery' : 'Alphabetical'}. Click to toggle.`}
             >
-              <option value="unlock">By Discovery</option>
-              <option value="alpha">Alphabetical</option>
-            </select>
+              {sortMode === 'unlock' ? '🔍 Discovery' : '🔤 Alpha'}
+            </button>
           </div>
           
           {/* Game Mode Toggle */}
