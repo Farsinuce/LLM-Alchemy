@@ -12,7 +12,7 @@ export const useGameAnimations = () => {
   const [shakeElement, setShakeElement] = useState<string | null>(null);
   const [popElement, setPopElement] = useState<string | null>(null);
   const [animatingElements, setAnimatingElements] = useState<Set<string>>(new Set());
-  const [isPlayingLoadAnimation, setIsPlayingLoadAnimation] = useState<boolean>(false);
+  const isPlayingLoadAnimation = useRef<boolean>(false);
   const [animatedElements, setAnimatedElements] = useState<Set<string>>(new Set());
   
   // Timeout tracking for cleanup
@@ -86,10 +86,10 @@ export const useGameAnimations = () => {
   // Play element load animation (for loading saved game state)
   const playElementLoadAnimation = useCallback((elementsToAnimate: Element[]) => {
     const elementsToAnimate_filtered = elementsToAnimate.filter(e => e.unlockOrder > 4);
-    if (elementsToAnimate_filtered.length === 0 || isPlayingLoadAnimation) return;
+    if (elementsToAnimate_filtered.length === 0 || isPlayingLoadAnimation.current) return;
     
     console.log('[LOAD_ANIMATION] Starting element load animation for', elementsToAnimate_filtered.length, 'elements');
-    setIsPlayingLoadAnimation(true);
+    isPlayingLoadAnimation.current = true;
     
     // Sort elements by unlock order for proper animation sequence
     const sortedElements = [...elementsToAnimate_filtered].sort((a, b) => a.unlockOrder - b.unlockOrder);
@@ -103,19 +103,19 @@ export const useGameAnimations = () => {
     
     // Set timeout to complete load animation
     const timeout = setTimeout(() => {
-      setIsPlayingLoadAnimation(false);
+      isPlayingLoadAnimation.current = false;
       setAnimatedElements(new Set());
     }, totalDuration);
     
     animationTimeouts.current.set('load-animation', timeout);
-  }, [isPlayingLoadAnimation, clearExistingTimeout]);
+  }, [clearExistingTimeout]);
 
   // Clear all animations (useful for cleanup or mode switching)
   const clearAllAnimations = useCallback(() => {
     setShakeElement(null);
     setPopElement(null);
     setAnimatingElements(new Set());
-    setIsPlayingLoadAnimation(false);
+    isPlayingLoadAnimation.current = false;
     setAnimatedElements(new Set());
     
     // Clear all timeouts
@@ -139,7 +139,7 @@ export const useGameAnimations = () => {
     shakeElement,
     popElement,
     animatingElements,
-    isPlayingLoadAnimation,
+    isPlayingLoadAnimation: isPlayingLoadAnimation.current,
     animatedElements,
     
     // Actions
