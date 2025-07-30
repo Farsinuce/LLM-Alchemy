@@ -43,6 +43,7 @@ export interface GameState {
   animatingElements: Set<string>;
   isUndoing: boolean;
   isMixing: boolean;
+  isDragging: boolean;
   hoveredElement: number | null;
   touchDragging: MixingElement | null;
   touchOffset: { x: number; y: number };
@@ -84,6 +85,7 @@ export type GameAction =
   | { type: 'CLEAR_ANIMATING_ELEMENTS' }
   | { type: 'SET_IS_UNDOING'; payload: boolean }
   | { type: 'SET_IS_MIXING'; payload: boolean }
+  | { type: 'SET_IS_DRAGGING'; payload: boolean }
   | { type: 'SET_HOVERED_ELEMENT'; payload: number | null }
   | { type: 'SET_TOUCH_DRAGGING'; payload: MixingElement | null }
   | { type: 'SET_TOUCH_OFFSET'; payload: { x: number; y: number } }
@@ -124,6 +126,7 @@ const createInitialState = (gameMode: 'science' | 'creative' = 'science'): GameS
     animatingElements: new Set<string>(),
     isUndoing: false,
     isMixing: false,
+    isDragging: false,
     hoveredElement: null,
     touchDragging: null,
     touchOffset: { x: 0, y: 0 },
@@ -256,6 +259,9 @@ function gameStateReducer(state: GameState, action: GameAction): GameState {
 
     case 'SET_IS_MIXING':
       return { ...state, isMixing: action.payload };
+
+    case 'SET_IS_DRAGGING':
+      return { ...state, isDragging: action.payload };
 
     case 'SET_HOVERED_ELEMENT':
       return { ...state, hoveredElement: action.payload };
@@ -400,6 +406,10 @@ export function useGameState(initialGameMode: 'science' | 'creative' = 'science'
 
     setIsMixing: useCallback((isMixing: boolean) => {
       dispatch({ type: 'SET_IS_MIXING', payload: isMixing });
+    }, []),
+
+    setIsDragging: useCallback((isDragging: boolean) => {
+      dispatch({ type: 'SET_IS_DRAGGING', payload: isDragging });
     }, []),
 
     setHoveredElement: useCallback((elementIndex: number | null) => {

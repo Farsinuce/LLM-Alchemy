@@ -86,17 +86,18 @@ const LLMAlchemyRefactored = () => {
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [unlockAnimationStartTime, setUnlockAnimationStartTime] = useState<number | null>(null);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
   // Use centralized UI interaction state
   const {
     hoveredElement,
     isMixing,
+    isDragging,
     touchDragging,
     touchOffset,
     dimmedElements,
     isUndoing,
     setHoveredElement,
     setIsMixing,
+    setIsDragging,
     setTouchDragging,
     setTouchOffset,
     setDimmedElements,

@@ -35,6 +35,7 @@ interface GameStateContextType {
     clearAnimatingElements: () => void;
     setIsUndoing: (isUndoing: boolean) => void;
     setIsMixing: (isMixing: boolean) => void;
+    setIsDragging: (isDragging: boolean) => void;
     setHoveredElement: (elementIndex: number | null) => void;
     setTouchDragging: (element: MixingElement | null) => void;
     setTouchOffset: (offset: { x: number; y: number }) => void;
@@ -167,6 +168,7 @@ export function useElementInteractionState() {
     animatingElements: state.animatingElements,
     isUndoing: state.isUndoing,
     isMixing: state.isMixing,
+    isDragging: state.isDragging,
     hoveredElement: state.hoveredElement,
     touchDragging: state.touchDragging,
     touchOffset: state.touchOffset,
@@ -180,6 +182,7 @@ export function useElementInteractionState() {
     clearAnimatingElements: actions.clearAnimatingElements,
     setIsUndoing: actions.setIsUndoing,
     setIsMixing: actions.setIsMixing,
+    setIsDragging: actions.setIsDragging,
     setHoveredElement: actions.setHoveredElement,
     setTouchDragging: actions.setTouchDragging,
     setTouchOffset: actions.setTouchOffset,
