@@ -3,7 +3,7 @@ Project-specific guidelines for the LLM Alchemy game restoration and development
 
 ## Development approach
 - Follow established restoration plan step-by-step (new-restoration-plan.md)
-- Commit and push to git (for vercel to auto-redeploy) when something needs testing
+- Don't build locally with "npm run build", but instead commit and push to git (for vercel to auto-redeploy) when something needs testing
 
 ## Documentation Requirements
 -   Update relevant documentation in /docs when modifying features

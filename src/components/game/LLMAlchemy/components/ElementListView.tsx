@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React from 'react';
 import { Element } from '@/types/game.types';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 import { getContrastColor, getRarityHoverColor, getElementSizeClasses, isTouchDevice } from '@/lib/ui-utils';
+import { useDelayedHover } from '../hooks/useDelayedHover';
 
 interface ElementListViewProps {
   elements: Element[];
@@ -41,53 +42,17 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
   onElementMouseEnter,
   onElementMouseLeave
 }) => {
-  const isTouch = isTouchDevice();
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Use the unified delayed hover hook
+  const { handleMouseEnter, handleMouseLeave } = useDelayedHover({
+    onHover: onElementMouseEnter,
+    delay: 500
+  });
 
-  // Handle mouse enter with 500ms delay for reasoning popup
-  const handleElementMouseEnter = (element: Element, event: React.MouseEvent) => {
-    // Show popup on hover for desktop with 500ms delay
-    if (!isTouch && element.reasoning) {
-      // Clear any existing timeout
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-      // Capture the bounding rect immediately
-      const rect = event.currentTarget.getBoundingClientRect();
-      // Set 500ms delay
-      hoverTimeoutRef.current = setTimeout(() => {
-        // Create a synthetic event with the captured rect
-        const syntheticEvent = {
-          ...event,
-          currentTarget: {
-            getBoundingClientRect: () => rect
-          },
-          type: 'mouseenter'
-        };
-        onElementMouseEnter(element, syntheticEvent as React.MouseEvent);
-      }, 500);
-    }
-  };
-
-  // Handle mouse leave - clear timeout and call parent handler
+  // Combined mouse leave handler that calls both the unified hook and parent handler
   const handleElementMouseLeave = () => {
-    // Clear timeout if leaving before 500ms
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-    // Call parent handler
-    onElementMouseLeave();
+    handleMouseLeave(); // Clear timeout from unified hook
+    onElementMouseLeave(); // Call parent handler
   };
-
-  // Cleanup timeout on unmount
-  React.useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // Sort elements based on sortMode
   const sortedElements = React.useMemo(() => {
@@ -110,10 +75,10 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
         {sortedElements.map((element) => (
           <div
             key={element.id}
-            draggable={!isTouch}
+            draggable={!isTouchDevice()}
             onDragStart={(e) => onElementDragStart(e, element)}
             onTouchStart={(e) => onElementTouchStart(e, element)}
-            onMouseEnter={(e) => handleElementMouseEnter(element, e)}
+            onMouseEnter={(e) => handleMouseEnter(element, e)}
             onMouseLeave={handleElementMouseLeave}
             onClick={(e) => onElementClick(element, e)}
             onContextMenu={(e) => e.preventDefault()}

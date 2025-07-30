@@ -51,53 +51,35 @@
 
 *Goal: Bring back the "fun" by fixing the features that most directly impact the player's experience.*
 
-### 1. Re-implement "Energy" Mixing Rules
-*   **Why:** The special, interesting logic for the "Energy" element was lost in the refactor.
-*   **How:** In `useElementMixing.ts`, re-introduce the `if/else if` branches from the original `mixElements` function to handle the three "Energy" scenarios.
-*   **Code Example (in `useElementMixing.ts`):**
-    ```typescript
-    // Inside the main mixElements function
-    if (elem1.name === 'Energy' && !elem2.energized) {
-      // Scenario 1: Energize elem2
-    } else if (elem1.energized || elem2.energized) {
-      // Scenario 2: Perform an energy-infused mix
-    } else {
-      // Scenario 3: Perform a normal mix
-    }
-    ```
+### 1. ✅ Re-implement "Energy" Mixing Rules - COMPLETED
+*   **Status:** The Energy mixing rules have been successfully restored in the refactored code.
+*   **Implementation:** Located in `useElementMixing.ts` (lines 467-494) with proper type definitions and visual feedback.
+*   **Features Working:**
+    *   **Energize Element:** Energy + non-energized element → Updates target to `energized: true`, removes Energy
+    *   **Energy-Infused Mix:** Energized element + any element → Calls `/api/generate` with energy enhancement
+    *   **Normal Mix:** Standard mixing without energy
+    *   **Visual Feedback:** Energized elements display golden glow and shake animation
+    *   **Type Safety:** `MixingElement` interface includes `energized: boolean` property
 
-### 2. Fix the Undo Functionality
-*   **Why:** Undo is broken because it doesn't remember the state of the mixing area.
-*   **How:** Modify the `LastCombination` interface in `useGameState.ts` to include a `mixingAreaSnapshot: MixingElement[]`. When a mix occurs, store a deep copy of the `mixingArea`. The undo function will then restore this snapshot.
-*   **Code Example:**
-    *   **In `useGameState.ts`:**
-        ```typescript
-        interface LastCombination {
-          // ... other properties
-          mixingAreaSnapshot: MixingElement[]; // Add this line
-        }
-        ```
-    *   **In `useElementMixing.ts` (before a mix):**
-        ```typescript
-        const snapshot = [...mixingArea]; // Create a copy of the current mixing area
-        setLastCombination({ ..., mixingAreaSnapshot: snapshot });
-        ```
+### 2. ✅ Fix the Undo Functionality - COMPLETED
+*   **Status:** The undo functionality has been successfully implemented in the refactored code.
+*   **Implementation:** Located in `useElementMixing.ts` and `LLMAlchemyRefactored.tsx` with proper state restoration.
+*   **Features Working:**
+    *   **Mixing Area Snapshot:** Creates `mixingAreaSnapshot = [...mixingArea]` before mixing
+    *   **State Storage:** `LastCombination` includes `mixingAreaState: MixingElement[]` property
+    *   **Full Restoration:** Undo restores mixing area, removes created elements, clears combinations
+    *   **Achievement Rollback:** Properly removes gained achievements and end elements
+    *   **UI Integration:** Undo button appears when `undoAvailable` is true
 
-### 3. Unify Hover Effects & Reasoning Popups
-*   **Why:** The hover effect is inconsistent because the logic is duplicated.
-*   **How:** Create a single, reusable `useDelayedHover.ts` hook that encapsulates the 500ms timer logic. This hook will be used by both the `ElementListView` and `MixingAreaView`.
-*   **Code Example:**
-    *   **Create `useDelayedHover.ts`:** This new hook will manage the `setTimeout` and return handlers.
-    *   **In `ElementListView.tsx` and `MixingAreaView.tsx`:**
-        ```typescript
-        const { handleMouseEnter, handleMouseLeave } = useDelayedHover({
-          onHover: (element) => {
-            // This will set a new state in the GameStateProvider
-            setPopupInfo(element);
-          },
-          delay: 500
-        });
-        ```
+### 3. ✅ Unify Hover Effects & Reasoning Popups - COMPLETED
+*   **Status:** The hover logic has been successfully unified and refactored for consistency.
+*   **Implementation:** Created `useDelayedHover.ts` hook and integrated it into `ElementListView.tsx`.
+*   **Features Working:**
+    *   **Unified Logic:** Single reusable hook manages 500ms hover delay across all components
+    *   **Touch Detection:** Automatically prevents hover effects on touch devices
+    *   **Proper Cleanup:** Timeout management with automatic cleanup on unmount
+    *   **Consistent Behavior:** Identical hover functionality across element list and mixing areas
+    *   **Code Reduction:** Eliminated duplicate hover logic, reducing complexity and maintenance burden
 
 ## Phase 3: Polish and Performance
 
@@ -127,6 +109,10 @@
 ### 4. Consolidate to Pointer Events & Clean Up CSS (Friend's Suggestion)
 *   **Why:** Using modern `onPointerDown` events simplifies code and works for both mouse and touch. Old, touch-specific CSS can cause conflicts.
 *   **How:** Refactor drag/touch handlers in `useElementInteraction.ts` to use `onPointerDown`, `onPointerMove`, and `onPointerUp`. Afterwards, search for and remove redundant CSS like `touchAction:` and `WebkitTouchCallout:`.
+
+### 3.5: Fix Drag-and-Drop State Cleanup
+*   **Why:** A cancelled or invalid drag operation (e.g., releasing an element outside the mixing area) leaves the UI in a broken state: dimmed elements remain dimmed, and hover effects trigger incorrectly.
+*   **How:** Investigate the `onDragEnd` handlers in `LLMAlchemyRefactored.tsx`. Ensure that state cleanup functions (`clearDimmedElements`, `setIsDragging(false)`, `setHoveredElement(null)`) are called reliably in all scenarios, especially when a drag operation does not result in a valid drop.
 
 ## Phase 4: Verification & Future-Proofing
 

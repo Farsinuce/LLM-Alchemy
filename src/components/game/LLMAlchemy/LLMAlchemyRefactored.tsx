@@ -994,6 +994,7 @@ const LLMAlchemyRefactored = () => {
                   mixIndex: element.index
                 };
                 e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', element.name);
                 setIsDragging(true);
                 playSound('press');
               }}
@@ -1033,7 +1034,15 @@ const LLMAlchemyRefactored = () => {
               onContextMenu={(e) => e.preventDefault()}
               onDragOver={(e) => {
                 e.preventDefault();
-                if (isDragging) setHoveredElement(element.index);
+                if (isDragging) {
+                  setHoveredElement(element.index);
+                  // Preserve the dropEffect from parent
+                  if (draggedElement.current?.fromMixingArea) {
+                    e.dataTransfer.dropEffect = 'move';
+                  } else {
+                    e.dataTransfer.dropEffect = 'copy';
+                  }
+                }
               }}
               onDragEnter={() => {
                 if (isDragging) setHoveredElement(element.index);
