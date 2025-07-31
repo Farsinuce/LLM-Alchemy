@@ -483,6 +483,14 @@ export function useElementMixing({
           })
         };
         
+        // Show unlock modal IMMEDIATELY for instant feedback
+        onShowUnlock({ 
+          ...newElement, 
+          isNew: true,
+          achievement: null // Will be updated later if there are achievements
+        });
+        onSetUnlockAnimationStartTime(Date.now());
+        
         // Add to appropriate collection
         if (isEndElement) {
           onPlaySound('end-element');
@@ -505,6 +513,15 @@ export function useElementMixing({
           
           if (allAchievements.length > 0) {
             addAchievements(allAchievements);
+            
+            // Update unlock modal with achievement if we found one
+            if (contextualAchievement) {
+              onShowUnlock({ 
+                ...newElement, 
+                isNew: true,
+                achievement: contextualAchievement
+              });
+            }
           }
         } catch (error) {
           console.error('Achievement check failed:', error);
@@ -527,36 +544,30 @@ export function useElementMixing({
         setUndoAvailable(true);
         incrementTotalCombinations();
 
-        // Save state immediately
+        // Save state immediately (in background)
         if (user && gameMode) {
-          try {
-            const supabase = createClient();
-            const updatedElements = isEndElement ? elements : [...elements, newElement];
-            const updatedEndElements = isEndElement ? [...endElements, newElement] : endElements;
-            
-            await saveGameState(supabase, user.id, {
-              game_mode: gameMode,
-              elements: updatedElements,
-              end_elements: updatedEndElements,
-              combinations: { ...combinations, [mixKey]: result.result },
-              achievements: [...achievements, ...allAchievements],
-              failed_combinations: failedCombinations
-            });
-          } catch (error) {
-            console.error('Immediate save failed:', error);
-          }
+          (async () => {
+            try {
+              const supabase = createClient();
+              const updatedElements = isEndElement ? elements : [...elements, newElement];
+              const updatedEndElements = isEndElement ? [...endElements, newElement] : endElements;
+              
+              await saveGameState(supabase, user.id, {
+                game_mode: gameMode,
+                elements: updatedElements,
+                end_elements: updatedEndElements,
+                combinations: { ...combinations, [mixKey]: result.result },
+                achievements: [...achievements, ...allAchievements],
+                failed_combinations: failedCombinations
+              });
+            } catch (error) {
+              console.error('Background save failed:', error);
+            }
+          })();
         }
         
-        // Check challenge completion
-        await checkChallengeCompletion(newElement);
-        
-        // Show unlock modal
-        onShowUnlock({ 
-          ...newElement, 
-          isNew: true,
-          achievement: contextualAchievement || null
-        });
-        onSetUnlockAnimationStartTime(Date.now());
+        // Check challenge completion (in background)
+        checkChallengeCompletion(newElement);
         
         if (!isEndElement) {
           // Add new element to mixing area center

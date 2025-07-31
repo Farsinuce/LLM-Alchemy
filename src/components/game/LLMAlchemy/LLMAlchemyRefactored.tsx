@@ -1097,9 +1097,10 @@ const LLMAlchemyRefactored = () => {
                 playSound('press');
               }}
               onDragEnd={() => {
+                draggedElement.current = null; // Clear drag reference
                 setIsDragging(false);
                 setHoveredElement(null);
-                setDimmedElements(new Set());
+                clearDimmedElements();
               }}
               onTouchStart={(e) => {
                 const touch = e.touches[0];

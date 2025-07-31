@@ -94,11 +94,11 @@ These are issues from the initial bug list that were either not fixed correctly 
     3. Maintain the staggered delay for visual appeal.
 
 ### G. Custom Fonts
-- **Problem**: Missing "Jersey 10" and "Pixelify Sans" fonts.
+- **Problem**: Missing "Source Sans 3" font.
 - **Technical Plan**:
-    1. In `src/app/layout.tsx`, import both fonts from Google Fonts.
-    2. Apply "Jersey 10" to titles and headers (h1, h2, h3).
-    3. Apply "Pixelify Sans" to body text and game elements.
+    1. In `src/app/layout.tsx`, import font from Google Fonts.
+    2. Apply "Source Sans 3" (regular 400) to all text elements in the game.
+    3. Apply different weight to titles and headers (h1 = black 900, h2 = bold , h3 = Medium 500).
     4. Update the font family declarations in Tailwind config if needed.
 
 ### H. Missing Visuals from Legacy
@@ -168,9 +168,9 @@ These are issues from the initial bug list that were either not fixed correctly 
 ## 4. Implementation Order
 
 ### Phase 1: Critical Regressions (Highest Priority)
-1. **Bug 2**: Fix immovable mixing area elements
-2. **Bug 8**: Fix unlock animation timing
-3. **Bug 1**: Fix Energy element layout with vertical separator
+1. **Bug 2**: Fix immovable mixing area elements ✅ COMPLETED (fixed drag cleanup for desktop)
+2. **Bug 8**: Fix unlock animation timing ✅ COMPLETED (unlock modal now appears immediately)
+3. **Bug 1**: Fix Energy element layout with vertical separator ✅ COMPLETED
 
 ### Phase 2: Essential Functionality
 1. **Bug A**: Enable self-mixing ✅ COMPLETED
@@ -178,20 +178,20 @@ These are issues from the initial bug list that were either not fixed correctly 
 3. **Bug K**: Fix TypeError crashes ✅ COMPLETED
 
 ### Phase 3: Visual Polish
-1. **Bug F**: Improve clear animation
-2. **Bug G**: Add custom fonts
-3. **Bug H**: Restore visual effects
-4. **Bug I**: Simplify reasoning popup
-5. **Bug J**: Add floating emojis
+1. **Bug F**: Improve clear animation ❌ NOT WORKING AS INTENDED
+2. **Bug G**: Add custom fonts ❌ NOT DONE
+3. **Bug H**: Restore visual effects ❌ PARTIALLY DONE (Rarity stroke element color not working)
+4. **Bug I**: Simplify reasoning popup ✅ COMPLETED
+5. **Bug J**: Add floating emojis ❌ NOT WORKING
 
 ### Phase 4: Mobile Experience
-1. **Bug C**: Fix mobile viewport
-2. **Bug D**: Update sort buttons
-3. **Bug N**: Fix element list scrolling
-4. **Bug L**: Improve emoji matching
+1. **Bug C**: Fix mobile viewport ❌ PARTIALLY DONE (could work better)
+2. **Bug D**: Update sort buttons ✅ COMPLETED
+3. **Bug N**: Fix element list scrolling ❌ NOT DONE
+4. **Bug L**: Improve emoji matching ❌ NOT DONE
 
 ### Phase 5: Advanced Mobile
-1. **Bug M**: Implement landscape mode (includes Bug E solution)
+1. **Bug M**: Implement landscape mode (includes Bug E solution) ❌ NOT DONE
 
 ---
 
@@ -214,4 +214,4 @@ These are issues from the initial bug list that were either not fixed correctly 
 - Mobile experience is smooth and responsive
 - No TypeErrors in console
 - Visual polish matches original game
-- Landscape mode is fully functional
+- Landscape mode is functional
