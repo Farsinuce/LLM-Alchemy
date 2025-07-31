@@ -116,7 +116,7 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
   );
 
   return (
-    <div data-testid="element-list" className="flex-1 overflow-y-auto p-4 scrollbar-mobile">
+    <div data-testid="element-list" className="flex-1 overflow-y-auto p-4 pr-6 scrollbar-mobile">
       {/* All Elements - Energy first with vertical separator if in Science mode */}
       <div className="flex flex-wrap gap-2 justify-start items-start max-w-full">
         {gameMode === 'science' && energyElement && (

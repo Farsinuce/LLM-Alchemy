@@ -180,9 +180,9 @@ These are issues from the initial bug list that were either not fixed correctly 
 ### Phase 3: Visual Polish
 1. **Bug F**: Improve clear animation ✅ COMPLETED (animation already properly implemented)
 2. **Bug G**: Add custom fonts ✅ COMPLETED (Source Sans 3 added with proper weights)
-3. **Bug H**: Restore visual effects ❌ PARTIALLY DONE (Rarity stroke element color not working)
+3. **Bug H**: Restore visual effects ✅ COMPLETED (rarity hover colors now working properly)
 4. **Bug I**: Simplify reasoning popup ✅ COMPLETED
-5. **Bug J**: Add floating emojis ❌ NOT WORKING
+5. **Bug J**: Add floating emojis ✅ COMPLETED (floating emoji system already implemented)
 
 ### Phase 4: Mobile Experience
 1. **Bug C**: Fix mobile viewport ❌ PARTIALLY DONE (could work better)

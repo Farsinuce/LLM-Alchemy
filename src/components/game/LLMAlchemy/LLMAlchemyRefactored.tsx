@@ -690,7 +690,7 @@ const LLMAlchemyRefactored = () => {
 
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col relative overflow-hidden select-none" style={{ touchAction: touchDragging || isDraggingDivider ? 'none' : 'auto' }}>
+    <div className="min-h-screen max-h-screen bg-gray-900 text-white flex flex-col relative overflow-hidden select-none" style={{ touchAction: touchDragging || isDraggingDivider ? 'none' : 'auto' }}>
       <div className={`absolute inset-0 ${
         gameMode === 'science' 
           ? 'bg-gradient-to-br from-blue-900/20 via-gray-900 to-blue-900/20'
