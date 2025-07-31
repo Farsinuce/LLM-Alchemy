@@ -908,7 +908,8 @@ const LLMAlchemyRefactored = () => {
                   Math.pow(moveTouch.clientY - touch.clientY, 2)
                 );
                 
-                if (distance > 8) { // 8px threshold for drag detection
+                const dragThreshold = 8 / (window.devicePixelRatio || 1); // Dynamic threshold for high-DPI displays
+                if (distance > dragThreshold) {
                   dragStarted = true;
                   setTouchDragging({
                     ...element,
