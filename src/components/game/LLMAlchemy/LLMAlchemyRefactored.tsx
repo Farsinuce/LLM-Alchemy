@@ -784,7 +784,12 @@ const LLMAlchemyRefactored = () => {
               className="px-2 py-1 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded text-white text-sm transition-colors focus:outline-none focus:border-purple-500"
               title={`Currently sorting: ${sortMode === 'unlock' ? 'By Discovery' : 'Alphabetical'}. Click to toggle.`}
             >
-              {sortMode === 'unlock' ? '🔍 Discovery' : '🔤 Alpha'}
+              <span className="hidden sm:inline">
+                {sortMode === 'unlock' ? '🔢 1-2-3' : '🔤 A-Z'}
+              </span>
+              <span className="sm:hidden">
+                {sortMode === 'unlock' ? '🔢' : '🔤'}
+              </span>
             </button>
           </div>
           
