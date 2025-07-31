@@ -174,7 +174,7 @@ These are issues from the initial bug list that were either not fixed correctly 
 
 ### Phase 2: Essential Functionality
 1. **Bug A**: Enable self-mixing ✅ COMPLETED
-2. **Bug B**: Fix mobile dimming ❌ STILL NOT WORKING - Method didn't work, skipping for now
+2. **Bug B**: Fix mobile dimming ❌ STILL NOT WORKING - Method didn't work
 3. **Bug K**: Fix TypeError crashes ✅ COMPLETED
 
 ### Phase 3: Visual Polish
@@ -185,9 +185,9 @@ These are issues from the initial bug list that were either not fixed correctly 
 5. **Bug J**: Add floating emojis ✅ COMPLETED (floating emoji system already implemented)
 
 ### Phase 4: Mobile Experience
-1. **Bug C**: Fix mobile viewport ❌ PARTIALLY DONE (could work better)
+1. **Bug C**: Fix mobile viewport ✅ COMPLETED (max-h-screen prevents page scrolling)
 2. **Bug D**: Update sort buttons ✅ COMPLETED
-3. **Bug N**: Fix element list scrolling ❌ NOT DONE
+3. **Bug N**: Fix element list scrolling ✅ COMPLETED (pr-6 padding for touch area)
 4. **Bug L**: Improve emoji matching ❌ NOT DONE
 
 ### Phase 5: Advanced Mobile

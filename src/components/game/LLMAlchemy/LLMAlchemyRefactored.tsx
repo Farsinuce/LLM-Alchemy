@@ -544,7 +544,7 @@ const LLMAlchemyRefactored = () => {
         directionY: (Math.random() - 0.5) * 2,
         speed: 0.3 + Math.random() * 0.4,
         opacity: 0,
-        maxOpacity: 0.005 + Math.random() * 0.005,
+        maxOpacity: 0.05 + Math.random() * 0.05, // Increased to 5%-10% opacity
         lifespan: 8000 + Math.random() * 6000,
         age: 0
       };
