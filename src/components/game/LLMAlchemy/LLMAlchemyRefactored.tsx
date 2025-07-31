@@ -880,8 +880,19 @@ const LLMAlchemyRefactored = () => {
                 y: touch.clientY - rect.top
               });
               
-              setTimeout(() => {
-                if (touchStartTime && Date.now() - touchStartTime > 150) {
+              // Distance-based drag detection
+              let dragStarted = false;
+              const handleTouchMove = (moveEvent: TouchEvent) => {
+                if (dragStarted) return;
+                
+                const moveTouch = moveEvent.touches[0];
+                const distance = Math.sqrt(
+                  Math.pow(moveTouch.clientX - touch.clientX, 2) + 
+                  Math.pow(moveTouch.clientY - touch.clientY, 2)
+                );
+                
+                if (distance > 8) { // 8px threshold for drag detection
+                  dragStarted = true;
                   setTouchDragging({
                     ...element,
                     x: 0,
@@ -898,8 +909,21 @@ const LLMAlchemyRefactored = () => {
                   if ('vibrate' in navigator) {
                     navigator.vibrate(10);
                   }
+                  
+                  // Clean up listeners
+                  document.removeEventListener('touchmove', handleTouchMove);
+                  document.removeEventListener('touchend', handleTouchEnd);
                 }
-              }, 150);
+              };
+              
+              const handleTouchEnd = () => {
+                // Clean up listeners if drag never started
+                document.removeEventListener('touchmove', handleTouchMove);
+                document.removeEventListener('touchend', handleTouchEnd);
+              };
+              
+              document.addEventListener('touchmove', handleTouchMove, { passive: false });
+              document.addEventListener('touchend', handleTouchEnd);
             }}
             onElementClick={handleElementClick}
             onElementMouseEnter={handleElementMouseEnter}
@@ -1076,8 +1100,19 @@ const LLMAlchemyRefactored = () => {
                   y: touch.clientY - rect.top
                 });
                 
-                setTimeout(() => {
-                  if (touchStartTime && Date.now() - touchStartTime > 100) {
+                // Distance-based drag detection for mixing area elements
+                let dragStarted = false;
+                const handleTouchMove = (moveEvent: TouchEvent) => {
+                  if (dragStarted) return;
+                  
+                  const moveTouch = moveEvent.touches[0];
+                  const distance = Math.sqrt(
+                    Math.pow(moveTouch.clientX - touch.clientX, 2) + 
+                    Math.pow(moveTouch.clientY - touch.clientY, 2)
+                  );
+                  
+                  if (distance > 8) { // 8px threshold for drag detection
+                    dragStarted = true;
                     setTouchDragging({
                       ...element,
                       fromMixingArea: true,
@@ -1087,8 +1122,21 @@ const LLMAlchemyRefactored = () => {
                     if ('vibrate' in navigator) {
                       navigator.vibrate(10);
                     }
+                    
+                    // Clean up listeners
+                    document.removeEventListener('touchmove', handleTouchMove);
+                    document.removeEventListener('touchend', handleTouchEnd);
                   }
-                }, 100);
+                };
+                
+                const handleTouchEnd = () => {
+                  // Clean up listeners if drag never started
+                  document.removeEventListener('touchmove', handleTouchMove);
+                  document.removeEventListener('touchend', handleTouchEnd);
+                };
+                
+                document.addEventListener('touchmove', handleTouchMove, { passive: false });
+                document.addEventListener('touchend', handleTouchEnd);
               }}
               onMouseEnter={() => {
                 if (isDragging) setHoveredElement(element.index);
