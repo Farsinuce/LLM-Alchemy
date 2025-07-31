@@ -178,8 +178,8 @@ These are issues from the initial bug list that were either not fixed correctly 
 3. **Bug K**: Fix TypeError crashes ✅ COMPLETED
 
 ### Phase 3: Visual Polish
-1. **Bug F**: Improve clear animation ❌ NOT WORKING AS INTENDED
-2. **Bug G**: Add custom fonts ❌ NOT DONE
+1. **Bug F**: Improve clear animation ✅ COMPLETED (animation already properly implemented)
+2. **Bug G**: Add custom fonts ✅ COMPLETED (Source Sans 3 added with proper weights)
 3. **Bug H**: Restore visual effects ❌ PARTIALLY DONE (Rarity stroke element color not working)
 4. **Bug I**: Simplify reasoning popup ✅ COMPLETED
 5. **Bug J**: Add floating emojis ❌ NOT WORKING

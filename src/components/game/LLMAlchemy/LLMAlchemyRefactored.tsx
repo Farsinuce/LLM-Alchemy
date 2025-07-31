@@ -107,6 +107,7 @@ const LLMAlchemyRefactored = () => {
     clearDimmedElements,
     setIsUndoing,
   } = useElementInteractionState();
+  const [hoveredElementId, setHoveredElementId] = useState<string | null>(null);
   const [listHeight, setListHeight] = useState<number>(192);
   const [isDraggingDivider, setIsDraggingDivider] = useState<boolean>(false);
   const [touchStartTime, setTouchStartTime] = useState<number | null>(null);
@@ -633,11 +634,15 @@ const LLMAlchemyRefactored = () => {
   };
 
   const handleElementMouseEnter = (element: Element, event: React.MouseEvent) => {
-    // Simply show the reasoning popup - no 500ms delay needed here since child handles it
+    // Set hover state for rarity effects
+    setHoveredElementId(element.id);
+    // Show the reasoning popup 
     showReasoningPopup(element, event);
   };
 
   const handleElementMouseLeave = () => {
+    // Clear hover state
+    setHoveredElementId(null);
     // Hide popup if it was from hover
     if (reasoningPopup && reasoningPopup.fromHover) {
       hideReasoningPopup();
@@ -821,19 +826,19 @@ const LLMAlchemyRefactored = () => {
           className="bg-gray-800/30 backdrop-blur-sm"
           style={{ height: `${listHeight}px` }}
         >
-          <ElementListView
-            elements={sortedElements}
-            energyElement={energyElement}
-            gameMode={gameMode}
-            searchTerm={searchTerm}
-            sortMode={sortMode}
-            shakeElement={shakeElement}
-            popElement={popElement}
-            hoveredElement={null}
-            isDragging={isDragging}
-            dimmedElements={dimmedElements}
-            isPlayingLoadAnimation={isPlayingLoadAnimation}
-            animatedElements={animatedElements}
+            <ElementListView
+              elements={sortedElements}
+              energyElement={energyElement}
+              gameMode={gameMode}
+              searchTerm={searchTerm}
+              sortMode={sortMode}
+              shakeElement={shakeElement}
+              popElement={popElement}
+              hoveredElement={hoveredElementId}
+              isDragging={isDragging}
+              dimmedElements={dimmedElements}
+              isPlayingLoadAnimation={isPlayingLoadAnimation}
+              animatedElements={animatedElements}
             onElementDragStart={(e, element) => {
               draggedElement.current = {
                 ...element,
