@@ -183,13 +183,17 @@ export async function decrementDailyCount(supabase: GenericSupabaseClient, userI
 
 export async function saveGameState(supabase: GenericSupabaseClient, userId: string, gameState: Partial<GameState>): Promise<boolean> {
   try {
+    // Add version field to prevent compatibility issues
+    const versionedGameState = {
+      user_id: userId,
+      ...gameState,
+      state_version: '1.0', // Version for future compatibility
+      updated_at: new Date().toISOString()
+    };
+
     const { error } = await supabase
       .from('game_states')
-      .upsert({
-        user_id: userId,
-        ...gameState,
-        updated_at: new Date().toISOString()
-      }, {
+      .upsert(versionedGameState, {
         onConflict: 'user_id,game_mode'
       })
 

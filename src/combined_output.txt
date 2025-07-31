@@ -52,7 +52,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-source-sans-3), system-ui, sans-serif;
 }
 
 /* Design System Utility Classes */
@@ -351,6 +351,7 @@ body {
 ===== START: C:\ai\LLM-Alchemy\src\app\layout.tsx ===== 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import { SupabaseProvider } from "@/components/auth/SupabaseProvider";
 
@@ -362,6 +363,12 @@ const geist = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const sourceSans3 = Source_Sans_3({
+  variable: "--font-source-sans-3",
+  subsets: ["latin"],
+  weight: ["400", "500", "700", "900"],
 });
 
 export const metadata: Metadata = {
@@ -377,13 +384,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Mobile viewport configuration */}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
         {/* Preconnect to Turnstile for faster loading */}
         <link rel="preconnect" href="https://challenges.cloudflare.com" />
         <link rel="dns-prefetch" href="https://challenges.cloudflare.com" />
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
       </head>
       <body
-        className={`${geist.variable} ${geistMono.variable} antialiased`}
+        className={`${geist.variable} ${geistMono.variable} ${sourceSans3.variable} antialiased`}
       >
         <SupabaseProvider>
           {children}
@@ -4481,20 +4490,24 @@ export const OpenMojiDisplay = memo<OpenMojiDisplayProps>(({
 }) => {
   const [fallbackToUnicode, setFallbackToUnicode] = useState(false);
   
+  // Guard against undefined/null values
+  const safeEmoji = emoji || '❓';
+  const safeName = name || 'Unknown Element';
+  
   const sizeClasses = {
     sm: 'w-6 h-6',     // 24px - for UI elements
     md: 'w-8 h-8',     // 32px - default game size
     lg: 'w-12 h-12'    // 48px - for showcases
   };
   
-  // Use provided hexcode or convert from Unicode
-  const finalHexcode = hexcode || unicodeToHexSequence(emoji);
+  // Use provided hexcode or convert from Unicode (with safe fallback)
+  const finalHexcode = hexcode || unicodeToHexSequence(safeEmoji);
   
   // If fallback is triggered, render Unicode emoji
   if (fallbackToUnicode) {
     return (
       <span className={`${sizeClasses[size]} flex items-center justify-center text-2xl ${className}`}>
-        {emoji}
+        {safeEmoji}
       </span>
     );
   }
@@ -4502,7 +4515,7 @@ export const OpenMojiDisplay = memo<OpenMojiDisplayProps>(({
   return (
     <img 
       src={`/openmoji/${finalHexcode}.svg`}
-      alt={name}
+      alt={safeName}
       className={`${sizeClasses[size]} ${className} select-none`}
       loading="lazy"
       draggable={false}
@@ -4629,6 +4642,7 @@ const LLMAlchemyRefactored = () => {
     clearDimmedElements,
     setIsUndoing,
   } = useElementInteractionState();
+  const [hoveredElementId, setHoveredElementId] = useState<string | null>(null);
   const [listHeight, setListHeight] = useState<number>(192);
   const [isDraggingDivider, setIsDraggingDivider] = useState<boolean>(false);
   const [touchStartTime, setTouchStartTime] = useState<number | null>(null);
@@ -5065,7 +5079,7 @@ const LLMAlchemyRefactored = () => {
         directionY: (Math.random() - 0.5) * 2,
         speed: 0.3 + Math.random() * 0.4,
         opacity: 0,
-        maxOpacity: 0.005 + Math.random() * 0.005,
+        maxOpacity: 0.05 + Math.random() * 0.05, // Increased to 5%-10% opacity
         lifespan: 8000 + Math.random() * 6000,
         age: 0
       };
@@ -5155,11 +5169,15 @@ const LLMAlchemyRefactored = () => {
   };
 
   const handleElementMouseEnter = (element: Element, event: React.MouseEvent) => {
-    // Simply show the reasoning popup - no 500ms delay needed here since child handles it
+    // Set hover state for rarity effects
+    setHoveredElementId(element.id);
+    // Show the reasoning popup 
     showReasoningPopup(element, event);
   };
 
   const handleElementMouseLeave = () => {
+    // Clear hover state
+    setHoveredElementId(null);
     // Hide popup if it was from hover
     if (reasoningPopup && reasoningPopup.fromHover) {
       hideReasoningPopup();
@@ -5192,7 +5210,9 @@ const LLMAlchemyRefactored = () => {
     });
   };
 
-  const sortedElements = GameLogic.sortElements(elements, sortMode as 'unlock' | 'alpha', searchTerm);
+  // Separate Energy element for Science mode
+  const energyElement = gameMode === 'science' ? elements.find(e => e.name === 'Energy') : undefined;
+  const sortedElements = GameLogic.sortElements(elements.filter(e => e.name !== 'Energy'), sortMode as 'unlock' | 'alpha', searchTerm);
 
   const regularElementCount = elements.length;
   const endElementCount = endElements.length;
@@ -5205,8 +5225,12 @@ const LLMAlchemyRefactored = () => {
 
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col relative overflow-hidden select-none" style={{ touchAction: touchDragging || isDraggingDivider ? 'none' : 'auto' }}>
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-gray-900 to-blue-900/20"></div>
+    <div className="min-h-screen max-h-screen bg-gray-900 text-white flex flex-col relative overflow-hidden select-none" style={{ touchAction: touchDragging || isDraggingDivider ? 'none' : 'auto' }}>
+      <div className={`absolute inset-0 ${
+        gameMode === 'science' 
+          ? 'bg-gradient-to-br from-blue-900/20 via-gray-900 to-blue-900/20'
+          : 'bg-gradient-to-br from-purple-900/20 via-gray-900 to-purple-900/20'
+      }`}></div>
       
       {/* Floating Background Emojis */}
       {floatingEmojis.map(emoji => (
@@ -5228,7 +5252,7 @@ const LLMAlchemyRefactored = () => {
       <div className="relative z-10 bg-gray-800/80 backdrop-blur-sm p-4 shadow-lg">
         <div className="flex justify-between items-start mb-3">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl font-black flex items-center gap-2">
               <Sparkles className="text-yellow-400 hidden sm:block" />
               LLM Alchemy
             </h1>
@@ -5252,53 +5276,6 @@ const LLMAlchemyRefactored = () => {
           </button>
           
           <div className="text-sm text-gray-400 flex items-center gap-2">
-            {/* Undo Button */}
-            {undoAvailable && !isUndoing && (
-              <button
-                onClick={async () => {
-                  if (lastCombination) {
-                    setIsUndoing(true);
-                    playSound('reverse-pop');
-                    
-                    // Remove the created element
-                    if (lastCombination.createdElement.isEndElement) {
-                      const newEndElements = endElements.filter(e => e.id !== lastCombination.createdElement.element.id);
-                      setEndElements(newEndElements);
-                    } else {
-                      const newElements = elements.filter(e => e.id !== lastCombination.createdElement.element.id);
-                      setElements(newElements);
-                    }
-                    
-                    // Restore the mixing area
-                    setMixingArea(lastCombination.mixingAreaState);
-                    
-                    // Remove from combinations
-                    const newCombinations = { ...combinations };
-                    delete newCombinations[lastCombination.combinationKey];
-                    setCombinations(newCombinations);
-                    
-                    // Remove from failed combinations if it was there
-                    const newFailedCombinations = failedCombinations.filter(key => key !== lastCombination.combinationKey);
-                    setFailedCombinations(newFailedCombinations);
-                    
-                    // Clear undo state
-                    setLastCombination(null);
-                    setUndoAvailable(false);
-                    
-                    showToast('Undid last combination');
-                    
-                    setTimeout(() => {
-                      setIsUndoing(false);
-                    }, 300);
-                  }
-                }}
-                className="px-2 py-1 bg-orange-600 hover:bg-orange-500 rounded text-white font-medium transition-colors text-xs"
-                title="Undo last combination"
-              >
-                ↶ Undo
-              </button>
-            )}
-            
             {userApiKey ? (
               <span className="text-green-400">Using your API key</span>
             ) : tokenBalance > 0 ? (
@@ -5342,14 +5319,18 @@ const LLMAlchemyRefactored = () => {
               <span>🏆</span>
               <span className="hidden sm:inline text-sm">Achievements</span>
             </button>
-            <select
-              value={sortMode}
-              onChange={(e) => setSortMode(e.target.value)}
-              className="px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-purple-500"
+            <button
+              onClick={() => setSortMode(sortMode === 'unlock' ? 'alpha' : 'unlock')}
+              className="px-2 py-1 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded text-white text-sm transition-colors focus:outline-none focus:border-purple-500"
+              title={`Currently sorting: ${sortMode === 'unlock' ? 'By Discovery' : 'Alphabetical'}. Click to toggle.`}
             >
-              <option value="unlock">By Discovery</option>
-              <option value="alpha">Alphabetical</option>
-            </select>
+              <span className="hidden sm:inline">
+                {sortMode === 'unlock' ? '🔢 1-2-3' : '🔤 A-Z'}
+              </span>
+              <span className="sm:hidden">
+                {sortMode === 'unlock' ? '🔢' : '🔤'}
+              </span>
+            </button>
           </div>
           
           {/* Game Mode Toggle */}
@@ -5380,17 +5361,19 @@ const LLMAlchemyRefactored = () => {
           className="bg-gray-800/30 backdrop-blur-sm"
           style={{ height: `${listHeight}px` }}
         >
-          <ElementListView
-            elements={sortedElements}
-            searchTerm={searchTerm}
-            sortMode={sortMode}
-            shakeElement={shakeElement}
-            popElement={popElement}
-            hoveredElement={null}
-            isDragging={isDragging}
-            dimmedElements={dimmedElements}
-            isPlayingLoadAnimation={isPlayingLoadAnimation}
-            animatedElements={animatedElements}
+            <ElementListView
+              elements={sortedElements}
+              energyElement={energyElement}
+              gameMode={gameMode}
+              searchTerm={searchTerm}
+              sortMode={sortMode}
+              shakeElement={shakeElement}
+              popElement={popElement}
+              hoveredElement={hoveredElementId}
+              isDragging={isDragging}
+              dimmedElements={dimmedElements}
+              isPlayingLoadAnimation={isPlayingLoadAnimation}
+              animatedElements={animatedElements}
             onElementDragStart={(e, element) => {
               draggedElement.current = {
                 ...element,
@@ -5401,32 +5384,34 @@ const LLMAlchemyRefactored = () => {
               };
               setIsDragging(true);
               
-              // Calculate and set dimmed elements for visual feedback
-              const previouslyMixed = new Set<string>();
-              Object.keys(combinations).forEach(comboKey => {
-                const parts = comboKey.split('+');
-                if (parts.includes(element.name)) {
-                  parts.forEach(part => {
-                    if (part !== element.name && part !== 'Energy') {
-                      previouslyMixed.add(part);
-                    }
-                  });
-                }
-              });
-              
-              // Also check failed combinations
-              failedCombinations.forEach(failedCombo => {
-                const parts = failedCombo.split('+');
-                if (parts.includes(element.name)) {
-                  parts.forEach(part => {
-                    if (part !== element.name && part !== 'Energy') {
-                      previouslyMixed.add(part);
-                    }
-                  });
-                }
-              });
-              
-              setDimmedElements(previouslyMixed);
+              // Calculate and set dimmed elements for visual feedback (desktop only)
+              if (!isTouchDevice()) {
+                const previouslyMixed = new Set<string>();
+                Object.keys(combinations).forEach(comboKey => {
+                  const parts = comboKey.split('+');
+                  if (parts.includes(element.name)) {
+                    parts.forEach(part => {
+                      if (part !== element.name && part !== 'Energy') {
+                        previouslyMixed.add(part);
+                      }
+                    });
+                  }
+                });
+                
+                // Also check failed combinations
+                failedCombinations.forEach(failedCombo => {
+                  const parts = failedCombo.split('+');
+                  if (parts.includes(element.name)) {
+                    parts.forEach(part => {
+                      if (part !== element.name && part !== 'Energy') {
+                        previouslyMixed.add(part);
+                      }
+                    });
+                  }
+                });
+                
+                setDimmedElements(previouslyMixed);
+              }
               
               e.dataTransfer.effectAllowed = 'copy';
               e.dataTransfer.setData('text/plain', element.name);
@@ -5446,8 +5431,19 @@ const LLMAlchemyRefactored = () => {
                 y: touch.clientY - rect.top
               });
               
-              setTimeout(() => {
-                if (touchStartTime && Date.now() - touchStartTime > 150) {
+              // Distance-based drag detection
+              let dragStarted = false;
+              const handleTouchMove = (moveEvent: TouchEvent) => {
+                if (dragStarted) return;
+                
+                const moveTouch = moveEvent.touches[0];
+                const distance = Math.sqrt(
+                  Math.pow(moveTouch.clientX - touch.clientX, 2) + 
+                  Math.pow(moveTouch.clientY - touch.clientY, 2)
+                );
+                
+                if (distance > 8) { // 8px threshold for drag detection
+                  dragStarted = true;
                   setTouchDragging({
                     ...element,
                     x: 0,
@@ -5464,8 +5460,21 @@ const LLMAlchemyRefactored = () => {
                   if ('vibrate' in navigator) {
                     navigator.vibrate(10);
                   }
+                  
+                  // Clean up listeners
+                  document.removeEventListener('touchmove', handleTouchMove);
+                  document.removeEventListener('touchend', handleTouchEnd);
                 }
-              }, 150);
+              };
+              
+              const handleTouchEnd = () => {
+                // Clean up listeners if drag never started
+                document.removeEventListener('touchmove', handleTouchMove);
+                document.removeEventListener('touchend', handleTouchEnd);
+              };
+              
+              document.addEventListener('touchmove', handleTouchMove, { passive: false });
+              document.addEventListener('touchend', handleTouchEnd);
             }}
             onElementClick={handleElementClick}
             onElementMouseEnter={handleElementMouseEnter}
@@ -5551,6 +5560,53 @@ const LLMAlchemyRefactored = () => {
             </div>
           )}
           
+          {/* Undo Button */}
+          {undoAvailable && !isUndoing && (
+            <button
+              onClick={async () => {
+                if (lastCombination) {
+                  setIsUndoing(true);
+                  playSound('reverse-pop');
+                  
+                  // Remove the created element
+                  if (lastCombination.createdElement.isEndElement) {
+                    const newEndElements = endElements.filter(e => e.id !== lastCombination.createdElement.element.id);
+                    setEndElements(newEndElements);
+                  } else {
+                    const newElements = elements.filter(e => e.id !== lastCombination.createdElement.element.id);
+                    setElements(newElements);
+                  }
+                  
+                  // Restore the mixing area
+                  setMixingArea(lastCombination.mixingAreaState);
+                  
+                  // Remove from combinations
+                  const newCombinations = { ...combinations };
+                  delete newCombinations[lastCombination.combinationKey];
+                  setCombinations(newCombinations);
+                  
+                  // Remove from failed combinations if it was there
+                  const newFailedCombinations = failedCombinations.filter(key => key !== lastCombination.combinationKey);
+                  setFailedCombinations(newFailedCombinations);
+                  
+                  // Clear undo state
+                  setLastCombination(null);
+                  setUndoAvailable(false);
+                  
+                  showToast('Undid last combination');
+                  
+                  setTimeout(() => {
+                    setIsUndoing(false);
+                  }, 300);
+                }
+              }}
+              className="absolute top-2 left-2 px-2 py-1 bg-orange-600 hover:bg-orange-500 rounded text-white font-medium transition-colors text-xs z-10"
+              title="Undo last combination"
+            >
+              ↶ Undo
+            </button>
+          )}
+          
           {/* Clear Button */}
           {mixingArea.length > 0 && (
             <button
@@ -5581,9 +5637,10 @@ const LLMAlchemyRefactored = () => {
                 playSound('press');
               }}
               onDragEnd={() => {
+                draggedElement.current = null; // Clear drag reference
                 setIsDragging(false);
                 setHoveredElement(null);
-                setDimmedElements(new Set());
+                clearDimmedElements();
               }}
               onTouchStart={(e) => {
                 const touch = e.touches[0];
@@ -5595,8 +5652,19 @@ const LLMAlchemyRefactored = () => {
                   y: touch.clientY - rect.top
                 });
                 
-                setTimeout(() => {
-                  if (touchStartTime && Date.now() - touchStartTime > 100) {
+                // Distance-based drag detection for mixing area elements
+                let dragStarted = false;
+                const handleTouchMove = (moveEvent: TouchEvent) => {
+                  if (dragStarted) return;
+                  
+                  const moveTouch = moveEvent.touches[0];
+                  const distance = Math.sqrt(
+                    Math.pow(moveTouch.clientX - touch.clientX, 2) + 
+                    Math.pow(moveTouch.clientY - touch.clientY, 2)
+                  );
+                  
+                  if (distance > 8) { // 8px threshold for drag detection
+                    dragStarted = true;
                     setTouchDragging({
                       ...element,
                       fromMixingArea: true,
@@ -5606,8 +5674,21 @@ const LLMAlchemyRefactored = () => {
                     if ('vibrate' in navigator) {
                       navigator.vibrate(10);
                     }
+                    
+                    // Clean up listeners
+                    document.removeEventListener('touchmove', handleTouchMove);
+                    document.removeEventListener('touchend', handleTouchEnd);
                   }
-                }, 100);
+                };
+                
+                const handleTouchEnd = () => {
+                  // Clean up listeners if drag never started
+                  document.removeEventListener('touchmove', handleTouchMove);
+                  document.removeEventListener('touchend', handleTouchEnd);
+                };
+                
+                document.addEventListener('touchmove', handleTouchMove, { passive: false });
+                document.addEventListener('touchend', handleTouchEnd);
               }}
               onMouseEnter={() => {
                 if (isDragging) setHoveredElement(element.index);
@@ -5852,6 +5933,8 @@ import { useDelayedHover } from '../hooks/useDelayedHover';
 
 interface ElementListViewProps {
   elements: Element[];
+  energyElement?: Element;
+  gameMode: 'science' | 'creative';
   searchTerm: string;
   sortMode: string;
   shakeElement: string | null;
@@ -5871,6 +5954,8 @@ interface ElementListViewProps {
 
 export const ElementListView: React.FC<ElementListViewProps> = ({
   elements,
+  energyElement,
+  gameMode,
   searchTerm,
   sortMode,
   shakeElement,
@@ -5912,53 +5997,62 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
     }
   }, [elements, searchTerm, sortMode]);
 
+  const renderElement = (element: Element) => (
+    <div
+      key={element.id}
+      data-testid={`element-${element.name}`}
+      draggable={!isTouchDevice()}
+      onDragStart={(e) => onElementDragStart(e, element)}
+      onTouchStart={(e) => onElementTouchStart(e, element)}
+      onMouseEnter={(e) => handleMouseEnter(element, e)}
+      onMouseLeave={handleElementMouseLeave}
+      onClick={(e) => onElementClick(element, e)}
+      onContextMenu={(e) => e.preventDefault()}
+      className={`
+        ${getElementSizeClasses()} flex flex-col items-center justify-center rounded-lg cursor-move 
+        hover:scale-110 transition-transform select-none
+        ${popElement === element.id ? 'animate-element-pop-in' : ''}
+        ${shakeElement === element.id ? 'animate-element-shake' : ''}
+        ${isPlayingLoadAnimation && animatedElements.has(element.id) ? 'animate-element-load-delayed' : ''}
+        ${dimmedElements.has(element.name) ? 'element-dimmed' : ''}
+      `}
+      style={{ 
+        backgroundColor: element.color,
+        color: getContrastColor(element.color),
+        boxShadow: !isDragging && hoveredElement === element.id ? `0 0 0 2px ${getRarityHoverColor(element.rarity)}` : '',
+        touchAction: 'none',
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        animationDelay: isPlayingLoadAnimation && animatedElements.has(element.id) 
+          ? `${(element.unlockOrder || 0) * 25}ms` 
+          : undefined
+      }}
+    >
+      <OpenMojiDisplay 
+        emoji={element.emoji} 
+        hexcode={element.openmojiHex}
+        name={element.name} 
+        size="md" 
+      />
+      <div className="text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight">
+        {element.name}
+      </div>
+    </div>
+  );
+
   return (
-    <div data-testid="element-list" className="flex-1 overflow-y-auto p-4 scrollbar-mobile">
-      {/* Use flex-wrap layout for natural responsiveness */}
-      <div className="flex flex-wrap gap-2">
-        {sortedElements.map((element) => (
-          <div
-            key={element.id}
-            data-testid={`element-${element.name}`}
-            draggable={!isTouchDevice()}
-            onDragStart={(e) => onElementDragStart(e, element)}
-            onTouchStart={(e) => onElementTouchStart(e, element)}
-            onMouseEnter={(e) => handleMouseEnter(element, e)}
-            onMouseLeave={handleElementMouseLeave}
-            onClick={(e) => onElementClick(element, e)}
-            onContextMenu={(e) => e.preventDefault()}
-            className={`
-              ${getElementSizeClasses()} flex flex-col items-center justify-center rounded-lg cursor-move 
-              hover:scale-110 transition-transform select-none
-              ${popElement === element.id ? 'animate-element-pop-in' : ''}
-              ${shakeElement === element.id ? 'animate-element-shake' : ''}
-              ${isPlayingLoadAnimation && animatedElements.has(element.id) ? 'animate-element-load-delayed' : ''}
-              ${dimmedElements.has(element.name) ? 'element-dimmed' : ''}
-            `}
-            style={{ 
-              backgroundColor: element.color,
-              color: getContrastColor(element.color),
-              boxShadow: !isDragging && hoveredElement === element.id ? `0 0 0 2px ${getRarityHoverColor(element.rarity)}` : '',
-              touchAction: 'none',
-              WebkitTouchCallout: 'none',
-              WebkitUserSelect: 'none',
-              animationDelay: isPlayingLoadAnimation && animatedElements.has(element.id) 
-                ? `${(element.unlockOrder || 0) * 25}ms` 
-                : undefined
-            }}
-          >
-            
-            <OpenMojiDisplay 
-              emoji={element.emoji} 
-              hexcode={element.openmojiHex}
-              name={element.name} 
-              size="md" 
-            />
-            <div className="text-[8px] sm:text-[10px] font-medium px-1 text-center leading-tight">
-              {element.name}
+    <div data-testid="element-list" className="flex-1 overflow-y-auto p-4 pr-6 scrollbar-mobile">
+      {/* All Elements - Energy first with vertical separator if in Science mode */}
+      <div className="flex flex-wrap gap-2 justify-start items-start max-w-full">
+        {gameMode === 'science' && energyElement && (
+          <>
+            <div className="flex-shrink-0">
+              {renderElement(energyElement)}
             </div>
-          </div>
-        ))}
+            <div className="w-px h-12 sm:h-14 md:h-16 bg-gray-600 flex-shrink-0"></div>
+          </>
+        )}
+        {sortedElements.map((element) => renderElement(element))}
       </div>
 
       {sortedElements.length === 0 && searchTerm && (
@@ -6312,7 +6406,7 @@ export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
  
 ===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\ReasoningPopup.tsx ===== 
 import React from 'react';
-import { X, Zap } from 'lucide-react';
+import { X } from 'lucide-react';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 import { Element } from '@/types/game.types';
 
@@ -6335,64 +6429,59 @@ export const ReasoningPopup: React.FC<ReasoningPopupProps> = ({
   if (!reasoningPopup) return null;
 
   const { element } = reasoningPopup;
-  const hasParents = element.parents && element.parents.length > 0;
 
   return (
     <div
-      className="reasoning-popup fixed z-50 bg-gray-800 border border-gray-600 rounded-lg p-4 max-w-xs shadow-xl"
+      className={`reasoning-popup fixed z-50 bg-gray-800/95 backdrop-blur-sm border border-gray-600 rounded-lg p-3 max-w-xs shadow-xl ${
+        reasoningPopup.fromHover ? 'pointer-events-none' : ''
+      }`}
       style={{
         left: `${Math.min(reasoningPopup.x, window.innerWidth - 200)}px`,
         top: `${Math.max(reasoningPopup.y - 100, 10)}px`,
         transform: 'translateX(-50%)'
       }}
     >
-      <div className="flex items-center gap-2 mb-2">
-        <OpenMojiDisplay 
-          emoji={element.emoji} 
-          hexcode={element.openmojiHex}
-          name={element.name} 
-          size="sm" 
-        />
-        <h4 className="font-semibold">{element.name}</h4>
-      </div>
-      
-      {/* Show parent elements if available */}
-      {hasParents && (
-        <div className="mb-3 p-2 bg-gray-700/50 rounded border-l-2 border-blue-400">
-          <div className="text-xs text-gray-400 mb-1">Created from:</div>
-          <div className="flex items-center gap-1 text-sm">
-            {element.parents!.map((parent, index) => (
-              <React.Fragment key={parent.name}>
-                <span className="text-yellow-300">{parent.name}</span>
-                {index < element.parents!.length - 1 && (
-                  <span className="text-gray-400">+</span>
-                )}
-              </React.Fragment>
-            ))}
-            {element.energyEnhanced && (
-              <>
-                <span className="text-gray-400">+</span>
-                <span className="text-purple-300 flex items-center gap-1">
-                  <Zap size={12} />
-                  Energy
+      {/* Show parent emojis joined by + or 〰️ if energy was used */}
+      {element.parents && element.parents.length > 0 && (
+        <div className="text-center text-sm mb-2 flex items-center justify-center gap-1">
+          {element.parents.map((parent, index) => (
+            <React.Fragment key={parent.name}>
+              <OpenMojiDisplay 
+                emoji={parent.emoji} 
+                hexcode={parent.openmojiHex}
+                name={parent.name} 
+                size="sm" 
+              />
+              {index < element.parents!.length - 1 && (
+                <span className="text-gray-400 mx-1">
+                  {element.energyEnhanced ? '〰️' : '+'}
                 </span>
-              </>
-            )}
-          </div>
+              )}
+            </React.Fragment>
+          ))}
         </div>
       )}
       
-      {/* Show reasoning */}
+      {/* Show reasoning text */}
       {element.reasoning && (
-        <p className="text-sm text-gray-300">{element.reasoning}</p>
+        <div className="text-gray-300 italic text-center text-xs">
+          {element.reasoning}
+        </div>
       )}
       
-      <button
-        onClick={onClose}
-        className="absolute top-2 right-2 text-gray-400 hover:text-white"
-      >
-        <X size={16} />
-      </button>
+      {!reasoningPopup.fromHover && (
+        <button
+          onClick={onClose}
+          className="absolute top-1 right-1 text-gray-400 hover:text-white"
+        >
+          <X size={12} />
+        </button>
+      )}
+      
+      {/* Arrow pointing down */}
+      <div className="absolute top-full left-1/2 transform -translate-x-1/2">
+        <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-600"></div>
+      </div>
     </div>
   );
 };
@@ -6401,7 +6490,7 @@ export const ReasoningPopup: React.FC<ReasoningPopupProps> = ({
  
  
 ===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\UnlockModal.tsx ===== 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Element, Achievement } from '@/types/game.types';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 
@@ -6416,18 +6505,32 @@ interface UnlockModalProps {
 }
 
 export const UnlockModal: React.FC<UnlockModalProps> = ({ showUnlock, onClose }) => {
-  // Auto-close after 3 seconds for new discoveries, 2 seconds for already discovered
+  // Two-stage animation state
+  const [animationStage, setAnimationStage] = useState<'initial' | 'anticipation' | 'reveal'>('initial');
+
+  // Initialize animation stages when showUnlock changes
   useEffect(() => {
-    if (!showUnlock) return;
+    if (!showUnlock) {
+      setAnimationStage('initial');
+      return;
+    }
+    
+    // Directly show the reveal animation without delay
+    setAnimationStage('reveal');
+  }, [showUnlock]);
+
+  // Auto-close after animation completes
+  useEffect(() => {
+    if (!showUnlock || animationStage !== 'reveal') return;
     
     const timeout = setTimeout(() => {
       onClose();
     }, showUnlock.isNew ? 3000 : 2000);
 
     return () => clearTimeout(timeout);
-  }, [showUnlock, onClose]);
+  }, [showUnlock, animationStage, onClose]);
 
-  if (!showUnlock) return null;
+  if (!showUnlock || animationStage === 'initial') return null;
 
   // Get rarity-based styling
   const getRarityStyle = (rarity: string = 'common') => {
@@ -6468,13 +6571,22 @@ export const UnlockModal: React.FC<UnlockModalProps> = ({ showUnlock, onClose })
   const rarityStyle = getRarityStyle(showUnlock.rarity);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in" onClick={onClose}>
+    <div 
+      className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 ${
+        animationStage === 'reveal' ? 'animate-fade-in' : ''
+      }`} 
+      onClick={onClose}
+    >
       <div 
-        className="bg-gray-800 rounded-lg p-6 max-w-sm mx-4 border-2 animate-element-unlock-bounce cursor-pointer"
+        className={`bg-gray-800 rounded-lg p-6 max-w-sm mx-4 border-2 cursor-pointer ${
+          animationStage === 'anticipation' 
+            ? 'scale-75 opacity-50 transition-all duration-200' 
+            : 'animate-element-unlock-bounce'
+        }`}
         style={{
           borderColor: rarityStyle.borderColor,
           backgroundColor: `${rarityStyle.backgroundColor}`,
-          boxShadow: rarityStyle.glowColor
+          boxShadow: animationStage === 'reveal' ? rarityStyle.glowColor : 'none'
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -7287,9 +7399,9 @@ export function useElementMixing({
           // Multiple outcomes - select based on rarity probabilities
           const roll = Math.random() * 100;
           
-          const commonOutcomes = parsedResult.outcomes.filter(o => o.rarity === 'common');
-          const uncommonOutcomes = parsedResult.outcomes.filter(o => o.rarity === 'uncommon');
-          const rareOutcomes = parsedResult.outcomes.filter(o => o.rarity === 'rare');
+          const commonOutcomes = parsedResult.outcomes.filter(o => o && o.rarity === 'common');
+          const uncommonOutcomes = parsedResult.outcomes.filter(o => o && o.rarity === 'uncommon');
+          const rareOutcomes = parsedResult.outcomes.filter(o => o && o.rarity === 'rare');
           
           if (roll < 60 && commonOutcomes.length > 0) {
             selectedOutcome = commonOutcomes[Math.floor(Math.random() * commonOutcomes.length)];
@@ -7300,6 +7412,12 @@ export function useElementMixing({
           } else {
             selectedOutcome = parsedResult.outcomes[Math.floor(Math.random() * parsedResult.outcomes.length)];
           }
+        }
+        
+        // Ensure selectedOutcome exists before accessing its properties
+        if (!selectedOutcome) {
+          await incrementUsageCounter();
+          return { result: null };
         }
         
         // Increment usage counter for successful API calls
@@ -7543,6 +7661,14 @@ export function useElementMixing({
           })
         };
         
+        // Show unlock modal IMMEDIATELY for instant feedback
+        onShowUnlock({ 
+          ...newElement, 
+          isNew: true,
+          achievement: null // Will be updated later if there are achievements
+        });
+        onSetUnlockAnimationStartTime(Date.now());
+        
         // Add to appropriate collection
         if (isEndElement) {
           onPlaySound('end-element');
@@ -7565,6 +7691,15 @@ export function useElementMixing({
           
           if (allAchievements.length > 0) {
             addAchievements(allAchievements);
+            
+            // Update unlock modal with achievement if we found one
+            if (contextualAchievement) {
+              onShowUnlock({ 
+                ...newElement, 
+                isNew: true,
+                achievement: contextualAchievement
+              });
+            }
           }
         } catch (error) {
           console.error('Achievement check failed:', error);
@@ -7587,36 +7722,30 @@ export function useElementMixing({
         setUndoAvailable(true);
         incrementTotalCombinations();
 
-        // Save state immediately
+        // Save state immediately (in background)
         if (user && gameMode) {
-          try {
-            const supabase = createClient();
-            const updatedElements = isEndElement ? elements : [...elements, newElement];
-            const updatedEndElements = isEndElement ? [...endElements, newElement] : endElements;
-            
-            await saveGameState(supabase, user.id, {
-              game_mode: gameMode,
-              elements: updatedElements,
-              end_elements: updatedEndElements,
-              combinations: { ...combinations, [mixKey]: result.result },
-              achievements: [...achievements, ...allAchievements],
-              failed_combinations: failedCombinations
-            });
-          } catch (error) {
-            console.error('Immediate save failed:', error);
-          }
+          (async () => {
+            try {
+              const supabase = createClient();
+              const updatedElements = isEndElement ? elements : [...elements, newElement];
+              const updatedEndElements = isEndElement ? [...endElements, newElement] : endElements;
+              
+              await saveGameState(supabase, user.id, {
+                game_mode: gameMode,
+                elements: updatedElements,
+                end_elements: updatedEndElements,
+                combinations: { ...combinations, [mixKey]: result.result },
+                achievements: [...achievements, ...allAchievements],
+                failed_combinations: failedCombinations
+              });
+            } catch (error) {
+              console.error('Background save failed:', error);
+            }
+          })();
         }
         
-        // Check challenge completion
-        await checkChallengeCompletion(newElement);
-        
-        // Show unlock modal
-        onShowUnlock({ 
-          ...newElement, 
-          isNew: true,
-          achievement: contextualAchievement || null
-        });
-        onSetUnlockAnimationStartTime(Date.now());
+        // Check challenge completion (in background)
+        checkChallengeCompletion(newElement);
         
         if (!isEndElement) {
           // Add new element to mixing area center
@@ -7736,24 +7865,28 @@ export const useGameAnimations = () => {
     animationTimeouts.current.set(`pop-${elementId}`, timeout);
   }, [clearExistingTimeout]);
 
-  // Animate removal of elements from mixing area
+  // Animate removal of elements from mixing area with improved clear animation
   const animateRemoval = useCallback((elements: MixingElement[], onComplete: () => void) => {
     if (elements.length === 0) {
       onComplete();
       return;
     }
     
-    // Stagger the removal animation for each element
+    // Apply the new clear animation directly to DOM elements
     elements.forEach((el, index) => {
       const timeout = setTimeout(() => {
+        const domElement = document.getElementById(`mixing-${el.id}-${el.index}`);
+        if (domElement) {
+          domElement.classList.add('animate-clear-zoom-fade');
+        }
         setAnimatingElements(prev => new Set(prev).add(`${el.id}-${el.index}`));
       }, index * 50);
       
       animationTimeouts.current.set(`removal-${el.id}-${el.index}`, timeout);
     });
     
-    // Complete the animation and call onComplete
-    const totalDuration = elements.length * 50 + 300;
+    // Complete the animation and call onComplete (400ms for new animation + stagger)
+    const totalDuration = elements.length * 50 + 400;
     const completeTimeout = setTimeout(() => {
       onComplete();
       setAnimatingElements(new Set());
@@ -9904,9 +10037,6 @@ export const getHardcodedCombination = (
 
 // Mixing validation logic (pure)
 export const validateMixing = (elem1: Element, elem2: Element): boolean => {
-  // Don't allow mixing with self
-  if (elem1.name === elem2.name) return false;
-  
   // Don't allow mixing End Elements
   if (elem1.isEndElement || elem2.isEndElement) return false;
   
@@ -11808,6 +11938,12 @@ export type { User, UserSession, Element, GameState, Achievement, DiscoveredElem
   100% { transform: scale(0); opacity: 0; }
 }
 
+@keyframes clear-zoom-fade {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(0); }
+}
+
 @keyframes mixing-blur {
   0%, 100% { backdrop-filter: blur(0px); }
   50% { backdrop-filter: blur(4px); }
@@ -11882,13 +12018,16 @@ export type { User, UserSession, Element, GameState, Achievement, DiscoveredElem
 }
 
 .animate-element-load-delayed {
-  animation: element-load-delayed 0.3s ease-out;
-  animation-fill-mode: both;
+  animation: element-load-delayed 0.3s ease-out forwards;
   animation-delay: var(--animation-delay, 0ms);
 }
 
 .animate-element-remove-staggered {
   animation: element-remove-staggered 0.3s ease-out forwards;
+}
+
+.animate-clear-zoom-fade {
+  animation: clear-zoom-fade 0.4s ease-out forwards;
 }
 
 .animate-element-shake {

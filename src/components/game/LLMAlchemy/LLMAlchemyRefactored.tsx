@@ -989,25 +989,30 @@ const LLMAlchemyRefactored = () => {
                      e.clientY >= elRect.top && e.clientY <= elRect.bottom;
             });
 
+            // First: Check if we're mixing with a different element
             if (targetElement && targetElement.index !== draggedElement.current.mixIndex) {
               await mixElements(draggedElement.current, targetElement);
-            } else if (!targetElement) {
+            } 
+            // Then: Check if we're repositioning an existing element
+            else if (draggedElement.current.fromMixingArea) {
               playSound('plop');
               const offset = GameLogic.getElementSize() / 2;
-              if (draggedElement.current.fromMixingArea) {
-                const newPos = GameLogic.resolveCollisions(x - offset, y - offset, mixingArea, dropZoneRef.current!, draggedElement.current.mixIndex);
-                updateMixingElement(draggedElement.current.mixIndex!, { x: newPos.x, y: newPos.y });
-              } else {
-                const newPos = GameLogic.resolveCollisions(x - offset, y - offset, mixingArea, dropZoneRef.current!);
-                const newElement: MixingElement = {
-                  ...draggedElement.current,
-                  x: newPos.x,
-                  y: newPos.y,
-                  index: Date.now(),
-                  energized: false
-                };
-                addToMixingArea(newElement);
-              }
+              const newPos = GameLogic.resolveCollisions(x - offset, y - offset, mixingArea, dropZoneRef.current!, draggedElement.current.mixIndex);
+              updateMixingElement(draggedElement.current.mixIndex!, { x: newPos.x, y: newPos.y });
+            } 
+            // Finally: Add new element to mixing area
+            else {
+              playSound('plop');
+              const offset = GameLogic.getElementSize() / 2;
+              const newPos = GameLogic.resolveCollisions(x - offset, y - offset, mixingArea, dropZoneRef.current!);
+              const newElement: MixingElement = {
+                ...draggedElement.current,
+                x: newPos.x,
+                y: newPos.y,
+                index: Date.now(),
+                energized: false
+              };
+              addToMixingArea(newElement);
             }
             
             draggedElement.current = null;
