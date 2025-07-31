@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Jersey_10, Pixelify_Sans } from "next/font/google";
+import { Jersey_10, Pixelify_Sans, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import { SupabaseProvider } from "@/components/auth/SupabaseProvider";
 
@@ -26,6 +26,12 @@ const pixelifySans = Pixelify_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
+const sourceSans3 = Source_Sans_3({
+  variable: "--font-source-sans-3",
+  subsets: ["latin"],
+  weight: ["400", "500", "700", "900"],
+});
+
 export const metadata: Metadata = {
   title: "LLM Alchemy - AI Element Combination Game",
   description: "Discover new elements by combining existing ones using the power of AI. Choose between Science mode for realistic combinations or Creative mode for imaginative results!",
@@ -47,7 +53,7 @@ export default function RootLayout({
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
       </head>
       <body
-        className={`${geist.variable} ${geistMono.variable} ${jersey10.variable} ${pixelifySans.variable} antialiased`}
+        className={`${geist.variable} ${geistMono.variable} ${jersey10.variable} ${pixelifySans.variable} ${sourceSans3.variable} antialiased`}
       >
         <SupabaseProvider>
           {children}

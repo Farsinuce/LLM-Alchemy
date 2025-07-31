@@ -21,10 +21,11 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-geist-sans)", ...fontFamily.sans],
+        sans: ["var(--font-source-sans-3)", "var(--font-geist-sans)", ...fontFamily.sans],
         mono: ["var(--font-geist-mono)", ...fontFamily.mono],
         jersey: ["var(--font-jersey-10)", ...fontFamily.sans],
         pixelify: ["var(--font-pixelify-sans)", ...fontFamily.sans],
+        "source-sans": ["var(--font-source-sans-3)", ...fontFamily.sans],
       },
       keyframes: {
         "accordion-down": {

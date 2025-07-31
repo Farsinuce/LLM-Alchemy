@@ -712,7 +712,7 @@ const LLMAlchemyRefactored = () => {
       <div className="relative z-10 bg-gray-800/80 backdrop-blur-sm p-4 shadow-lg">
         <div className="flex justify-between items-start mb-3">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl font-black flex items-center gap-2">
               <Sparkles className="text-yellow-400 hidden sm:block" />
               LLM Alchemy
             </h1>
