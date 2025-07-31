@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Element, Achievement } from '@/types/game.types';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 
@@ -13,18 +13,39 @@ interface UnlockModalProps {
 }
 
 export const UnlockModal: React.FC<UnlockModalProps> = ({ showUnlock, onClose }) => {
-  // Auto-close after 3 seconds for new discoveries, 2 seconds for already discovered
+  // Two-stage animation state
+  const [animationStage, setAnimationStage] = useState<'initial' | 'anticipation' | 'reveal'>('initial');
+
+  // Initialize animation stages when showUnlock changes
   useEffect(() => {
-    if (!showUnlock) return;
+    if (!showUnlock) {
+      setAnimationStage('initial');
+      return;
+    }
+    
+    // Stage 1: Brief anticipation delay
+    setAnimationStage('anticipation');
+    
+    const anticipationTimeout = setTimeout(() => {
+      // Stage 2: Full reveal animation
+      setAnimationStage('reveal');
+    }, 200);
+    
+    return () => clearTimeout(anticipationTimeout);
+  }, [showUnlock]);
+
+  // Auto-close after animation completes
+  useEffect(() => {
+    if (!showUnlock || animationStage !== 'reveal') return;
     
     const timeout = setTimeout(() => {
       onClose();
     }, showUnlock.isNew ? 3000 : 2000);
 
     return () => clearTimeout(timeout);
-  }, [showUnlock, onClose]);
+  }, [showUnlock, animationStage, onClose]);
 
-  if (!showUnlock) return null;
+  if (!showUnlock || animationStage === 'initial') return null;
 
   // Get rarity-based styling
   const getRarityStyle = (rarity: string = 'common') => {
@@ -65,13 +86,22 @@ export const UnlockModal: React.FC<UnlockModalProps> = ({ showUnlock, onClose })
   const rarityStyle = getRarityStyle(showUnlock.rarity);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in" onClick={onClose}>
+    <div 
+      className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 ${
+        animationStage === 'reveal' ? 'animate-fade-in' : ''
+      }`} 
+      onClick={onClose}
+    >
       <div 
-        className="bg-gray-800 rounded-lg p-6 max-w-sm mx-4 border-2 animate-element-unlock-bounce cursor-pointer"
+        className={`bg-gray-800 rounded-lg p-6 max-w-sm mx-4 border-2 cursor-pointer ${
+          animationStage === 'anticipation' 
+            ? 'scale-75 opacity-50 transition-all duration-200' 
+            : 'animate-element-unlock-bounce'
+        }`}
         style={{
           borderColor: rarityStyle.borderColor,
           backgroundColor: `${rarityStyle.backgroundColor}`,
-          boxShadow: rarityStyle.glowColor
+          boxShadow: animationStage === 'reveal' ? rarityStyle.glowColor : 'none'
         }}
         onClick={(e) => e.stopPropagation()}
       >
