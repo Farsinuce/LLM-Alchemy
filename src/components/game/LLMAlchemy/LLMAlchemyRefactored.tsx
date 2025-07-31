@@ -83,6 +83,7 @@ const LLMAlchemyRefactored = () => {
     isElementRemoving
   } = useGameAnimations();
 
+
   // UI-only state (ephemeral - doesn't need to be in global state)
   const [sortMode, setSortMode] = useState<string>('unlock');
   const [showUnlock, setShowUnlock] = useState<ShowUnlockElement | null>(null);
