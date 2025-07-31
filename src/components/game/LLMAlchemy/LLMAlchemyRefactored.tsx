@@ -835,32 +835,34 @@ const LLMAlchemyRefactored = () => {
               };
               setIsDragging(true);
               
-              // Calculate and set dimmed elements for visual feedback
-              const previouslyMixed = new Set<string>();
-              Object.keys(combinations).forEach(comboKey => {
-                const parts = comboKey.split('+');
-                if (parts.includes(element.name)) {
-                  parts.forEach(part => {
-                    if (part !== element.name && part !== 'Energy') {
-                      previouslyMixed.add(part);
-                    }
-                  });
-                }
-              });
-              
-              // Also check failed combinations
-              failedCombinations.forEach(failedCombo => {
-                const parts = failedCombo.split('+');
-                if (parts.includes(element.name)) {
-                  parts.forEach(part => {
-                    if (part !== element.name && part !== 'Energy') {
-                      previouslyMixed.add(part);
-                    }
-                  });
-                }
-              });
-              
-              setDimmedElements(previouslyMixed);
+              // Calculate and set dimmed elements for visual feedback (desktop only)
+              if (!isTouchDevice()) {
+                const previouslyMixed = new Set<string>();
+                Object.keys(combinations).forEach(comboKey => {
+                  const parts = comboKey.split('+');
+                  if (parts.includes(element.name)) {
+                    parts.forEach(part => {
+                      if (part !== element.name && part !== 'Energy') {
+                        previouslyMixed.add(part);
+                      }
+                    });
+                  }
+                });
+                
+                // Also check failed combinations
+                failedCombinations.forEach(failedCombo => {
+                  const parts = failedCombo.split('+');
+                  if (parts.includes(element.name)) {
+                    parts.forEach(part => {
+                      if (part !== element.name && part !== 'Energy') {
+                        previouslyMixed.add(part);
+                      }
+                    });
+                  }
+                });
+                
+                setDimmedElements(previouslyMixed);
+              }
               
               e.dataTransfer.effectAllowed = 'copy';
               e.dataTransfer.setData('text/plain', element.name);

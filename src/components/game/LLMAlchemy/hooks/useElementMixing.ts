@@ -221,9 +221,9 @@ export function useElementMixing({
           // Multiple outcomes - select based on rarity probabilities
           const roll = Math.random() * 100;
           
-          const commonOutcomes = parsedResult.outcomes.filter(o => o.rarity === 'common');
-          const uncommonOutcomes = parsedResult.outcomes.filter(o => o.rarity === 'uncommon');
-          const rareOutcomes = parsedResult.outcomes.filter(o => o.rarity === 'rare');
+          const commonOutcomes = parsedResult.outcomes.filter(o => o && o.rarity === 'common');
+          const uncommonOutcomes = parsedResult.outcomes.filter(o => o && o.rarity === 'uncommon');
+          const rareOutcomes = parsedResult.outcomes.filter(o => o && o.rarity === 'rare');
           
           if (roll < 60 && commonOutcomes.length > 0) {
             selectedOutcome = commonOutcomes[Math.floor(Math.random() * commonOutcomes.length)];
@@ -234,6 +234,12 @@ export function useElementMixing({
           } else {
             selectedOutcome = parsedResult.outcomes[Math.floor(Math.random() * parsedResult.outcomes.length)];
           }
+        }
+        
+        // Ensure selectedOutcome exists before accessing its properties
+        if (!selectedOutcome) {
+          await incrementUsageCounter();
+          return { result: null };
         }
         
         // Increment usage counter for successful API calls

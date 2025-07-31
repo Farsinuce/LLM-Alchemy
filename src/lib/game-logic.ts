@@ -305,9 +305,6 @@ export const getHardcodedCombination = (
 
 // Mixing validation logic (pure)
 export const validateMixing = (elem1: Element, elem2: Element): boolean => {
-  // Don't allow mixing with self
-  if (elem1.name === elem2.name) return false;
-  
   // Don't allow mixing End Elements
   if (elem1.isEndElement || elem2.isEndElement) return false;
   
