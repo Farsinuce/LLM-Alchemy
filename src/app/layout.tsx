@@ -7,17 +7,20 @@ import { SupabaseProvider } from "@/components/auth/SupabaseProvider";
 const geist = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: 'swap',
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: 'swap',
 });
 
 const sourceSans3 = Source_Sans_3({
   variable: "--font-source-sans-3",
   subsets: ["latin"],
   weight: ["400", "500", "700", "900"],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
