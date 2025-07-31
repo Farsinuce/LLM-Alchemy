@@ -23,15 +23,8 @@ export const UnlockModal: React.FC<UnlockModalProps> = ({ showUnlock, onClose })
       return;
     }
     
-    // Stage 1: Brief anticipation delay
-    setAnimationStage('anticipation');
-    
-    const anticipationTimeout = setTimeout(() => {
-      // Stage 2: Full reveal animation
-      setAnimationStage('reveal');
-    }, 200);
-    
-    return () => clearTimeout(anticipationTimeout);
+    // Directly show the reveal animation without delay
+    setAnimationStage('reveal');
   }, [showUnlock]);
 
   // Auto-close after animation completes

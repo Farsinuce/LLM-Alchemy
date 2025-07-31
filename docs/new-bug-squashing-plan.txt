@@ -1,0 +1,44 @@
+Overall well done. 
+
+However, some of the bugs were not quite fixed, and I found additional bugs in my game. I want you to take note and update our bug-squashing-plan.md (including context - hows/whys.
+
+FIRST re-read C:\ai\LLM-Alchemy\src\combined_output.txt for holistic insight in my code project.
+
+Now, to the old bugs:
+Your fix to bug 8 made it worse. You misunderstood what I wanted: I don't want a two step animation of the reward/discover/unlock animation modal. I want it to appear SOONER. While the newly discovered ELEMENT appears INSTANTLY upon the LLM responding, the unlock animation appears way too LATE.
+
+Regarding bug 1:
+Almost perfect. I don't want the energy element in it's own line with a horizontal line below it, separating it from the other elements. I want it to be on the SAME line, but always placed as the FIRST element, regardless of sorting. See screenshots
+
+Regarding bug 2:
+The issue persists, and you just skipped it. It's mighty kind of you to search for and conclude that everything in the code looks fine and should be in place, but I can tell you: IT'S NOT WORKING. Elements placed in the mixing area becomes LOCKED IN PLACE and CANNOT BE MOVED. This is a persistant bug, that you need to investigate and find the root cause for.
+
+
+NEW Bugs:
+A: Elements should be able to mix with themselves - they currently cannot. E.g.: Water should be able to mix with Water to create a Pool. When I try to drop an identical element copy on itself in the mixing area, nothing happens currently.
+
+B: The dimming of previously combined elements (occurs when dragging an element) doesn't apply on mobile. Nothing dims.
+
+C: On mobile, the entire game seems to be LONGER than my mobile's full screen height. That makes it quirky, when I try to scroll - where it scrolls the entire game. I want the game to STAY IN PLACE, meaning that the entire game should not be taller than the height of my phone's screen height.
+
+D: Change the sorting button text from "🔍 Discovery" and "🔤 alpha" to simply "🔢" and "🔤" - remember to use the openmoji style.
+
+E: On mobiles with a very narrow width, where there is not enough room for all the UI in the header, hide the storting button. We'll suffice with the default discovery order sorting on mobile, only.
+
+F: Clearing the mixing area still doesn't look right. The animations are not satisfying. What happens currently, after pressing "Clear": Elements in the mixing area immediately becomes 0% opaque, then they fade back in (up to 100% opaque), and then immediately disappears. What they SHOULD do: Elements should fade from 100% opaque to 0% opaque, while zooming from 100% to 110% to 0% (an organic animation). Animations do, however, already stagger, which is good.
+
+G: Our nice fonts from before refactoring are gone. The game should use Google's "Jersey 10" for titles and headers, and "Pixelify Sans" for everything else.
+
+H: Other missing visuals from the original llmalchemy.legacy.tsx:
+ - Subtle background gradient color change based on game mode is missing. We have it in the original 
+ - Element hover outline color based on rarity
+
+I: The reasoning text (modal hover) on elements in the element list/grid does not present the information I want - something much simpler. Look in the original llmalchemy.legacy.tsx. What I want for e.g. the element "steam" in the hover modal: "🔥+💧/n [reasoning text]", that's all. And if Energy was involved in the mix, it should be "🔥〰️💧/n [reasoning text]". Only exception is if "Energy" was used as an element for mixing, like "〰+💧"
+
+J: Large floating emoji animation system (1-3 emojis, 1% opacity): Graphic of discovered huge emojis floating slowly around in the mixing area as a subtle background animation. Each emoji gets a random direction to move slowly towards, and a lifespan of 5 seconds before they fade out and is replaced by another emoji. This animation system should be very simple and not made overly complex.
+
+K: 
+
+D: If the mobile is flipped into LANDSCAPE MODE, I want our game to be responsive in such a degree, that the entire top part of the game (the header: logo, element counter, back button, tokens, filter, achivements button, sorting, game mode) becomes hidden in a hamburger menu. NOT in default PORTRAIT mode, mind you - only in mobile landscape mode, when the full game can simply not be displayed in its full height (due to landscape mode), yet there is plenty of horizontal space. Furthermore, the element grid list and the mixing area should not be split horisontally, but VERTICALLY. This requires quite some well-thoughtout plan from you to achieve.
+
+Read the pre-refactored LLMAlchemy.legacy.tsx file if you need historical code of how the game worked, with all features working, before.
