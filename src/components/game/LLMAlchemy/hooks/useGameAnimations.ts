@@ -57,24 +57,28 @@ export const useGameAnimations = () => {
     animationTimeouts.current.set(`pop-${elementId}`, timeout);
   }, [clearExistingTimeout]);
 
-  // Animate removal of elements from mixing area
+  // Animate removal of elements from mixing area with improved clear animation
   const animateRemoval = useCallback((elements: MixingElement[], onComplete: () => void) => {
     if (elements.length === 0) {
       onComplete();
       return;
     }
     
-    // Stagger the removal animation for each element
+    // Apply the new clear animation directly to DOM elements
     elements.forEach((el, index) => {
       const timeout = setTimeout(() => {
+        const domElement = document.getElementById(`mixing-${el.id}-${el.index}`);
+        if (domElement) {
+          domElement.classList.add('animate-clear-zoom-fade');
+        }
         setAnimatingElements(prev => new Set(prev).add(`${el.id}-${el.index}`));
       }, index * 50);
       
       animationTimeouts.current.set(`removal-${el.id}-${el.index}`, timeout);
     });
     
-    // Complete the animation and call onComplete
-    const totalDuration = elements.length * 50 + 300;
+    // Complete the animation and call onComplete (400ms for new animation + stagger)
+    const totalDuration = elements.length * 50 + 400;
     const completeTimeout = setTimeout(() => {
       onComplete();
       setAnimatingElements(new Set());

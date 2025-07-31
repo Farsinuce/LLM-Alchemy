@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Jersey_10, Pixelify_Sans } from "next/font/google";
 import "./globals.css";
 import { SupabaseProvider } from "@/components/auth/SupabaseProvider";
 
@@ -11,6 +12,18 @@ const geist = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const jersey10 = Jersey_10({
+  variable: "--font-jersey-10",
+  subsets: ["latin"],
+  weight: "400",
+});
+
+const pixelifySans = Pixelify_Sans({
+  variable: "--font-pixelify-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -32,7 +45,7 @@ export default function RootLayout({
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
       </head>
       <body
-        className={`${geist.variable} ${geistMono.variable} antialiased`}
+        className={`${geist.variable} ${geistMono.variable} ${jersey10.variable} ${pixelifySans.variable} antialiased`}
       >
         <SupabaseProvider>
           {children}

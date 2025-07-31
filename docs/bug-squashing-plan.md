@@ -173,9 +173,9 @@ These are issues from the initial bug list that were either not fixed correctly 
 3. **Bug 1**: Fix Energy element layout with vertical separator
 
 ### Phase 2: Essential Functionality
-1. **Bug A**: Enable self-mixing
-2. **Bug B**: Fix mobile dimming
-3. **Bug K**: Fix TypeError crashes
+1. **Bug A**: Enable self-mixing ✅ COMPLETED
+2. **Bug B**: Fix mobile dimming ❌ STILL NOT WORKING - Method didn't work, skipping for now
+3. **Bug K**: Fix TypeError crashes ✅ COMPLETED
 
 ### Phase 3: Visual Polish
 1. **Bug F**: Improve clear animation
