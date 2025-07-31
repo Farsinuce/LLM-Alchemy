@@ -118,12 +118,13 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
   return (
     <div data-testid="element-list" className="flex-1 overflow-y-auto p-4 scrollbar-mobile">
       {/* All Elements - Energy first with vertical separator if in Science mode */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 justify-start items-start max-w-full">
         {gameMode === 'science' && energyElement && (
           <>
-            <div className="border-r border-gray-600 pr-2 mr-2">
+            <div className="flex-shrink-0">
               {renderElement(energyElement)}
             </div>
+            <div className="w-px h-12 sm:h-14 md:h-16 bg-gray-600 flex-shrink-0"></div>
           </>
         )}
         {sortedElements.map((element) => renderElement(element))}
