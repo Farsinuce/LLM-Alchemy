@@ -36,17 +36,26 @@ This document outlines a refined, developer-centric plan to address three critic
 
 ---
 
-## 2. Priority Bug Fixes
+## 2. Active Bug Fixes
 
-### 2.1. Bug 2: Desktop Repositioning Fails
+### 2.1. Bug A: Save/Load State Fails
+
+-   **Status**: **CRITICAL** 
+-   **Priority**: **Highest**
+-   **The Problem**: Games cannot save or load state. Browser console shows `Could not find the 'state_version' column of 'game_states' in the schema cache` error and HTTP 400 responses when trying to save.
+-   **The Root Cause**: Commit 86c5b19 introduced a `state_version` field for future compatibility, but this column doesn't exist in the database schema. The database rejects upsert operations containing unknown fields.
+-   **The Solution**: Remove the `state_version` field from save operations. Any future database versioning needs to be done via proper database migrations, not by adding fields in application code.
+-   **Recent Action**: Rolled back the problematic versioning logic while keeping the `game_mode` validation.
+
+### 2.2. Bug 2: Desktop Repositioning Fails
 
 -   **Status**: **CRITICAL**
--   **Priority**: **Highest**
+-   **Priority**: **High**
 -   **The Problem**: On desktop, once an element is placed in the mixing area, it cannot be dragged again. The `onDrop` event that should handle repositioning never works correctly because the reference to the dragged element is cleared prematurely.
 -   **The Root Cause**: A race condition exists between two event handlers in `LLMAlchemyRefactored.tsx`. The `onDragEnd` event on the draggable element fires *before* the `onDrop` event on the mixing area. This `onDragEnd` handler immediately sets `draggedElement.current = null`, so by the time `onDrop` executes, it has no element to work with and aborts. This explains why it fails on desktop (which uses HTML5 drag-and-drop) but works on mobile (which uses a separate `onTouch...` event system).
 -   **The Solution**: Centralize all drag state cleanup within the `onDrop` handler of the mixing area. The `onDragEnd` handler on the individual elements will be removed to prevent it from clearing the state too early. This ensures that the `onDrop` handler always has the necessary information to correctly identify the element and its origin, allowing it to reliably reposition it.
 
-### 2.2. Bug X: "Clear" Animation is Incorrect
+### 2.3. Bug X: "Clear" Animation is Incorrect
 
 -   **Status**: **BUGGED**
 -   **Priority**: **Medium**
@@ -58,21 +67,17 @@ This document outlines a refined, developer-centric plan to address three critic
     1.  First, I will correct the `@keyframes` in `animations.css` to match the specified animation curve: `transform: scale(1) -> scale(1.1) -> scale(0)` and `opacity: 1 -> 1 -> 0`.
     2.  Second, I will update the `animateRemoval` function in `useGameAnimations.ts`. This function will be modified to temporarily remove the conflicting `transition: 'none'` style from the elements during the animation, allowing the corrected keyframes to apply properly.
 
-### 2.3. Bug D: Floating Emoji Background is Laggy and Incorrect
+## 3. Recently Fixed Bugs
 
--   **Status**: **BUGGED**
--   **Priority**: **Medium**
--   **The Problem**: The current background animation is inefficient, causing performance issues ("lagging blobs"). It also fails to meet the visual requirements: large, semi-transparent emojis that drift across the screen.
--   **The Root Cause**: The implementation in `LLMAlchemyRefactored.tsx` uses a JavaScript `setInterval` to manually update the position and opacity of standard-sized emojis every 100ms. This is highly inefficient, causing constant re-renders of the main game component and leading to poor performance.
--   **The Solution**: A complete rewrite using a dedicated component and CSS animations.
-    1.  **Create `FloatingEmojiBackground.tsx`**: I will create a new, self-contained component to handle the entire background animation logic. This isolates its re-renders from the main game state.
-    2.  **Use Pure CSS Animations**: The component will generate elements that use a hardware-accelerated CSS `@keyframe` animation for the entire lifecycle (fade-in, drift, fade-out). This is far more performant than JavaScript-driven animation.
-    3.  **Efficient Spawning Logic**: The component will use a combination of a low-frequency `setInterval` (e.g., every 2 seconds) to decide *if* a new emoji should spawn, and the `onAnimationEnd` browser event to know *when* an emoji has finished its animation and can be removed from the DOM. This guarantees a maximum of 3 emojis on screen without constant checks.
-    4.  **Correct Visuals**: The emojis will be rendered at `transform: scale(10)` and `opacity: 0.1` to achieve the large, subtle background effect, and will correctly source from the list of discovered elements.
+### 3.1. Bug D: Floating Emoji Background ✅ FIXED
+
+-   **Status**: **FIXED** (as of recent commits)
+-   **The Problem**: The background animation was inefficient, causing performance issues ("lagging blobs"). It also failed to meet the visual requirements: large, semi-transparent emojis that drift across the screen.
+-   **The Solution Applied**: Complete rewrite using dedicated `FloatingEmojiBackground.tsx` component with pure CSS animations. The new implementation uses hardware-accelerated CSS `@keyframe` animations and efficient spawning logic with `onAnimationEnd` events.
 
 ---
 
-## 3. 🐛 Openmoji emoji selection bug:
+## 4. 🐛 Openmoji emoji selection bug:
 
 **"Coal" → Openmoji "Collaboration" Bug**
 - **Problem**: Element "Coal" matched to "collaboration" emoji (completely wrong)

@@ -189,18 +189,13 @@ export async function saveGameState(supabase: GenericSupabaseClient, userId: str
       return false
     }
 
-    // Add version field to prevent compatibility issues
-    const versionedGameState = {
-      user_id: userId,
-      ...gameState,
-      game_mode: gameState.game_mode, // Explicitly ensure game_mode is included
-      state_version: '1.0', // Version for future compatibility
-      updated_at: new Date().toISOString()
-    };
-
     const { error } = await supabase
       .from('game_states')
-      .upsert(versionedGameState, {
+      .upsert({
+        user_id: userId,
+        ...gameState,
+        updated_at: new Date().toISOString()
+      }, {
         onConflict: 'user_id,game_mode'
       })
 
