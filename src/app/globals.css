@@ -288,6 +288,26 @@ body {
     opacity: 0.3;
   }
   
+  /* OpenMoji Style System - Future-ready for Phase 4.1 Visual Redesign */
+  .openmoji-outline {
+    outline: var(--openmoji-outline-width, 3px) solid var(--openmoji-outline-color, #000000);
+    outline-offset: -1px;
+  }
+  
+  .openmoji-outline-dashed {
+    outline: var(--openmoji-outline-width, 3px) dashed var(--openmoji-outline-color, #000000);
+    outline-offset: -1px;
+  }
+  
+  .openmoji-outline-thick {
+    outline-width: 4px;
+  }
+  
+  .openmoji-ghost {
+    background: transparent !important;
+    color: transparent !important;
+  }
+  
   /* Responsive Text */
   .text-responsive-xs {
     @apply text-xs sm:text-sm;

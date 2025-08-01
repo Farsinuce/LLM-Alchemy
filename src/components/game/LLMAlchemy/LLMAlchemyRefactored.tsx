@@ -1102,7 +1102,7 @@ const LLMAlchemyRefactored = () => {
               } ${
                 touchDragging?.mixIndex === element.index && touchDragging?.fromMixingArea ? 'opacity-30' : ''
               } ${
-                draggingMixingElement === element.index ? 'opacity-10' : ''
+                draggingMixingElement === element.index ? 'openmoji-outline-dashed openmoji-ghost' : ''
               } ${
                 dimmedElements.has(element.name) ? 'element-dimmed' : ''
               } ${
