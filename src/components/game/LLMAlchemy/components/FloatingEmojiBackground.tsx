@@ -58,9 +58,9 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
     const dirX = centerX - startX;
     const dirY = centerY - startY;
     
-    // Normalize and scale to fixed distance (200 viewport units)
+    // Normalize and scale to fixed distance (2 viewport units)
     const length = Math.sqrt(dirX * dirX + dirY * dirY);
-    const fixedDistance = 200;
+    const fixedDistance = 20;
     const deltaX = (dirX / length) * fixedDistance;
     const deltaY = (dirY / length) * fixedDistance;
     
