@@ -91,3 +91,14 @@ Solution B (my favourite):
 - Good score: If the discovered element is an apple, and the LLM suggest "🍎" (an apple), that's a high confidence score (maybe 1.0)
 - Poor score: If the discovered element is a "Narwhal", but the LLM only can suggest "🐋" (it KNOWS it's a whale, and not quite accurate), then the LLM might output a low 0.5 confidence score.
 - Good score: If the discovered element is "glass" (not as in "a drinking glass", mind you, but as in the material), the LLM might be clever and suggest "🪟" (window emoji), which is actually a BETTER choice than a "(drinking) glass" emoji, so its confidence score would be high. In these cases, we don't want our fuse search to overrule. We just want the openmoji version of the window emoji.
+
+### L. OpenMoji "Coal" Fuzzy Search Bug
+
+- **Problem**: Fuzzy search produces poor matches (Coal → Collaboration).
+- **Technical Plan** (LLM Confidence Score approach):
+    1. Update `llm-prompts.ts` to include `"emojiConfidence": 0.0-1.0` in the response schema.
+    2. Update `/api/generate/route.ts` to parse this field.
+    3. In `openmoji-service.ts`:
+        - Accept `confidenceScore` parameter.
+        - If score > 0.8, bypass fuzzy search and use LLM's Unicode directly.
+        - If score ≤ 0.8, use existing fuzzy search for better match.

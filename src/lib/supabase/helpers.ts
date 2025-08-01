@@ -183,10 +183,17 @@ export async function decrementDailyCount(supabase: GenericSupabaseClient, userI
 
 export async function saveGameState(supabase: GenericSupabaseClient, userId: string, gameState: Partial<GameState>): Promise<boolean> {
   try {
+    // Ensure game_mode is present for proper conflict resolution
+    if (!gameState.game_mode) {
+      console.error('Error: game_mode is required for saving game state')
+      return false
+    }
+
     // Add version field to prevent compatibility issues
     const versionedGameState = {
       user_id: userId,
       ...gameState,
+      game_mode: gameState.game_mode, // Explicitly ensure game_mode is included
       state_version: '1.0', // Version for future compatibility
       updated_at: new Date().toISOString()
     };
