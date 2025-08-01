@@ -32,23 +32,23 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
     let startX: number, startY: number;
     
     switch (edge) {
-      case 0: // top edge
-        startX = Math.random() * 100;
-        startY = -10;
-        break;
-      case 1: // right edge
-        startX = 110;
-        startY = Math.random() * 100;
-        break;
-      case 2: // bottom edge
-        startX = Math.random() * 100;
-        startY = 110;
-        break;
-      default: // left edge
-        startX = -10;
-        startY = Math.random() * 100;
-        break;
-    }
+  case 0: // top edge
+    startX = Math.random() * 100;
+    startY = -5 + Math.random() * 15; // Range: -5 to 10
+    break;
+  case 1: // right edge
+    startX = 95 + Math.random() * 15; // Range: 95 to 110
+    startY = Math.random() * 100;
+    break;
+  case 2: // bottom edge
+    startX = Math.random() * 100;
+    startY = 95 + Math.random() * 15; // Range: 95 to 110
+    break;
+  default: // left edge
+    startX = -5 + Math.random() * 15; // Range: -5 to 10
+    startY = Math.random() * 100;
+    break;
+}
     
     // Generate random direction toward/through center
     const centerX = 50 + (Math.random() - 0.5) * 60; // Center area with some spread
@@ -136,7 +136,7 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
             left: `${emoji.startX}%`,
             top: `${emoji.startY}%`,
             transform: 'translate(-50%, -50%) scale(15)',
-            animation: 'floatAcross 10s linear forwards',
+            animation: 'floatAcross 20s linear forwards',
             '--dx': `${emoji.deltaX}vw`,
             '--dy': `${emoji.deltaY}vh`,
           } as React.CSSProperties & { '--dx': string; '--dy': string }}
@@ -158,10 +158,10 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
             transform: translate(-50%, -50%) scale(15);
           }
           10% {
-            opacity: 0.02;
+            opacity: 0.01;
           }
           90% {
-            opacity: 0.02;
+            opacity: 0.01;
             transform: translate3d(var(--dx), var(--dy), 0) translate(-50%, -50%) scale(15);
           }
           100% {

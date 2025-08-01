@@ -113,6 +113,7 @@ const LLMAlchemyRefactored = () => {
   const dropZoneRef = useRef<HTMLDivElement | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isOverDropZone = useRef<boolean>(false);
 
   // Load API key from localStorage on mount
   useEffect(() => {
@@ -452,11 +453,16 @@ const LLMAlchemyRefactored = () => {
     };
     
     const handleGlobalDragEnd = () => {
-      // Ensure cleanup happens on any drag end
-      draggedElement.current = null;
-      setIsDragging(false);
-      setHoveredElement(null);
-      clearDimmedElements();
+      // Only clean up if drag was cancelled (not over drop zone)
+      // If over drop zone, let onDrop handle the cleanup
+      if (!isOverDropZone.current) {
+        draggedElement.current = null;
+        setIsDragging(false);
+        setHoveredElement(null);
+        clearDimmedElements();
+      }
+      // Reset flag for next drag
+      isOverDropZone.current = false;
     };
     
     if (touchDragging || isDraggingDivider) {
@@ -875,11 +881,18 @@ const LLMAlchemyRefactored = () => {
           style={{ minHeight: '200px', touchAction: 'none' }}
           onDragOver={(e) => {
             e.preventDefault();
+            isOverDropZone.current = true;
             if (draggedElement.current?.fromMixingArea) {
               e.dataTransfer.dropEffect = 'move';
             } else {
               e.dataTransfer.dropEffect = 'copy';
             }
+          }}
+          onDragEnter={() => {
+            isOverDropZone.current = true;
+          }}
+          onDragLeave={() => {
+            isOverDropZone.current = false;
           }}
           onDrop={async (e) => {
             e.preventDefault();
