@@ -1,4 +1,4 @@
-# LLM Alchemy - Bug Squashing & Refinement Plan (v5)
+# LLM Alchemy - Bug Squashing & Refinement Plan (v6)
 
 ## 0. Getting Started for New Developers
 
@@ -16,176 +16,64 @@ LLM Alchemy is a web-based alchemy game where players combine elements to discov
 - **Testing**: Vitest (unit) + GitHub Actions (E2E)
 
 ### Development Workflow
-1. **Clone the repository**: `git clone https://github.com/Farsinuce/LLM-Alchemy.git`
-2. **Install dependencies**: `npm install`
-3. **Make changes** to fix bugs as outlined below
-4. **Commit and push**: `git add . && git commit -m "Fix: [bug description]" && git push`
-5. **Test on live site**: Vercel auto-deploys within ~1 minute to https://llm-alchemy-beta2.vercel.app
-6. **Run tests locally**: `npm run test` (optional, as GitHub Actions will also run them)
+- **Commit and push**: `git add . && git commit -m "Fix: [bug description]" && git push`
+- **Test on live site**: Vercel auto-deploys within ~1 minute to https://llm-alchemy-beta2.vercel.app
+- **Usually don't Run tests locally**: `npm run test` (optional, as GitHub Actions will also run them)
 
 **Important**: We do NOT build locally. All testing happens on the live Vercel deployment.
 
 ### Key Files for Bug Fixes
 - **Main game component**: `src/components/game/LLMAlchemy/LLMAlchemyRefactored.tsx`
 - **State management**: `src/components/game/LLMAlchemy/contexts/GameStateProvider.tsx`
-- **Drag & drop logic**: `src/components/game/LLMAlchemy/hooks/useElementInteraction.ts`
-- **Game logic**: `src/lib/game-logic.ts`
-- **Styles**: `src/app/globals.css` and `src/styles/animations.css`
-- **Layout**: `src/app/layout.tsx`
+- **Animation logic**: `src/components/game/LLMAlchemy/hooks/useGameAnimations.ts`
+- **Animation styles**: `src/styles/animations.css`
 
 ---
 
 ## 1. Overview
 
-This document outlines a refined, developer-centric plan to address remaining bugs and harden existing fixes. It incorporates a critical review of the `main` branch and prioritizes tasks based on impact and effort. The goal is to move from "patched" to "robust."
+This document outlines a refined, developer-centric plan to address three critical user-facing bugs. It incorporates a deep analysis of the codebase to identify the true root causes and proposes robust, long-term solutions.
 
 ---
 
-## 2. Current Status & Action Plan
+## 2. Priority Bug Fixes
 
-This table summarizes the observed gaps in the current implementation and the proposed actions.
+### 2.1. Bug 2: Desktop Repositioning Fails
 
-| Bug | Status in `main` | Observed Gaps & Action Plan | Priority |
-| --- | --- | --- | --- |
-| **A – Save/Load State** | **Mostly OK** | **Gap:** No guard against corrupted JSON saves. <br/> **Action:** Add a `version` field to the saved state object. On load, wrap parsing in `try...catch`. If version mismatches or parsing fails, clear the invalid state and show a toast notification. | **High** |
-| **B – Undo** | **Implemented** | **Gap:** Undo is client-side only; does not roll back token usage or challenge completions on the server. <br/> **Action:** Reclassify as a **known limitation**. A full server-side undo is a major feature, not a bug fix. No immediate action required. | **Low** |
-| **C – Animation Glitches** | **Improved** | **Gap:** Inline `transition: 'none'` style manipulation can cause frame drops on mobile Safari. <br/> **Action:** Refactor to use a global `.is-dragging` class on the `<body>` to disable transitions via CSS instead of JS. | **Low** |
-| **D – Touch Click Timing** | **Partially Fixed** | **Gap:** (1) Hard-coded 8px drag threshold ignores `devicePixelRatio`. (2) `preventDefault()` on `touchstart` blocks scrolling. <br/> **Action:** (1) Make threshold dynamic: `8 / window.devicePixelRatio`. (2) Use passive listeners on `touchstart` and only call `preventDefault()` *after* the drag threshold is met. | **Medium** |
-| **E – Drag-State Cleanup** | **Patched** | **Gap:** Race conditions can leave `isDragging` flag stuck on `true`. <br/> **Action:** Refactor to use a single, authoritative `useDragContext` to manage drag state, removing scattered `useRef` instances. | **High** |
-| **F – “Clear” Animation** | **Done** | No gaps identified. | — |
-| **G – Fonts** | **Done** | **Gap:** Missing `font-display: swap`. <br/> **Action:** Add `display: 'swap'` to the `Source_Sans_3` import options in `layout.tsx`. | **Low** |
-| **H – Floating Emojis** | **Visible** | **Gap:** `setInterval` loop is inefficient and raises CPU usage on mobile. <br/> **Action:** Replace the JS-based animation with a pure CSS keyframe animation (`@keyframes float { ... }`). | **Low** |
-| **I – Font Preconnect** | **Added** | **Gap:** Missing `preload` for the critical WOFF2 font file. <br/> **Action:** Add `<link rel="preload">` for the 700-weight font slice in `layout.tsx` to reduce LCP delay. | **Low** |
+-   **Status**: **CRITICAL**
+-   **Priority**: **Highest**
+-   **The Problem**: On desktop, once an element is placed in the mixing area, it cannot be dragged again. The `onDrop` event that should handle repositioning never works correctly because the reference to the dragged element is cleared prematurely.
+-   **The Root Cause**: A race condition exists between two event handlers in `LLMAlchemyRefactored.tsx`. The `onDragEnd` event on the draggable element fires *before* the `onDrop` event on the mixing area. This `onDragEnd` handler immediately sets `draggedElement.current = null`, so by the time `onDrop` executes, it has no element to work with and aborts. This explains why it fails on desktop (which uses HTML5 drag-and-drop) but works on mobile (which uses a separate `onTouch...` event system).
+-   **The Solution**: Centralize all drag state cleanup within the `onDrop` handler of the mixing area. The `onDragEnd` handler on the individual elements will be removed to prevent it from clearing the state too early. This ensures that the `onDrop` handler always has the necessary information to correctly identify the element and its origin, allowing it to reliably reposition it.
 
----
+### 2.2. Bug X: "Clear" Animation is Incorrect
 
-## 3. Priority Task: Fixing Bug 2 (Desktop Repositioning)
+-   **Status**: **BUGGED**
+-   **Priority**: **Medium**
+-   **The Problem**: When the "Clear" button is pressed, elements in the mixing area fade out incorrectly (opacity goes from 0% to 100% instead of 100% to 0%) and do not perform the required zoom animation (`100% -> 110% -> 0%`).
+-   **The Root Cause**: This is a two-part issue:
+    1.  **Incorrect CSS**: The `@keyframes clear-zoom-fade` in `src/styles/animations.css` has the wrong values. It animates opacity to `0.5` midway through instead of holding it at `1` before fading out.
+    2.  **Conflicting Inline Styles**: The mixing area elements in `LLMAlchemyRefactored.tsx` have an inline style of `transition: 'none'`. This CSS rule has higher specificity and overrides the `animate-clear-zoom-fade` class, preventing the keyframe animation from executing.
+-   **The Solution**:
+    1.  First, I will correct the `@keyframes` in `animations.css` to match the specified animation curve: `transform: scale(1) -> scale(1.1) -> scale(0)` and `opacity: 1 -> 1 -> 0`.
+    2.  Second, I will update the `animateRemoval` function in `useGameAnimations.ts`. This function will be modified to temporarily remove the conflicting `transition: 'none'` style from the elements during the animation, allowing the corrected keyframes to apply properly.
 
-This is the highest-priority user-facing bug.
+### 2.3. Bug D: Floating Emoji Background is Laggy and Incorrect
 
-### 3.1. The Problem
-
-The `onDrop` handler in `LLMAlchemyRefactored.tsx` fails to reposition an element if it's dropped partially over its own starting position, because `targetElement` is not null.
-
-### 3.2. The Solution
-
-The logical branches in the `onDrop` handler must be reordered to correctly handle the three distinct user actions: mixing, repositioning, and adding a new element.
-
-**Action Plan:**
-
-1.  Modify the `onDrop` handler in `src/components/game/LLMAlchemy/LLMAlchemyRefactored.tsx`.
-2.  The new logic will be:
-    *   **First, check for a mix:** `if (targetElement && targetElement.index !== draggedElement.current.mixIndex)`
-    *   **Then, check if repositioning:** `else if (draggedElement.current.fromMixingArea)`
-    *   **Finally, handle adding a new element:** `else`
-3.  This ensures that if an element is dragged from the mixing area, it is *always* repositioned unless it's dropped on a *different* element to be mixed.
-
-### 3.3. Implementation Code
-
-```typescript
-const onDrop = useCallback(
-  (e: React.DragEvent | React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!draggedElement.current) return;
-
-    const clientX = 'touches' in e ? e.touches[0]?.clientX || 0 : ('clientX' in e ? e.clientX : 0);
-    const clientY = 'touches' in e ? e.touches[0]?.clientY || 0 : ('clientY' in e ? e.clientY : 0);
-
-    const targetElement = document.elementFromPoint(clientX, clientY);
-    const targetIndex = targetElement?.getAttribute('data-element-index');
-    const targetMixingElement = targetIndex ? mixingAreaElements.find(el => el.index === parseInt(targetIndex)) : null;
-
-    // First: Check if we're mixing with a different element
-    if (targetMixingElement && targetMixingElement.index !== draggedElement.current.mixIndex) {
-      handleMix(draggedElement.current.element, targetMixingElement.element);
-    } 
-    // Then: Check if we're repositioning an existing element
-    else if (draggedElement.current.fromMixingArea) {
-      const dropPosition = {
-        x: clientX - ELEMENT_WIDTH / 2,
-        y: clientY - ELEMENT_HEIGHT / 2
-      };
-      updateElementPosition(draggedElement.current.mixIndex, dropPosition);
-    } 
-    // Finally: Add new element to mixing area
-    else {
-      const dropPosition = {
-        x: clientX - ELEMENT_WIDTH / 2,
-        y: clientY - ELEMENT_HEIGHT / 2
-      };
-      addToMixingArea(draggedElement.current.element, dropPosition);
-    }
-
-    // Clean up drag state
-    draggedElement.current = null;
-    setIsDragging(false);
-  },
-  [mixingAreaElements, handleMix, updateElementPosition, addToMixingArea]
-);
-```
-
-### 3.4. Edge Cases to Watch For
-
-1. **Rapid dragging:** User starts a new drag before the previous one completes
-2. **Multi-touch:** User drags multiple elements simultaneously on a touchscreen
-3. **Out-of-bounds drops:** User drops element outside the mixing area
-4. **Overlapping elements:** User drops element exactly on top of another
-5. **Browser zoom:** Ensure position calculations account for zoom level
+-   **Status**: **BUGGED**
+-   **Priority**: **Medium**
+-   **The Problem**: The current background animation is inefficient, causing performance issues ("lagging blobs"). It also fails to meet the visual requirements: large, semi-transparent emojis that drift across the screen.
+-   **The Root Cause**: The implementation in `LLMAlchemyRefactored.tsx` uses a JavaScript `setInterval` to manually update the position and opacity of standard-sized emojis every 100ms. This is highly inefficient, causing constant re-renders of the main game component and leading to poor performance.
+-   **The Solution**: A complete rewrite using a dedicated component and CSS animations.
+    1.  **Create `FloatingEmojiBackground.tsx`**: I will create a new, self-contained component to handle the entire background animation logic. This isolates its re-renders from the main game state.
+    2.  **Use Pure CSS Animations**: The component will generate elements that use a hardware-accelerated CSS `@keyframe` animation for the entire lifecycle (fade-in, drift, fade-out). This is far more performant than JavaScript-driven animation.
+    3.  **Efficient Spawning Logic**: The component will use a combination of a low-frequency `setInterval` (e.g., every 2 seconds) to decide *if* a new emoji should spawn, and the `onAnimationEnd` browser event to know *when* an emoji has finished its animation and can be removed from the DOM. This guarantees a maximum of 3 emojis on screen without constant checks.
+    4.  **Correct Visuals**: The emojis will be rendered at `transform: scale(10)` and `opacity: 0.1` to achieve the large, subtle background effect, and will correctly source from the list of discovered elements.
 
 ---
 
-## 4. Recommended Sprint Order
+## 3. Implementation Order
 
-1.  **Fix Desktop Repositioning (Bug 2):** Implement the `onDrop` logic refactor. This is the most critical fix.
-2.  **Guard Corrupted Saves (Bug A):** Implement the save-state versioning and `try...catch` block.
-3.  **Refactor Drag Context (Bug E):** Create a `useDragContext` to eliminate race conditions.
-4.  **Improve Touch Handling (Bug D):** Implement the `devicePixelRatio` threshold and passive listener strategy.
-5.  **Performance Polish (Bugs C, H, G, I):** Implement the remaining low-priority CSS and font-loading optimizations.
-
----
-
-## 5. Testing Checklist
-
-After implementing each fix, verify with these tests:
-
-### Desktop Repositioning (Bug 2)
-- [ ] Can drag element from sidebar to mixing area
-- [ ] Can reposition element within mixing area without triggering mix
-- [ ] Can mix two different elements by dropping one on another
-- [ ] No "stuck" elements after drag operations
-
-### Save/Load State (Bug A)
-- [ ] Valid saves load correctly
-- [ ] Corrupted JSON shows error toast and clears state
-- [ ] Old save versions are handled gracefully
-- [ ] Browser refresh preserves game state
-
-### Drag Context (Bug E)
-- [ ] No ghost elements after rapid dragging
-- [ ] Multiple quick drags don't break state
-- [ ] Drag indicator disappears reliably
-- [ ] No race conditions with simultaneous operations
-
-### Touch Handling (Bug D)
-- [ ] Touch drag works on high-DPI devices
-- [ ] Page still scrolls when not dragging
-- [ ] Single tap selects element correctly
-- [ ] No 300ms delay on touch interactions
-
-### Performance (Bugs C, H, G, I)
-- [ ] No animation stutters during drag
-- [ ] Floating emojis don't cause CPU spikes
-- [ ] Fonts load without FOUT (Flash of Unstyled Text)
-- [ ] Page loads faster with preconnect/preload
-
----
-
-## 6. Success Criteria
-
-The bug squashing sprint is complete when:
-1. All high-priority bugs are fixed and tested
-2. No new regressions are introduced
-3. The game feels responsive and polished
-4. Code is cleaner and more maintainable than before
+1.  **Fix Desktop Repositioning (Bug 2)**
+2.  **Fix "Clear" Animation (Bug X)**
+3.  **Rewrite Floating Emoji System (Bug D)**

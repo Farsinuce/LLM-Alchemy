@@ -69,7 +69,17 @@ export const useGameAnimations = () => {
       const timeout = setTimeout(() => {
         const domElement = document.getElementById(`mixing-${el.id}-${el.index}`);
         if (domElement) {
+          // Store original transition value and temporarily remove conflicting style
+          const originalTransition = domElement.style.transition;
+          domElement.style.transition = '';
+          
+          // Add the animation class
           domElement.classList.add('animate-clear-zoom-fade');
+          
+          // Restore original transition after animation completes
+          setTimeout(() => {
+            domElement.style.transition = originalTransition;
+          }, 400);
         }
         setAnimatingElements(prev => new Set(prev).add(`${el.id}-${el.index}`));
       }, index * 50);

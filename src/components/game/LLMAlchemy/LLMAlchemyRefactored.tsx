@@ -18,24 +18,10 @@ import { MixingElement } from './hooks/useGameState';
 import { useElementMixing } from './hooks/useElementMixing';
 import { useGameAudio } from './hooks/useGameAudio';
 import { useGameAnimations } from './hooks/useGameAnimations';
-import { UnlockModal, AchievementsModal, ReasoningPopup, ElementListView } from './components';
+import { UnlockModal, AchievementsModal, ReasoningPopup, ElementListView, FloatingEmojiBackground } from './components';
 import * as GameLogic from '@/lib/game-logic';
 
 // UI-only interfaces (not moved to state management)
-interface FloatingEmoji {
-  id: number;
-  emoji: string;
-  x: number;
-  y: number;
-  directionX: number;
-  directionY: number;
-  speed: number;
-  opacity: number;
-  maxOpacity: number;
-  lifespan: number;
-  age: number;
-}
-
 interface ReasoningPopup {
   element: Element;
   x: number;
@@ -117,7 +103,6 @@ const LLMAlchemyRefactored = () => {
   const [dragStartY, setDragStartY] = useState<number>(0);
   const [dragStartHeight, setDragStartHeight] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmoji[]>([]);
   const [reasoningPopup, setReasoningPopup] = useState<ReasoningPopup | null>(null);
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
@@ -127,7 +112,6 @@ const LLMAlchemyRefactored = () => {
   const draggedElement = useRef<MixingElement | null>(null);
   const dropZoneRef = useRef<HTMLDivElement | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
-  const floatingEmojiId = useRef<number>(0);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load API key from localStorage on mount
@@ -438,7 +422,6 @@ const LLMAlchemyRefactored = () => {
     if (isModeSwitching) {
       resetGameState(gameMode);
       // Clear UI state
-      setFloatingEmojis([]);
       setShowUnlock(null);
       setReasoningPopup(null);
       // Clear animations handled by useGameAnimations hook
@@ -505,7 +488,7 @@ const LLMAlchemyRefactored = () => {
         clearTimeout(timeoutRef);
       }
     };
-  }, [elements, floatingEmojis.length]);
+  }, [elements]);
 
 
   // Handle reasoning popup dismissal
@@ -530,68 +513,6 @@ const LLMAlchemyRefactored = () => {
     }
   }, [isDraggingDivider, dragStartY, dragStartHeight]);
 
-  // Floating emoji management
-  useEffect(() => {
-    if (elements.length < 5) return;
-
-    const createFloatingEmoji = () => {
-      const randomElement = elements[Math.floor(Math.random() * elements.length)];
-      return {
-        id: floatingEmojiId.current++,
-        emoji: randomElement.emoji,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        directionX: (Math.random() - 0.5) * 2,
-        directionY: (Math.random() - 0.5) * 2,
-        speed: 0.3 + Math.random() * 0.4,
-        opacity: 0,
-        maxOpacity: 0.05 + Math.random() * 0.05, // Increased to 5%-10% opacity
-        lifespan: 8000 + Math.random() * 6000,
-        age: 0
-      };
-    };
-
-    if (floatingEmojis.length === 0) {
-      const initialCount = 1 + Math.floor(Math.random() * 3);
-      setFloatingEmojis(Array.from({ length: initialCount }, createFloatingEmoji));
-    }
-
-    const animationLoop = setInterval(() => {
-      setFloatingEmojis(prevEmojis => {
-        let newEmojis = prevEmojis.map(emoji => {
-          const newAge = emoji.age + 100;
-          const lifeProgress = newAge / emoji.lifespan;
-          
-          let newOpacity;
-          if (lifeProgress < 0.2) {
-            newOpacity = (lifeProgress / 0.2) * emoji.maxOpacity;
-          } else if (lifeProgress < 0.8) {
-            newOpacity = emoji.maxOpacity;
-          } else {
-            newOpacity = emoji.maxOpacity * ((1 - lifeProgress) / 0.2);
-          }
-
-          return {
-            ...emoji,
-            x: emoji.x + emoji.directionX * emoji.speed,
-            y: emoji.y + emoji.directionY * emoji.speed,
-            opacity: Math.max(0, newOpacity),
-            age: newAge
-          };
-        });
-
-        newEmojis = newEmojis.filter(emoji => emoji.age < emoji.lifespan);
-        
-        while (newEmojis.length < 1 || (newEmojis.length < 3 && Math.random() < 0.3)) {
-          newEmojis.push(createFloatingEmoji());
-        }
-
-        return newEmojis;
-      });
-    }, 100);
-
-    return () => clearInterval(animationLoop);
-  }, [elements, floatingEmojis.length]);
 
   // Handle reasoning popup dismissal
   useEffect(() => {
@@ -699,20 +620,7 @@ const LLMAlchemyRefactored = () => {
       }`}></div>
       
       {/* Floating Background Emojis */}
-      {floatingEmojis.map(emoji => (
-        <div
-          key={emoji.id}
-          className="absolute text-4xl pointer-events-none transition-opacity duration-200"
-          style={{
-            left: `${emoji.x}%`,
-            top: `${emoji.y}%`,
-            opacity: emoji.opacity,
-            transform: 'translate(-50%, -50%)'
-          }}
-        >
-          {emoji.emoji}
-        </div>
-      ))}
+      <FloatingEmojiBackground elements={elements} gameMode={gameMode} />
       
       {/* Header */}
       <div className="relative z-10 bg-gray-800/80 backdrop-blur-sm p-4 shadow-lg">
@@ -1109,10 +1017,8 @@ const LLMAlchemyRefactored = () => {
                 playSound('press');
               }}
               onDragEnd={() => {
-                draggedElement.current = null; // Clear drag reference
-                setIsDragging(false);
-                setHoveredElement(null);
-                clearDimmedElements();
+                // Removed premature cleanup - let onDrop handle all state management
+                // This prevents race condition where onDragEnd fires before onDrop
               }}
               onTouchStart={(e) => {
                 const touch = e.touches[0];
