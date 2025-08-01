@@ -1039,7 +1039,7 @@ const LLMAlchemyRefactored = () => {
               key={`${element.id}-${element.index}`}
               id={`mixing-${element.id}-${element.index}`}
               data-testid={`mixing-element-${element.name}`}
-              draggable={!isTouchDevice && !isMixing}
+              draggable={!isTouchDevice() && !isMixing}
               onClick={() => {
                 console.log(`🖱️ [DEBUG] CLICK on mixing element: ${element.name} (index: ${element.index})`);
                 console.log(`🖱️ [DEBUG] Current draggedElement:`, draggedElement.current);
