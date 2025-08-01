@@ -1082,9 +1082,7 @@ const LLMAlchemyRefactored = () => {
                 document.addEventListener('touchend', handleTouchEnd);
               }}
               onMouseEnter={() => {
-                if (isDragging && draggingMixingElement !== element.index) {
-                  setHoveredElement(element.index);
-                }
+                if (isDragging) setHoveredElement(element.index);
               }}
               onMouseLeave={() => setHoveredElement(null)}
               onContextMenu={(e) => e.preventDefault()}
@@ -1130,7 +1128,7 @@ const LLMAlchemyRefactored = () => {
                 WebkitUserSelect: 'none',
                 transition: 'none',
                 boxShadow: element.energized ? '0 0 20px rgba(250, 204, 21, 0.5), 0 0 0 2px #facc15' :
-                          hoveredElement === element.index ? `0 0 0 2px ${GameLogic.getRarityHoverColor(element.rarity)}` : ''
+                          (hoveredElement === element.index && draggingMixingElement !== element.index) ? `0 0 0 2px ${GameLogic.getRarityHoverColor(element.rarity)}` : ''
               }}
             >
               <OpenMojiDisplay 
