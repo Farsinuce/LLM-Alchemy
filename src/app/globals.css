@@ -308,6 +308,10 @@ body {
     color: transparent !important;
   }
   
+  .openmoji-ghost > * {
+    visibility: hidden;
+  }
+  
   /* Responsive Text */
   .text-responsive-xs {
     @apply text-xs sm:text-sm;
