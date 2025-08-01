@@ -105,7 +105,7 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
             left: `${emoji.startX}%`,
             top: `${emoji.startY}%`,
             transform: 'translate(-50%, -50%) scale(10)',
-            animation: `floatingEmoji ${emoji.duration}ms ease-in-out forwards`,
+            animation: `floatingEmoji ${emoji.duration}ms linear forwards`,
             '--end-x': `${emoji.endX}%`,
             '--end-y': `${emoji.endY}%`,
           } as React.CSSProperties & { '--end-x': string; '--end-y': string }}
