@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Element } from '@/types/game.types';
+import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 
 interface FloatingEmojiBackgroundProps {
   elements: Element[];
@@ -10,13 +11,11 @@ interface FloatingEmojiBackgroundProps {
 
 interface FloatingEmoji {
   id: number;
-  emoji: string;
-  duration: number;
-  delay: number;
+  element: Element;
   startX: number;
-  endX: number;
   startY: number;
-  endY: number;
+  deltaX: number;
+  deltaY: number;
 }
 
 const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ elements, gameMode }) => {
@@ -24,19 +23,54 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
   const emojiIdRef = useRef<number>(0);
   const spawnIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Generate a new floating emoji
+  // Generate a new floating emoji with constant travel distance
   const createFloatingEmoji = (): FloatingEmoji => {
     const randomElement = elements[Math.floor(Math.random() * elements.length)];
     
+    // Start from a random edge
+    const edge = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
+    let startX: number, startY: number;
+    
+    switch (edge) {
+      case 0: // top edge
+        startX = Math.random() * 100;
+        startY = -10;
+        break;
+      case 1: // right edge
+        startX = 110;
+        startY = Math.random() * 100;
+        break;
+      case 2: // bottom edge
+        startX = Math.random() * 100;
+        startY = 110;
+        break;
+      default: // left edge
+        startX = -10;
+        startY = Math.random() * 100;
+        break;
+    }
+    
+    // Generate random direction toward/through center
+    const centerX = 50 + (Math.random() - 0.5) * 60; // Center area with some spread
+    const centerY = 50 + (Math.random() - 0.5) * 60;
+    
+    // Calculate direction vector
+    const dirX = centerX - startX;
+    const dirY = centerY - startY;
+    
+    // Normalize and scale to fixed distance (200 viewport units)
+    const length = Math.sqrt(dirX * dirX + dirY * dirY);
+    const fixedDistance = 200;
+    const deltaX = (dirX / length) * fixedDistance;
+    const deltaY = (dirY / length) * fixedDistance;
+    
     return {
       id: emojiIdRef.current++,
-      emoji: randomElement.emoji,
-      duration: 20000 + Math.random() * 15000, // 20-35 seconds
-      delay: 0,
-      startX: Math.random() * 100, // Start position as percentage
-      endX: Math.random() * 100,   // End position as percentage
-      startY: Math.random() * 100,
-      endY: Math.random() * 100,
+      element: randomElement,
+      startX,
+      startY,
+      deltaX,
+      deltaY,
     };
   };
 
@@ -48,7 +82,6 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
   // Spawn new emojis periodically
   useEffect(() => {
     if (elements.length < 5) {
-      // Clear any existing emojis and interval if not enough elements
       setActiveEmojis([]);
       if (spawnIntervalRef.current) {
         clearInterval(spawnIntervalRef.current);
@@ -57,10 +90,9 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
       return;
     }
 
-    // Initial spawn of 1-2 emojis
+    // Initial spawn
     if (activeEmojis.length === 0) {
-      const initialCount = 1 + Math.floor(Math.random() * 2);
-      const initialEmojis = Array.from({ length: initialCount }, createFloatingEmoji);
+      const initialEmojis = Array.from({ length: 2 }, createFloatingEmoji);
       setActiveEmojis(initialEmojis);
     }
 
@@ -68,13 +100,12 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
     if (!spawnIntervalRef.current) {
       spawnIntervalRef.current = setInterval(() => {
         setActiveEmojis(prev => {
-          // Only spawn if we have less than 3 emojis and random chance
-          if (prev.length < 3 && Math.random() < 0.4) {
+          if (prev.length < 3 && Math.random() < 0.5) {
             return [...prev, createFloatingEmoji()];
           }
           return prev;
         });
-      }, 2000); // Check every 2 seconds
+      }, 3000);
     }
 
     return () => {
@@ -100,41 +131,42 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
       {activeEmojis.map((emoji) => (
         <div
           key={emoji.id}
-          className="absolute text-4xl opacity-[0.03]"
+          className="absolute opacity-[0.02]"
           style={{
             left: `${emoji.startX}%`,
             top: `${emoji.startY}%`,
-            transform: 'translate(-50%, -50%) scale(10)',
-            animation: `floatingEmoji ${emoji.duration}ms linear forwards`,
-            '--end-x': `${emoji.endX}%`,
-            '--end-y': `${emoji.endY}%`,
-          } as React.CSSProperties & { '--end-x': string; '--end-y': string }}
+            transform: 'translate(-50%, -50%) scale(15)',
+            animation: 'floatAcross 10s linear forwards',
+            '--dx': `${emoji.deltaX}vw`,
+            '--dy': `${emoji.deltaY}vh`,
+          } as React.CSSProperties & { '--dx': string; '--dy': string }}
           onAnimationEnd={() => handleAnimationEnd(emoji.id)}
         >
-          {emoji.emoji}
+          <OpenMojiDisplay 
+            emoji={emoji.element.emoji} 
+            hexcode={emoji.element.openmojiHex}
+            name={emoji.element.name} 
+            size="sm"
+          />
         </div>
       ))}
       
       <style jsx>{`
-        @keyframes floatingEmoji {
+        @keyframes floatAcross {
           0% {
             opacity: 0;
-            transform: translate(-50%, -50%) scale(10);
+            transform: translate(-50%, -50%) scale(15);
           }
           10% {
-            opacity: 0.03;
+            opacity: 0.02;
           }
           90% {
-            opacity: 0.03;
-            left: var(--end-x);
-            top: var(--end-y);
-            transform: translate(-50%, -50%) scale(10);
+            opacity: 0.02;
+            transform: translate3d(var(--dx), var(--dy), 0) translate(-50%, -50%) scale(15);
           }
           100% {
             opacity: 0;
-            left: var(--end-x);
-            top: var(--end-y);
-            transform: translate(-50%, -50%) scale(10);
+            transform: translate3d(var(--dx), var(--dy), 0) translate(-50%, -50%) scale(15);
           }
         }
       `}</style>
