@@ -127,7 +127,7 @@ export function useElementMixing({
       reasoning?: string;
     }> => {
       const abortController = new AbortController();
-      const timeoutId = setTimeout(() => abortController.abort(), 8000);
+      const timeoutId = setTimeout(() => abortController.abort(), 13000);
       
       try {
         const requestBody = { 

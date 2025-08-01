@@ -75,197 +75,67 @@ This document outlines a refined, developer-centric plan to address three critic
 
 ---
 
-## 4. 🐛 OpenMoji Emoji Selection Bug (CRITICAL)
+## 4. 🐛 OpenMoji Emoji Selection Bug ✅ FIXED
 
 ### 4.1. The Problem
+**What happened**: Element "Coal" got matched to "collaboration" emoji 🤝 instead of ⚫ or 🪨
+**Why it was bad**: Completely nonsensical emoji assignments broke game immersion
+**Root cause**: Fuzzy search in `openmoji-service.ts` was too aggressive with partial string matching
 
-**What happens**: Element "Coal" gets matched to "collaboration" emoji 🤝 instead of ⚫ or 🪨
-**Why it's bad**: Completely nonsensical emoji assignments break game immersion
-**Root cause**: Fuzzy search in `openmoji-service.ts` is too aggressive with partial string matching
+### 4.2. The Solution Applied
+Implemented multi-stage guard logic with LLM confidence scoring:
 
-### 4.2. Technical Root Cause Analysis
+1. **Added `emojiConfidence`** to LLM prompts (0.0-1.0 range)
+2. **Multi-stage decision logic**:
+   - Stage 1: Prefer exact PUA matches with token overlap (preserves narwhal, oil-spill)
+   - Stage 2: Trust LLM when confidence ≥ 0.85 AND Unicode exists (respects glass → window)
+   - Stage 3: Use fuzzy search only with meaningful word overlap (prevents coal → collaboration)
+   - Stage 4: Fallback to LLM's choice
+3. **Added `tokenOverlap` helper** to prevent prefix-only matches
+4. **Enhanced caching** with confidence bucketing
+5. **Improved thresholds**: Fuse 0.32→0.25, override 0.35→0.15
 
-The current emoji resolution system has three issues:
+### 4.3. Result
+- ✅ "Coal" → ⚫ coal (no more collaboration bug)
+- ✅ Preserves valuable PUA emojis (narwhal, oil-spill) 
+- ✅ Respects LLM's intelligent choices when confident
+- ✅ Better emoji selection overall
 
-1. **Prefix collisions**: Fuzzy search threshold of 0.32 allows "co*" to match "collaboration" for "coal"
-2. **Wasted LLM data**: The LLM already outputs `emojiTags` (visual descriptors) but we ignore them completely
-3. **Poor PUA prioritization**: OpenMoji's extra emoji catalogue (narwhal, oil-spill, etc.) gets overridden by weak fuzzy matches
+**Files modified**: `src/lib/llm-prompts.ts`, `src/app/api/generate/route.ts`, `src/lib/openmoji-service.ts`
+**Commit**: 552e0ae - "Fix: Implement OpenMoji emoji selection bug fix"
 
-**Current flow**:
-```
-LLM suggests: "coal" → 🪨 (with emojiTags: ["coal", "black", "rock"])
-→ openmoji-service.ts ignores emojiTags
-→ Fuzzy search matches "co*" prefix
-→ Returns 🤝 "collaboration" (score 0.25 < threshold 0.35)
-```
+---
 
-### 4.3. The Solution: Multi-Stage Guard + LLM Confidence
+## 5. 🚨 New Critical Issues Found During Testing
 
-**Why this approach**: Leverages existing data (emojiTags) + adds LLM intelligence (confidence) without over-engineering.
+### 5.1. Bug: JSON Parse Fallback Wrong Format (CRITICAL)
 
-**Key insight**: The LLM already provides two valuable signals we're not using:
-- `emojiTags`: Visual descriptors for better fuzzy matching
-- `emojiConfidence`: How sure the LLM is about its Unicode choice
-
-### 4.4. Implementation Plan
-
-#### Step 1: Update LLM Prompts (`src/lib/llm-prompts.ts`)
-Add `emojiConfidence` field to the response schema:
-
-```typescript
-// In both buildSciencePrompt and buildCreativePrompt, update the JSON schema:
-{
-  "outcomes": [
+-   **Status**: **CRITICAL**
+-   **Priority**: **High**
+-   **The Problem**: When Gemini Flash returns malformed JSON (which it's prone to do), the API's fallback response uses the old single-outcome format instead of the new multi-outcome format expected by the frontend. This causes 500 errors.
+-   **The Root Cause**: In `src/app/api/generate/route.ts` lines 117-137, the JSON parse error fallback returns:
+    ```javascript
     {
-      "result": "Element Name",
-      "emoji": "one appropriate Unicode emoji",
-      "emojiConfidence": {"type":"number","minimum":0,"maximum":1}, // ADD THIS
-      "color": "hex color",
-      // ... rest of fields
+      result: null,
+      emoji: '❌',
+      // ... old format
     }
-  ]
-}
-```
+    ```
+    But the frontend expects `{outcomes: null, reasoning: "..."}` format.
+-   **The Solution**: Update the fallback to return the correct format that matches the frontend expectations.
 
-**Why**: Allows LLM to express confidence in its emoji choice (0.0 = unsure, 1.0 = perfect match).
+### 5.2. Bug: "Null" Element Creation (CRITICAL)
 
-#### Step 2: Parse Confidence in API (`src/app/api/generate/route.ts`)
-Update the generate endpoint to extract and pass the confidence score:
+-   **Status**: **CRITICAL**
+-   **Priority**: **High**
+-   **The Problem**: Gemini Flash can return `{result: "Null", ...}` which gets accepted as a valid element name, creating a literal "Null" element in the game.
+-   **The Root Cause**: No validation exists to prevent invalid element names like "Null", "null", "undefined", "Unknown", empty strings, etc.
+-   **The Solution**: Add validation in the API route to filter out reserved/invalid element names before processing outcomes.
 
-```typescript
-// In the response parsing section, extract:
-const emojiConfidence = outcome.emojiConfidence ?? 0.5; // Default if missing
+### 5.3. Bug: Timeout Too Short for Complex Combinations
 
-// Pass to resolveEmoji:
-resolveEmoji({
-  unicodeEmoji: outcome.emoji,
-  name: outcome.result,
-  tags: outcome.emojiTags || [],
-  confidence: emojiConfidence
-});
-```
-
-**Why**: Forwards LLM's confidence assessment to the emoji resolver.
-
-#### Step 3: Implement Multi-Stage Guard (`src/lib/openmoji-service.ts`)
-
-Replace the current simple decision logic with a smart multi-stage guard:
-
-```typescript
-function choose(direct, best, llmScore, name, tags) {
-  // 1. Always prefer exact PUA matches with token overlap
-  if (best?.item.hexcode.startsWith('E') && tokenOverlap(name, best)) {
-    return best; // Keep valuable narwhal, oil-spill emojis
-  }
-  
-  // 2. Trust LLM when confidence is high AND Unicode exists in OpenMoji
-  if (llmScore >= 0.85 && direct) {
-    return direct; // Respect "glass" → 🪟 window choice
-  }
-  
-  // 3. Use fuzzy search only with meaningful word overlap
-  if (!direct || (best && best.score < 0.15 && tokenOverlap(name, best))) {
-    return best; // Prevents "coal" → "collaboration"
-  }
-  
-  // 4. Fallback to LLM's choice
-  return direct ?? fallback;
-}
-
-function tokenOverlap(elementName, fuseResult) {
-  const nameWords = elementName.toLowerCase().split(/\s+/);
-  const annotationWords = fuseResult.item.annotation.toLowerCase().split(/\s+/);
-  return nameWords.some(word => annotationWords.includes(word));
-}
-```
-
-**Why each stage**:
-- Stage 1: Preserves valuable PUA emojis (narwhal, oil-spill) when they truly match
-- Stage 2: Respects LLM's intelligent choices (glass → window) when it's confident
-- Stage 3: Prevents prefix-only matches (coal → collaboration) by requiring word overlap
-- Stage 4: Safe fallback to LLM's Unicode choice
-
-#### Step 4: Enhanced Fuzzy Search with Tags
-Use `emojiTags` to improve fuzzy matching:
-
-```typescript
-// In fuzzy search, when no direct match found:
-const queryWithTags = `${elementName} ${tags.join(' ')}`;
-const results = fuse.search(queryWithTags);
-```
-
-**Why**: Tags like ["coffee", "grinder", "mill"] help find better matches than just "Coffee Grinder".
-
-#### Step 5: Adjust Thresholds
-```typescript
-// Lower Fuse threshold: 0.32 → 0.25 (more selective)
-// Raise override threshold: 0.35 → 0.15 (fewer bad overrides)
-```
-
-**Why**: Empirically reduces false positives while keeping good matches.
-
-### 4.5. Expected Outcomes
-
-| Element | Current Result | New Result | Why It's Better |
-|---------|---------------|------------|-----------------|
-| Coal | 🤝 collaboration | ⚫ coal | Prevents prefix collision |
-| Glass (material) | 🥛 milk glass | 🪟 window | LLM's intelligent choice (high confidence) |
-| Narwhal | 🐋 whale | 🦄 narwhal (PUA) | Prioritizes exact PUA matches |
-| Oil Spill | 🛢️ oil drum | 🌊 oil-spill (PUA) | Uses specialized PUA emoji |
-
-### 4.6. Why This Isn't Over-Engineered
-
-1. **Uses existing data**: `emojiTags` already in prompts, just not used
-2. **Minimal code**: ~30 lines across 3 files
-3. **Simple logic**: Series of if-statements, not complex algorithms
-4. **Addresses root cause**: Fixes fuzzy search issues systematically
-5. **Preserves good cases**: Keeps valuable PUA emojis and LLM insights
-
-### 4.7. Testing
-
-Create test cases in `openmoji-service.test.ts`:
-
-```typescript
-describe('emoji resolution', () => {
-  test('prevents prefix collisions', () => {
-    expect(resolveEmoji({name: 'coal', confidence: 0.9})).toMatch(/coal|black/);
-  });
-  
-  test('respects high-confidence LLM choices', () => {
-    expect(resolveEmoji({name: 'glass', unicode: '🪟', confidence: 0.95})).toBe('🪟');
-  });
-  
-  test('prioritizes PUA matches', () => {
-    expect(resolveEmoji({name: 'narwhal'})).toMatch(/narwhal/);
-  });
-});
-```
-
-### 4.8. Implementation Details
-
-**Type Safety**:
-- Add optional `confidence?: number` to `ResolveEmojiParams` interface
-- Make `emojiConfidence` required in JSON schema with bounds: `{"type":"number","minimum":0,"maximum":1}`
-- Fix test parameter name: use `unicodeEmoji` not `unicode`
-
-**Cache Fix**:
-- Update cache key to include confidence bucketing: `${name}|${tags.join(',')}|${Math.round((confidence ?? 0.5) * 10)}`
-- Prevents serving wrong confidence results from cache
-
-**Guard Implementation Fixes**:
-- Use `wrap()` for fallback instead of undefined `fallback` variable
-- Make tokenOverlap case-insensitive to handle "Oil Spill" vs "oil-spill"
-- Add `unicodeMap.has()` check in stage 2 to prevent 404s for unknown Unicode
-- Confidence clamping: `Math.min(Math.max(raw,0),1)` for parser robustness
-
-**Thresholds**:
-- Fuzzy search: 0.32 → 0.25 (more selective)
-- Override threshold: 0.35 → 0.15 (fewer bad overrides)
-
-### 4.9. Files to Modify
-
-1. **`src/lib/llm-prompts.ts`**: Add required `emojiConfidence` to schema
-2. **`src/app/api/generate/route.ts`**: Extract, clamp confidence & call resolveEmoji
-3. **`src/lib/openmoji-service.ts`**: Implement multi-stage guard with fixes above
-
-**Total estimated work**: 2-3 hours for an experienced developer.
+-   **Status**: **BUGGED**
+-   **Priority**: **Medium**
+-   **The Problem**: 8-second timeout in `useElementMixing.ts` is too short for complex 3-element combinations, especially with Gemini Flash which needs more time to process.
+-   **The Root Cause**: Current timeout of 8000ms (line 134 in `useElementMixing.ts`) doesn't account for complex reasoning required by 3-element mixes.
+-   **The Solution**: Increase timeout to 13000ms (13 seconds) to allow LLM sufficient processing time.
