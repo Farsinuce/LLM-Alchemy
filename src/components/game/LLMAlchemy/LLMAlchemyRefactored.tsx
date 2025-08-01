@@ -619,9 +619,6 @@ const LLMAlchemyRefactored = () => {
           : 'bg-gradient-to-br from-purple-900/20 via-gray-900 to-purple-900/20'
       }`}></div>
       
-      {/* Floating Background Emojis */}
-      <FloatingEmojiBackground elements={elements} gameMode={gameMode} />
-      
       {/* Header */}
       <div className="relative z-10 bg-gray-800/80 backdrop-blur-sm p-4 shadow-lg">
         <div className="flex justify-between items-start mb-3">
@@ -932,6 +929,9 @@ const LLMAlchemyRefactored = () => {
           }}
           onTouchEnd={handleTouchEnd}
         >
+          {/* Floating Background Emojis - Only in mixing area */}
+          <FloatingEmojiBackground elements={elements} gameMode={gameMode} />
+          
           {mixingArea.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center">
               <p className="text-gray-500 text-center px-4">

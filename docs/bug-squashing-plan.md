@@ -72,8 +72,22 @@ This document outlines a refined, developer-centric plan to address three critic
 
 ---
 
-## 3. Implementation Order
+## 3. 🐛 Openmoji emoji selection bug:
 
-1.  **Fix Desktop Repositioning (Bug 2)**
-2.  **Fix "Clear" Animation (Bug X)**
-3.  **Rewrite Floating Emoji System (Bug D)**
+**"Coal" → Openmoji "Collaboration" Bug**
+- **Problem**: Element "Coal" matched to "collaboration" emoji (completely wrong)
+- **Cause**: Fuzzy search matching too broadly on partial strings ("co" prefix)
+- **Impact**: Nonsensical emoji assignments that break immersion
+- **Example**: User creates "Coal", expects ⚫ or 🪨, gets 🤝 collaboration emoji
+
+**Proposed Solution**:
+Solution A:
+- Add minimum quality threshold to fuzzy search (e.g., reject if score > 0.5)
+- When fuzzy match is too poor, use LLM's Unicode emoji in OpenMoji style
+- Preserves visual consistency while avoiding absurd matches
+
+Solution B (my favourite):
+- Utilise the LLM better! Make the LLM output a confidence score to how well it thinks its assigned unicode LLM matches the discovered element title.
+- Good score: If the discovered element is an apple, and the LLM suggest "🍎" (an apple), that's a high confidence score (maybe 1.0)
+- Poor score: If the discovered element is a "Narwhal", but the LLM only can suggest "🐋" (it KNOWS it's a whale, and not quite accurate), then the LLM might output a low 0.5 confidence score.
+- Good score: If the discovered element is "glass" (not as in "a drinking glass", mind you, but as in the material), the LLM might be clever and suggest "🪟" (window emoji), which is actually a BETTER choice than a "(drinking) glass" emoji, so its confidence score would be high. In these cases, we don't want our fuse search to overrule. We just want the openmoji version of the window emoji.

@@ -31,7 +31,7 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
     return {
       id: emojiIdRef.current++,
       emoji: randomElement.emoji,
-      duration: 12000 + Math.random() * 8000, // 12-20 seconds
+      duration: 20000 + Math.random() * 15000, // 20-35 seconds
       delay: 0,
       startX: Math.random() * 100, // Start position as percentage
       endX: Math.random() * 100,   // End position as percentage
@@ -100,7 +100,7 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
       {activeEmojis.map((emoji) => (
         <div
           key={emoji.id}
-          className="absolute text-4xl opacity-10"
+          className="absolute text-4xl opacity-[0.03]"
           style={{
             left: `${emoji.startX}%`,
             top: `${emoji.startY}%`,
@@ -122,10 +122,10 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
             transform: translate(-50%, -50%) scale(10);
           }
           10% {
-            opacity: 0.1;
+            opacity: 0.03;
           }
           90% {
-            opacity: 0.1;
+            opacity: 0.03;
             left: var(--end-x);
             top: var(--end-y);
             transform: translate(-50%, -50%) scale(10);
