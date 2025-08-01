@@ -38,16 +38,7 @@ This document outlines a refined, developer-centric plan to address three critic
 
 ## 2. Active Bug Fixes
 
-### 2.1. Bug A: Save/Load State Fails
-
--   **Status**: **CRITICAL** 
--   **Priority**: **Highest**
--   **The Problem**: Games cannot save or load state. Browser console shows `Could not find the 'state_version' column of 'game_states' in the schema cache` error and HTTP 400 responses when trying to save.
--   **The Root Cause**: Commit 86c5b19 introduced a `state_version` field for future compatibility, but this column doesn't exist in the database schema. The database rejects upsert operations containing unknown fields.
--   **The Solution**: Remove the `state_version` field from save operations. Any future database versioning needs to be done via proper database migrations, not by adding fields in application code.
--   **Recent Action**: Rolled back the problematic versioning logic while keeping the `game_mode` validation.
-
-### 2.2. Bug 2: Desktop Repositioning Fails
+### 2.1. Bug 2: Desktop Repositioning Fails
 
 -   **Status**: **CRITICAL**
 -   **Priority**: **High**
@@ -69,11 +60,18 @@ This document outlines a refined, developer-centric plan to address three critic
 
 ## 3. Recently Fixed Bugs
 
-### 3.1. Bug D: Floating Emoji Background ✅ FIXED
+### 3.1. Bug A: Save/Load State ✅ FIXED
 
 -   **Status**: **FIXED** (as of recent commits)
--   **The Problem**: The background animation was inefficient, causing performance issues ("lagging blobs"). It also failed to meet the visual requirements: large, semi-transparent emojis that drift across the screen.
--   **The Solution Applied**: Complete rewrite using dedicated `FloatingEmojiBackground.tsx` component with pure CSS animations. The new implementation uses hardware-accelerated CSS `@keyframe` animations and efficient spawning logic with `onAnimationEnd` events.
+-   **The Problem**: Games could not save or load state. Browser console showed `Could not find the 'state_version' column of 'game_states' in the schema cache` error and HTTP 400 responses when trying to save.
+-   **The Root Cause**: Commit 86c5b19 introduced a `state_version` field for future compatibility, but this column didn't exist in the database schema.
+-   **The Solution Applied**: Removed the problematic `state_version` field from save operations while keeping the `game_mode` validation for proper conflict resolution.
+
+### 3.2. Bug D: Floating Emoji Background ✅ FIXED
+
+-   **Status**: **FIXED** (as of recent commits)
+-   **The Problem**: The background animation was inefficient, causing performance issues ("lagging blobs"). It also failed to meet the visual requirements: large, semi-transparent emojis that drift across the screen. Additionally, emojis would stop moving during their fade-out phase.
+-   **The Solution Applied**: Complete rewrite using dedicated `FloatingEmojiBackground.tsx` component with pure CSS animations. Fixed fade-out animation to continue movement while fading (extending travel distance by 20% in final keyframe). The new implementation uses hardware-accelerated CSS `@keyframe` animations and efficient spawning logic with `onAnimationEnd` events.
 
 ---
 
