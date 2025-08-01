@@ -397,6 +397,7 @@ const LLMAlchemyRefactored = () => {
     setTouchStartTime(null);
     setTouchStartPos(null);
     setDimmedElements(new Set());
+    setDraggingMixingElement(null); // Ensure mixing element drag state is cleared
   }, [touchDragging, touchStartTime, touchStartPos, mixingArea, mixElements, playSound, updateMixingElement, addToMixingArea, showReasoningPopup]);
 
   const handleDividerTouchEnd = useCallback(() => {
@@ -1016,8 +1017,12 @@ const LLMAlchemyRefactored = () => {
                 e.dataTransfer.setData('text/plain', element.name);
                 
                 setIsDragging(true);
-                setDraggingMixingElement(element.index);
                 playSound('press');
+                
+                // Delay visual change until after browser captures drag ghost
+                setTimeout(() => {
+                  setDraggingMixingElement(element.index);
+                }, 0);
               }}
               onDragEnd={() => {
                 // Clean up drag state
