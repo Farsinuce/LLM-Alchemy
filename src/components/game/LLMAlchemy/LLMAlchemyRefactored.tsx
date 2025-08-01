@@ -1015,20 +1015,6 @@ const LLMAlchemyRefactored = () => {
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/plain', element.name);
                 
-                // Create a custom drag image without the ghost effect
-                const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
-                dragImage.classList.remove('openmoji-outline-dashed', 'openmoji-ghost');
-                dragImage.style.transform = 'scale(1.1)';
-                dragImage.style.position = 'absolute';
-                dragImage.style.top = '-1000px';
-                document.body.appendChild(dragImage);
-                e.dataTransfer.setDragImage(dragImage, GameLogic.getElementSize() / 2, GameLogic.getElementSize() / 2);
-                
-                // Clean up the temporary drag image after a brief delay
-                setTimeout(() => {
-                  document.body.removeChild(dragImage);
-                }, 100);
-                
                 setIsDragging(true);
                 setDraggingMixingElement(element.index);
                 playSound('press');
@@ -1069,6 +1055,7 @@ const LLMAlchemyRefactored = () => {
                       fromMixingArea: true,
                       mixIndex: element.index
                     });
+                    setDraggingMixingElement(element.index);
                     
                     if ('vibrate' in navigator) {
                       navigator.vibrate(10);

@@ -289,6 +289,30 @@ body {
     opacity: 0.3;
   }
   
+  /* OpenMoji Style System - Future-ready for Phase 4.1 Visual Redesign */
+  .openmoji-outline {
+    outline: var(--openmoji-outline-width, 3px) solid var(--openmoji-outline-color, #000000);
+    outline-offset: -1px;
+  }
+  
+  .openmoji-outline-dashed {
+    outline: var(--openmoji-outline-width, 3px) dashed var(--openmoji-outline-color, #000000);
+    outline-offset: -1px;
+  }
+  
+  .openmoji-outline-thick {
+    outline-width: 4px;
+  }
+  
+  .openmoji-ghost {
+    background: transparent !important;
+    color: transparent !important;
+  }
+  
+  .openmoji-ghost > * {
+    visibility: hidden;
+  }
+  
   /* Responsive Text */
   .text-responsive-xs {
     @apply text-xs sm:text-sm;
@@ -4556,24 +4580,10 @@ import { MixingElement } from './hooks/useGameState';
 import { useElementMixing } from './hooks/useElementMixing';
 import { useGameAudio } from './hooks/useGameAudio';
 import { useGameAnimations } from './hooks/useGameAnimations';
-import { UnlockModal, AchievementsModal, ReasoningPopup, ElementListView } from './components';
+import { UnlockModal, AchievementsModal, ReasoningPopup, ElementListView, FloatingEmojiBackground } from './components';
 import * as GameLogic from '@/lib/game-logic';
 
 // UI-only interfaces (not moved to state management)
-interface FloatingEmoji {
-  id: number;
-  emoji: string;
-  x: number;
-  y: number;
-  directionX: number;
-  directionY: number;
-  speed: number;
-  opacity: number;
-  maxOpacity: number;
-  lifespan: number;
-  age: number;
-}
-
 interface ReasoningPopup {
   element: Element;
   x: number;
@@ -4655,17 +4665,16 @@ const LLMAlchemyRefactored = () => {
   const [dragStartY, setDragStartY] = useState<number>(0);
   const [dragStartHeight, setDragStartHeight] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmoji[]>([]);
   const [reasoningPopup, setReasoningPopup] = useState<ReasoningPopup | null>(null);
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
+  const [draggingMixingElement, setDraggingMixingElement] = useState<number | null>(null);
   
   
   // Refs
   const draggedElement = useRef<MixingElement | null>(null);
   const dropZoneRef = useRef<HTMLDivElement | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
-  const floatingEmojiId = useRef<number>(0);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load API key from localStorage on mount
@@ -4976,7 +4985,6 @@ const LLMAlchemyRefactored = () => {
     if (isModeSwitching) {
       resetGameState(gameMode);
       // Clear UI state
-      setFloatingEmojis([]);
       setShowUnlock(null);
       setReasoningPopup(null);
       // Clear animations handled by useGameAnimations hook
@@ -5007,7 +5015,7 @@ const LLMAlchemyRefactored = () => {
     };
     
     const handleGlobalDragEnd = () => {
-      // Ensure cleanup happens on any drag end
+      // Clean up any cancelled drags
       draggedElement.current = null;
       setIsDragging(false);
       setHoveredElement(null);
@@ -5043,7 +5051,7 @@ const LLMAlchemyRefactored = () => {
         clearTimeout(timeoutRef);
       }
     };
-  }, [elements, floatingEmojis.length]);
+  }, [elements]);
 
 
   // Handle reasoning popup dismissal
@@ -5068,68 +5076,6 @@ const LLMAlchemyRefactored = () => {
     }
   }, [isDraggingDivider, dragStartY, dragStartHeight]);
 
-  // Floating emoji management
-  useEffect(() => {
-    if (elements.length < 5) return;
-
-    const createFloatingEmoji = () => {
-      const randomElement = elements[Math.floor(Math.random() * elements.length)];
-      return {
-        id: floatingEmojiId.current++,
-        emoji: randomElement.emoji,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        directionX: (Math.random() - 0.5) * 2,
-        directionY: (Math.random() - 0.5) * 2,
-        speed: 0.3 + Math.random() * 0.4,
-        opacity: 0,
-        maxOpacity: 0.05 + Math.random() * 0.05, // Increased to 5%-10% opacity
-        lifespan: 8000 + Math.random() * 6000,
-        age: 0
-      };
-    };
-
-    if (floatingEmojis.length === 0) {
-      const initialCount = 1 + Math.floor(Math.random() * 3);
-      setFloatingEmojis(Array.from({ length: initialCount }, createFloatingEmoji));
-    }
-
-    const animationLoop = setInterval(() => {
-      setFloatingEmojis(prevEmojis => {
-        let newEmojis = prevEmojis.map(emoji => {
-          const newAge = emoji.age + 100;
-          const lifeProgress = newAge / emoji.lifespan;
-          
-          let newOpacity;
-          if (lifeProgress < 0.2) {
-            newOpacity = (lifeProgress / 0.2) * emoji.maxOpacity;
-          } else if (lifeProgress < 0.8) {
-            newOpacity = emoji.maxOpacity;
-          } else {
-            newOpacity = emoji.maxOpacity * ((1 - lifeProgress) / 0.2);
-          }
-
-          return {
-            ...emoji,
-            x: emoji.x + emoji.directionX * emoji.speed,
-            y: emoji.y + emoji.directionY * emoji.speed,
-            opacity: Math.max(0, newOpacity),
-            age: newAge
-          };
-        });
-
-        newEmojis = newEmojis.filter(emoji => emoji.age < emoji.lifespan);
-        
-        while (newEmojis.length < 1 || (newEmojis.length < 3 && Math.random() < 0.3)) {
-          newEmojis.push(createFloatingEmoji());
-        }
-
-        return newEmojis;
-      });
-    }, 100);
-
-    return () => clearInterval(animationLoop);
-  }, [elements, floatingEmojis.length]);
 
   // Handle reasoning popup dismissal
   useEffect(() => {
@@ -5235,22 +5181,6 @@ const LLMAlchemyRefactored = () => {
           ? 'bg-gradient-to-br from-blue-900/20 via-gray-900 to-blue-900/20'
           : 'bg-gradient-to-br from-purple-900/20 via-gray-900 to-purple-900/20'
       }`}></div>
-      
-      {/* Floating Background Emojis */}
-      {floatingEmojis.map(emoji => (
-        <div
-          key={emoji.id}
-          className="absolute text-4xl pointer-events-none transition-opacity duration-200"
-          style={{
-            left: `${emoji.x}%`,
-            top: `${emoji.y}%`,
-            opacity: emoji.opacity,
-            transform: 'translate(-50%, -50%)'
-          }}
-        >
-          {emoji.emoji}
-        </div>
-      ))}
       
       {/* Header */}
       <div className="relative z-10 bg-gray-800/80 backdrop-blur-sm p-4 shadow-lg">
@@ -5558,10 +5488,13 @@ const LLMAlchemyRefactored = () => {
             draggedElement.current = null;
             setIsDragging(false);
             setHoveredElement(null);
-            clearDimmedElements(); // Fix: Clear dimming on drop
+            clearDimmedElements();
           }}
           onTouchEnd={handleTouchEnd}
         >
+          {/* Floating Background Emojis - Only in mixing area */}
+          <FloatingEmojiBackground elements={elements} gameMode={gameMode} />
+          
           {mixingArea.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center">
               <p className="text-gray-500 text-center px-4">
@@ -5634,7 +5567,7 @@ const LLMAlchemyRefactored = () => {
               key={`${element.id}-${element.index}`}
               id={`mixing-${element.id}-${element.index}`}
               data-testid={`mixing-element-${element.name}`}
-              draggable={!isTouchDevice && !isMixing}
+              draggable={!isTouchDevice() && !isMixing}
               onDragStart={(e) => {
                 draggedElement.current = {
                   ...element,
@@ -5643,13 +5576,33 @@ const LLMAlchemyRefactored = () => {
                 };
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/plain', element.name);
+                
+                // Try cloning the element for drag image without the ghost effect
+                const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
+                dragImage.classList.remove('openmoji-outline-dashed', 'openmoji-ghost');
+                dragImage.style.position = 'absolute';
+                dragImage.style.top = '-1000px';
+                dragImage.style.transform = 'scale(1.1)';
+                document.body.appendChild(dragImage);
+                e.dataTransfer.setDragImage(dragImage, GameLogic.getElementSize() / 2, GameLogic.getElementSize() / 2);
+                
+                // Clean up after drag
+                setTimeout(() => {
+                  if (document.body.contains(dragImage)) {
+                    document.body.removeChild(dragImage);
+                  }
+                }, 100);
+                
                 setIsDragging(true);
+                setDraggingMixingElement(element.index);
                 playSound('press');
               }}
               onDragEnd={() => {
-                draggedElement.current = null; // Clear drag reference
+                // Clean up drag state
+                draggedElement.current = null;
                 setIsDragging(false);
                 setHoveredElement(null);
+                setDraggingMixingElement(null);
                 clearDimmedElements();
               }}
               onTouchStart={(e) => {
@@ -5724,9 +5677,11 @@ const LLMAlchemyRefactored = () => {
               className={`absolute flex flex-col items-center justify-center rounded-lg cursor-move ${
                 element.energized ? 'animate-shake' : ''
               } ${
-                hoveredElement === element.index && !element.energized ? 'animate-continuous-pulse' : ''
+                hoveredElement === element.index && !element.energized && draggingMixingElement !== element.index ? 'animate-continuous-pulse' : ''
               } ${
                 touchDragging?.mixIndex === element.index && touchDragging?.fromMixingArea ? 'opacity-30' : ''
+              } ${
+                draggingMixingElement === element.index ? 'openmoji-outline-dashed openmoji-ghost' : ''
               } ${
                 dimmedElements.has(element.name) ? 'element-dimmed' : ''
               } ${
@@ -6085,6 +6040,188 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
 ===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\ElementListView.tsx ===== 
  
  
+===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\FloatingEmojiBackground.tsx ===== 
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { Element } from '@/types/game.types';
+import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
+
+interface FloatingEmojiBackgroundProps {
+  elements: Element[];
+  gameMode: 'science' | 'creative';
+}
+
+interface FloatingEmoji {
+  id: number;
+  element: Element;
+  startX: number;
+  startY: number;
+  deltaX: number;
+  deltaY: number;
+}
+
+const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ elements, gameMode }) => {
+  const [activeEmojis, setActiveEmojis] = useState<FloatingEmoji[]>([]);
+  const emojiIdRef = useRef<number>(0);
+  const spawnIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Generate a new floating emoji with constant travel distance
+  const createFloatingEmoji = (): FloatingEmoji => {
+    const randomElement = elements[Math.floor(Math.random() * elements.length)];
+    
+    // Start from a random edge
+    const edge = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
+    let startX: number, startY: number;
+    
+    switch (edge) {
+  case 0: // top edge
+    startX = Math.random() * 100;
+    startY = -5 + Math.random() * 15; // Range: -5 to 10
+    break;
+  case 1: // right edge
+    startX = 95 + Math.random() * 15; // Range: 95 to 110
+    startY = Math.random() * 100;
+    break;
+  case 2: // bottom edge
+    startX = Math.random() * 100;
+    startY = 95 + Math.random() * 15; // Range: 95 to 110
+    break;
+  default: // left edge
+    startX = -5 + Math.random() * 15; // Range: -5 to 10
+    startY = Math.random() * 100;
+    break;
+}
+    
+    // Generate random direction toward/through center
+    const centerX = 50 + (Math.random() - 0.5) * 60; // Center area with some spread
+    const centerY = 50 + (Math.random() - 0.5) * 60;
+    
+    // Calculate direction vector
+    const dirX = centerX - startX;
+    const dirY = centerY - startY;
+    
+    // Normalize and scale to fixed distance (2 viewport units)
+    const length = Math.sqrt(dirX * dirX + dirY * dirY);
+    const fixedDistance = 20;
+    const deltaX = (dirX / length) * fixedDistance;
+    const deltaY = (dirY / length) * fixedDistance;
+    
+    return {
+      id: emojiIdRef.current++,
+      element: randomElement,
+      startX,
+      startY,
+      deltaX,
+      deltaY,
+    };
+  };
+
+  // Handle emoji animation completion
+  const handleAnimationEnd = (emojiId: number) => {
+    setActiveEmojis(prev => prev.filter(emoji => emoji.id !== emojiId));
+  };
+
+  // Spawn new emojis periodically
+  useEffect(() => {
+    if (elements.length < 5) {
+      setActiveEmojis([]);
+      if (spawnIntervalRef.current) {
+        clearInterval(spawnIntervalRef.current);
+        spawnIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Initial spawn
+    if (activeEmojis.length === 0) {
+      const initialEmojis = Array.from({ length: 2 }, createFloatingEmoji);
+      setActiveEmojis(initialEmojis);
+    }
+
+    // Set up spawning interval
+    if (!spawnIntervalRef.current) {
+      spawnIntervalRef.current = setInterval(() => {
+        setActiveEmojis(prev => {
+          if (prev.length < 3 && Math.random() < 0.5) {
+            return [...prev, createFloatingEmoji()];
+          }
+          return prev;
+        });
+      }, 3000);
+    }
+
+    return () => {
+      if (spawnIntervalRef.current) {
+        clearInterval(spawnIntervalRef.current);
+        spawnIntervalRef.current = null;
+      }
+    };
+  }, [elements.length, activeEmojis.length]);
+
+  // Clear all emojis when game mode changes
+  useEffect(() => {
+    setActiveEmojis([]);
+    emojiIdRef.current = 0;
+  }, [gameMode]);
+
+  if (elements.length < 5) {
+    return null;
+  }
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {activeEmojis.map((emoji) => (
+        <div
+          key={emoji.id}
+          className="absolute opacity-[0.01]"
+          style={{
+            left: `${emoji.startX}%`,
+            top: `${emoji.startY}%`,
+            transform: 'translate(-50%, -50%) scale(15)',
+            animation: 'floatAcross 20s linear forwards',
+            '--dx': `${emoji.deltaX}vw`,
+            '--dy': `${emoji.deltaY}vh`,
+          } as React.CSSProperties & { '--dx': string; '--dy': string }}
+          onAnimationEnd={() => handleAnimationEnd(emoji.id)}
+        >
+          <OpenMojiDisplay 
+            emoji={emoji.element.emoji} 
+            hexcode={emoji.element.openmojiHex}
+            name={emoji.element.name} 
+            size="lg"
+          />
+        </div>
+      ))}
+      
+      <style jsx>{`
+        @keyframes floatAcross {
+          0% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(15);
+          }
+          10% {
+            opacity: 0.01;
+          }
+          90% {
+            opacity: 0.01;
+            transform: translate3d(var(--dx), var(--dy), 0) translate(-50%, -50%) scale(15);
+          }
+          100% {
+            opacity: 0;
+            transform: translate3d(calc(var(--dx) * 1.2), calc(var(--dy) * 1.2), 0) translate(-50%, -50%) scale(15);
+          }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default FloatingEmojiBackground;
+ 
+===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\FloatingEmojiBackground.tsx ===== 
+ 
+ 
 ===== START: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\GameHeader.tsx ===== 
 'use client';
 
@@ -6251,6 +6388,7 @@ export { ReasoningPopup } from './ReasoningPopup';
 export { GameHeader } from './GameHeader';
 export { ElementListView } from './ElementListView';
 export { MixingAreaView } from './MixingAreaView';
+export { default as FloatingEmojiBackground } from './FloatingEmojiBackground';
  
 ===== END: C:\ai\LLM-Alchemy\src\components\game\LLMAlchemy\components\index.ts ===== 
  
@@ -8034,7 +8172,17 @@ export const useGameAnimations = () => {
       const timeout = setTimeout(() => {
         const domElement = document.getElementById(`mixing-${el.id}-${el.index}`);
         if (domElement) {
+          // Store original transition value and temporarily remove conflicting style
+          const originalTransition = domElement.style.transition;
+          domElement.style.transition = '';
+          
+          // Add the animation class
           domElement.classList.add('animate-clear-zoom-fade');
+          
+          // Restore original transition after animation completes
+          setTimeout(() => {
+            domElement.style.transition = originalTransition;
+          }, 400);
         }
         setAnimatingElements(prev => new Set(prev).add(`${el.id}-${el.index}`));
       }, index * 50);
@@ -11505,17 +11653,19 @@ export async function decrementDailyCount(supabase: GenericSupabaseClient, userI
 
 export async function saveGameState(supabase: GenericSupabaseClient, userId: string, gameState: Partial<GameState>): Promise<boolean> {
   try {
-    // Add version field to prevent compatibility issues
-    const versionedGameState = {
-      user_id: userId,
-      ...gameState,
-      state_version: '1.0', // Version for future compatibility
-      updated_at: new Date().toISOString()
-    };
+    // Ensure game_mode is present for proper conflict resolution
+    if (!gameState.game_mode) {
+      console.error('Error: game_mode is required for saving game state')
+      return false
+    }
 
     const { error } = await supabase
       .from('game_states')
-      .upsert(versionedGameState, {
+      .upsert({
+        user_id: userId,
+        ...gameState,
+        updated_at: new Date().toISOString()
+      }, {
         onConflict: 'user_id,game_mode'
       })
 
@@ -12101,7 +12251,7 @@ export type { User, UserSession, Element, GameState, Achievement, DiscoveredElem
 
 @keyframes clear-zoom-fade {
   0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.1); }
+  50% { opacity: 1; transform: scale(1.1); }
   100% { opacity: 0; transform: scale(0); }
 }
 

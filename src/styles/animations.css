@@ -237,6 +237,29 @@
   @apply bg-red-600 hover:bg-red-500 text-white;
 }
 
+/* Floating Emoji Animation */
+@keyframes floatAcross {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(10);
+  }
+  10% {
+    opacity: 0.1;
+  }
+  90% {
+    opacity: 0.1;
+    transform: translate3d(var(--dx), var(--dy), 0) translate(-50%, -50%) scale(10);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(var(--dx) * 1.2), calc(var(--dy) * 1.2), 0) translate(-50%, -50%) scale(10);
+  }
+}
+
+.animate-float-across {
+  animation: floatAcross 20s linear forwards;
+}
+
 /* Modal Backdrop */
 .modal-backdrop {
   @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4;
