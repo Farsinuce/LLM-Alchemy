@@ -106,6 +106,7 @@ const LLMAlchemyRefactored = () => {
   const [reasoningPopup, setReasoningPopup] = useState<ReasoningPopup | null>(null);
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<'flash' | 'pro'>('flash');
+  const [draggingMixingElement, setDraggingMixingElement] = useState<number | null>(null);
   
   
   // Refs
@@ -1014,6 +1015,7 @@ const LLMAlchemyRefactored = () => {
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/plain', element.name);
                 setIsDragging(true);
+                setDraggingMixingElement(element.index);
                 playSound('press');
               }}
               onDragEnd={() => {
@@ -1021,6 +1023,7 @@ const LLMAlchemyRefactored = () => {
                 draggedElement.current = null;
                 setIsDragging(false);
                 setHoveredElement(null);
+                setDraggingMixingElement(null);
                 clearDimmedElements();
               }}
               onTouchStart={(e) => {
@@ -1098,6 +1101,8 @@ const LLMAlchemyRefactored = () => {
                 hoveredElement === element.index && !element.energized ? 'animate-continuous-pulse' : ''
               } ${
                 touchDragging?.mixIndex === element.index && touchDragging?.fromMixingArea ? 'opacity-30' : ''
+              } ${
+                draggingMixingElement === element.index ? 'opacity-10' : ''
               } ${
                 dimmedElements.has(element.name) ? 'element-dimmed' : ''
               } ${
