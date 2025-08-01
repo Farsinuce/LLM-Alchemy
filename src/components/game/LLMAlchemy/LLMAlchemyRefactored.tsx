@@ -1082,7 +1082,9 @@ const LLMAlchemyRefactored = () => {
                 document.addEventListener('touchend', handleTouchEnd);
               }}
               onMouseEnter={() => {
-                if (isDragging) setHoveredElement(element.index);
+                if (isDragging && draggingMixingElement !== element.index) {
+                  setHoveredElement(element.index);
+                }
               }}
               onMouseLeave={() => setHoveredElement(null)}
               onContextMenu={(e) => e.preventDefault()}
