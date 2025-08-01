@@ -453,16 +453,24 @@ const LLMAlchemyRefactored = () => {
     };
     
     const handleGlobalDragEnd = () => {
+      console.log(`🌍 [DEBUG] GLOBAL DRAG END fired`);
+      console.log(`🌍 [DEBUG] isOverDropZone.current: ${isOverDropZone.current}`);
+      console.log(`🌍 [DEBUG] draggedElement.current before check:`, draggedElement.current);
+      
       // Only clean up if drag was cancelled (not over drop zone)
       // If over drop zone, let onDrop handle the cleanup
       if (!isOverDropZone.current) {
+        console.log(`🌍 [DEBUG] Cleaning up (cancelled drag)`);
         draggedElement.current = null;
         setIsDragging(false);
         setHoveredElement(null);
         clearDimmedElements();
+      } else {
+        console.log(`🌍 [DEBUG] NOT cleaning up (over drop zone)`);
       }
       // Reset flag for next drag
       isOverDropZone.current = false;
+      console.log(`🌍 [DEBUG] Reset isOverDropZone to false`);
     };
     
     if (touchDragging || isDraggingDivider) {
@@ -895,12 +903,21 @@ const LLMAlchemyRefactored = () => {
             isOverDropZone.current = false;
           }}
           onDrop={async (e) => {
+            console.log(`🎯 [DEBUG] DROP EVENT fired`);
+            console.log(`🎯 [DEBUG] draggedElement.current at drop:`, draggedElement.current);
+            console.log(`🎯 [DEBUG] isMixing: ${isMixing}`);
+            console.log(`🎯 [DEBUG] isOverDropZone.current: ${isOverDropZone.current}`);
+            
             e.preventDefault();
-            if (!draggedElement.current || isMixing) return;
+            if (!draggedElement.current || isMixing) {
+              console.log(`🎯 [DEBUG] Early return - no draggedElement or isMixing`);
+              return;
+            }
 
             const rect = dropZoneRef.current!.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
+            console.log(`🎯 [DEBUG] Drop position: (${x}, ${y})`);
 
             const targetElement = mixingArea.find(el => {
               const elRect = document.getElementById(`mixing-${el.id}-${el.index}`)?.getBoundingClientRect();
@@ -908,13 +925,16 @@ const LLMAlchemyRefactored = () => {
               return e.clientX >= elRect.left && e.clientX <= elRect.right &&
                      e.clientY >= elRect.top && e.clientY <= elRect.bottom;
             });
+            console.log(`🎯 [DEBUG] Target element:`, targetElement);
 
             // First: Check if we're mixing with a different element
             if (targetElement && targetElement.index !== draggedElement.current.mixIndex) {
+              console.log(`🎯 [DEBUG] Mixing elements`);
               await mixElements(draggedElement.current, targetElement);
             } 
             // Then: Check if we're repositioning an existing element
             else if (draggedElement.current.fromMixingArea) {
+              console.log(`🎯 [DEBUG] Repositioning existing element`);
               playSound('plop');
               const offset = GameLogic.getElementSize() / 2;
               const newPos = GameLogic.resolveCollisions(x - offset, y - offset, mixingArea, dropZoneRef.current!, draggedElement.current.mixIndex);
@@ -922,6 +942,7 @@ const LLMAlchemyRefactored = () => {
             } 
             // Finally: Add new element to mixing area
             else {
+              console.log(`🎯 [DEBUG] Adding new element to mixing area`);
               playSound('plop');
               const offset = GameLogic.getElementSize() / 2;
               const newPos = GameLogic.resolveCollisions(x - offset, y - offset, mixingArea, dropZoneRef.current!);
@@ -935,6 +956,7 @@ const LLMAlchemyRefactored = () => {
               addToMixingArea(newElement);
             }
             
+            console.log(`🎯 [DEBUG] Cleaning up after drop`);
             draggedElement.current = null;
             setIsDragging(false);
             setHoveredElement(null);
@@ -1018,18 +1040,34 @@ const LLMAlchemyRefactored = () => {
               id={`mixing-${element.id}-${element.index}`}
               data-testid={`mixing-element-${element.name}`}
               draggable={!isTouchDevice && !isMixing}
+              onClick={() => {
+                console.log(`🖱️ [DEBUG] CLICK on mixing element: ${element.name} (index: ${element.index})`);
+                console.log(`🖱️ [DEBUG] Current draggedElement:`, draggedElement.current);
+                console.log(`🖱️ [DEBUG] isDragging: ${isDragging}`);
+              }}
+              onMouseDown={() => {
+                console.log(`🖱️ [DEBUG] MOUSE DOWN on mixing element: ${element.name} (index: ${element.index})`);
+                console.log(`🖱️ [DEBUG] isTouchDevice: ${isTouchDevice()}`);
+                console.log(`🖱️ [DEBUG] element.draggable: ${!isTouchDevice && !isMixing}`);
+              }}
               onDragStart={(e) => {
+                console.log(`🚀 [DEBUG] DRAG START on mixing element: ${element.name} (index: ${element.index})`);
                 draggedElement.current = {
                   ...element,
                   fromMixingArea: true,
                   mixIndex: element.index
                 };
+                console.log(`🚀 [DEBUG] Set draggedElement.current:`, draggedElement.current);
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/plain', element.name);
                 setIsDragging(true);
                 playSound('press');
+                console.log(`🚀 [DEBUG] isDragging set to true`);
               }}
               onDragEnd={() => {
+                console.log(`🛑 [DEBUG] DRAG END on mixing element: ${element.name} (index: ${element.index})`);
+                console.log(`🛑 [DEBUG] draggedElement.current before cleanup:`, draggedElement.current);
+                console.log(`🛑 [DEBUG] isOverDropZone.current:`, isOverDropZone.current);
                 // Removed premature cleanup - let onDrop handle all state management
                 // This prevents race condition where onDragEnd fires before onDrop
               }}
