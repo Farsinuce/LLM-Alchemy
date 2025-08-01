@@ -28,7 +28,7 @@ const globalCache = globalThis as any; // eslint-disable-line @typescript-eslint
 if (!globalCache.__openmojiFuse) {
   globalCache.__openmojiFuse = new Fuse(openmoji.openmojis, {
     keys: ['annotation', 'openmoji_tags'],
-    threshold: 0.32,
+    threshold: 0.25,
     includeScore: true
   });
 }
@@ -55,10 +55,11 @@ const aliasHex: Record<string, string> = {
   golem: 'E0BF'          // Golem (if exists)
 };
 
-interface ResolveEmojiParams {
+export interface ResolveEmojiParams {
   unicodeEmoji: string;
   name: string;
   tags?: string[];  // These are specifically emojiTags for visual search
+  confidence?: number;  // LLM confidence in emoji choice (0.0-1.0)
 }
 
 interface ResolveEmojiResult {
@@ -75,10 +76,12 @@ interface ResolveEmojiResult {
 export function resolveEmoji({ 
   unicodeEmoji = '', 
   name, 
-  tags = [] 
+  tags = [],
+  confidence = 0.5
 }: ResolveEmojiParams): ResolveEmojiResult {
-  // Check cache first
-  const cacheKey = `${name}|${tags.join(',')}`;
+  // Check cache first with confidence bucketing
+  const confBucket = Math.round(confidence * 10); // 0-10
+  const cacheKey = `${name}|${tags.join(',')}|${confBucket}`;
   if (resultCache.has(cacheKey)) {
     return resultCache.get(cacheKey)!;
   }
@@ -114,37 +117,64 @@ export function resolveEmoji({
     bestHit = searchResults[0];
   }
 
-  // Decision logic for using search result vs direct match (v2.1: threshold 0.35)
-  const useBest = bestHit && (
-    // Use if it's a PUA emoji (extends beyond Unicode)
-    bestHit.item.hexcode.startsWith('E') ||
-    // Use if no direct match exists
-    !direct ||
-    // Use if search result is significantly better (v2.1: 0.35 threshold)
-    (direct && bestHit.score! < 0.35) // Score closer to 0 is better
-  );
+  // Multi-stage guard decision logic
+  let chosenDatum: OpenMojiData | null = null;
+  let decision = 'fallback';
 
-  // v2.1: Debug logging in development
+  // Stage 1: Always prefer exact PUA matches with token overlap
+  if (bestHit?.item.hexcode.startsWith('E') && tokenOverlap(name, bestHit)) {
+    chosenDatum = bestHit.item;
+    decision = 'pua-exact';
+  }
+  // Stage 2: Trust LLM when confidence is high AND Unicode exists in OpenMoji
+  else if (confidence >= 0.85 && direct && unicodeMap.has(unicodeEmoji)) {
+    chosenDatum = direct;
+    decision = 'llm-confident';
+  }
+  // Stage 3: Use fuzzy search only with meaningful word overlap
+  else if (!direct || (bestHit && bestHit.score! < 0.15 && tokenOverlap(name, bestHit))) {
+    chosenDatum = bestHit?.item || null;
+    decision = 'fuzzy-validated';
+  }
+  // Stage 4: Fallback to LLM's choice
+  else {
+    chosenDatum = direct;
+    decision = 'llm-fallback';
+  }
+
+  // Debug logging in development
   if (process.env.NODE_ENV !== 'production') {
     const searchPhase = (bestHit?.score ?? 1) <= 0.3 ? 'name-only' : 'name-with-tags';
-    console.debug('[OpenMoji] Search result:', {
+    console.debug('[OpenMoji] Multi-stage decision:', {
       name,
       tags,
       unicodeEmoji,
+      confidence,
       searchPhase,
       direct: direct ? `${direct.emoji} (${direct.hexcode})` : null,
       bestHit: bestHit ? `${bestHit.item.emoji || bestHit.item.hexcode} (score: ${bestHit.score?.toFixed(3)})` : null,
-      useBest,
-      decision: useBest ? 'fuzzy' : 'direct'
+      tokenOverlap: bestHit ? tokenOverlap(name, bestHit) : false,
+      decision,
+      chosen: chosenDatum ? `${chosenDatum.emoji || chosenDatum.hexcode} (${chosenDatum.hexcode})` : null
     });
   }
 
-  const datum = useBest ? bestHit.item : direct;
+  const datum = chosenDatum || undefined;
   const result = wrap(datum);
   
   // Cache the result
   resultCache.set(cacheKey, result);
   return result;
+}
+
+/**
+ * Helper function to check if element name and annotation share meaningful words
+ * Prevents prefix-only matches like "coal" → "collaboration"
+ */
+function tokenOverlap(elementName: string, fuseResult: { item: OpenMojiData; score?: number }): boolean {
+  const nameWords = elementName.toLowerCase().split(/\s+/);
+  const annotationWords = fuseResult.item.annotation.toLowerCase().split(/\s+/);
+  return nameWords.some(word => annotationWords.includes(word));
 }
 
 // v2.1: Helper function for consistent result wrapping

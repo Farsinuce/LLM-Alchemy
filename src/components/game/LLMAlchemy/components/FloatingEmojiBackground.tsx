@@ -27,7 +27,7 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
   const createFloatingEmoji = (): FloatingEmoji => {
     const randomElement = elements[Math.floor(Math.random() * elements.length)];
     
-    // Start from a random edge (updated 1/8/2025)
+    // Start from a random edge
     const edge = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
     let startX: number, startY: number;
     
@@ -131,10 +131,12 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
       {activeEmojis.map((emoji) => (
         <div
           key={emoji.id}
-          className="absolute animate-float-across"
+          className="absolute opacity-[0.01]"
           style={{
             left: `${emoji.startX}%`,
             top: `${emoji.startY}%`,
+            transform: 'translate(-50%, -50%) scale(15)',
+            animation: 'floatAcross 20s linear forwards',
             '--dx': `${emoji.deltaX}vw`,
             '--dy': `${emoji.deltaY}vh`,
           } as React.CSSProperties & { '--dx': string; '--dy': string }}
@@ -148,6 +150,26 @@ const FloatingEmojiBackground: React.FC<FloatingEmojiBackgroundProps> = ({ eleme
           />
         </div>
       ))}
+      
+      <style jsx>{`
+        @keyframes floatAcross {
+          0% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(15);
+          }
+          10% {
+            opacity: 0.01;
+          }
+          90% {
+            opacity: 0.01;
+            transform: translate3d(var(--dx), var(--dy), 0) translate(-50%, -50%) scale(15);
+          }
+          100% {
+            opacity: 0;
+            transform: translate3d(calc(var(--dx) * 1.2), calc(var(--dy) * 1.2), 0) translate(-50%, -50%) scale(15);
+          }
+        }
+      `}</style>
     </div>
   );
 };

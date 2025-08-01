@@ -4959,6 +4959,7 @@ const LLMAlchemyRefactored = () => {
     setTouchStartTime(null);
     setTouchStartPos(null);
     setDimmedElements(new Set());
+    setDraggingMixingElement(null); // Ensure mixing element drag state is cleared
   }, [touchDragging, touchStartTime, touchStartPos, mixingArea, mixElements, playSound, updateMixingElement, addToMixingArea, showReasoningPopup]);
 
   const handleDividerTouchEnd = useCallback(() => {
@@ -5577,25 +5578,13 @@ const LLMAlchemyRefactored = () => {
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/plain', element.name);
                 
-                // Try cloning the element for drag image without the ghost effect
-                const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
-                dragImage.classList.remove('openmoji-outline-dashed', 'openmoji-ghost');
-                dragImage.style.position = 'absolute';
-                dragImage.style.top = '-1000px';
-                dragImage.style.transform = 'scale(1.1)';
-                document.body.appendChild(dragImage);
-                e.dataTransfer.setDragImage(dragImage, GameLogic.getElementSize() / 2, GameLogic.getElementSize() / 2);
-                
-                // Clean up after drag
-                setTimeout(() => {
-                  if (document.body.contains(dragImage)) {
-                    document.body.removeChild(dragImage);
-                  }
-                }, 100);
-                
                 setIsDragging(true);
-                setDraggingMixingElement(element.index);
                 playSound('press');
+                
+                // Delay visual change until after browser captures drag ghost
+                setTimeout(() => {
+                  setDraggingMixingElement(element.index);
+                }, 0);
               }}
               onDragEnd={() => {
                 // Clean up drag state
@@ -5633,6 +5622,7 @@ const LLMAlchemyRefactored = () => {
                       fromMixingArea: true,
                       mixIndex: element.index
                     });
+                    setDraggingMixingElement(element.index);
                     
                     if ('vibrate' in navigator) {
                       navigator.vibrate(10);
@@ -5700,7 +5690,7 @@ const LLMAlchemyRefactored = () => {
                 WebkitUserSelect: 'none',
                 transition: 'none',
                 boxShadow: element.energized ? '0 0 20px rgba(250, 204, 21, 0.5), 0 0 0 2px #facc15' :
-                          hoveredElement === element.index ? `0 0 0 2px ${GameLogic.getRarityHoverColor(element.rarity)}` : ''
+                          (hoveredElement === element.index && draggingMixingElement !== element.index) ? `0 0 0 2px ${GameLogic.getRarityHoverColor(element.rarity)}` : ''
               }}
             >
               <OpenMojiDisplay 

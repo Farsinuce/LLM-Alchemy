@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { resolveEmoji } from '@/lib/openmoji-service';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -161,24 +162,44 @@ export async function POST(req: NextRequest) {
           reasoning: parsedResult.reasoning || 'No reaction'
         });
       } else if (Array.isArray(parsedResult.outcomes)) {
-        // Valid outcomes found - validate each outcome
+        // Valid outcomes found - validate each outcome and resolve emojis
         const validatedOutcomes = parsedResult.outcomes.map((outcome: {
           result: string;
           emoji: string;
+          emojiConfidence?: number;
           color: string;
           rarity: string;
           reasoning: string;
           tags: string[];
+          emojiTags?: string[];
           isEndElement: boolean;
-        }) => ({
-          result: outcome.result || 'Unknown',
-          emoji: outcome.emoji || '✨',
-          color: outcome.color || '#808080',
-          rarity: outcome.rarity || 'common',
-          reasoning: outcome.reasoning || '',
-          tags: Array.isArray(outcome.tags) ? outcome.tags : [],
-          isEndElement: outcome.isEndElement || false
-        }));
+        }) => {
+          // Extract and clamp confidence
+          const raw = outcome.emojiConfidence;
+          const confidence = typeof raw === 'number' ? Math.min(Math.max(raw, 0), 1) : 0.5;
+          
+          // Resolve emoji using OpenMoji service
+          const emojiResult = resolveEmoji({
+            unicodeEmoji: outcome.emoji || '✨',
+            name: outcome.result || 'Unknown',
+            tags: outcome.emojiTags || [],
+            confidence
+          });
+
+          return {
+            result: outcome.result || 'Unknown',
+            emoji: outcome.emoji || '✨',
+            emojiHexcode: emojiResult.hexcode,
+            emojiSvgPath: emojiResult.svgPath,
+            emojiIsExtra: emojiResult.isExtra,
+            color: outcome.color || '#808080',
+            rarity: outcome.rarity || 'common',
+            reasoning: outcome.reasoning || '',
+            tags: Array.isArray(outcome.tags) ? outcome.tags : [],
+            emojiTags: Array.isArray(outcome.emojiTags) ? outcome.emojiTags : [],
+            isEndElement: outcome.isEndElement || false
+          };
+        });
         
         return NextResponse.json({
           outcomes: validatedOutcomes

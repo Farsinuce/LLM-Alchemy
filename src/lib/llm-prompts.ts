@@ -163,6 +163,7 @@ Respond with ONLY a valid JSON object:
     {
       "result": "Element Name",
       "emoji": "one appropriate Unicode emoji (no text or Asian characters)",
+      "emojiConfidence": {"type":"number","minimum":0,"maximum":1},
       "color": "hex color",
       "rarity": "common",
       "isEndElement": false,
@@ -298,6 +299,7 @@ Respond with ONLY a valid JSON object:
     {
       "result": "Element Name",
       "emoji": "one appropriate Unicode emoji (no text or Asian characters)", 
+      "emojiConfidence": {"type":"number","minimum":0,"maximum":1},
       "color": "hex color",
       "rarity": "common",
       "reasoning": "brief explanation",
