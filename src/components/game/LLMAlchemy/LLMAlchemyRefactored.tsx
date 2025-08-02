@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Sparkles, GripHorizontal, User, ArrowLeft } from 'lucide-react';
+import { GripHorizontal, ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
 import { createClient, saveGameState, loadGameState, addTokens, getLlmModelPreference } from '@/lib/supabase';
@@ -629,7 +629,7 @@ const LLMAlchemyRefactored = () => {
         <div className="flex justify-between items-start mb-3">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-black flex items-center gap-2">
-              <Sparkles className="text-yellow-400 hidden sm:block" />
+              <Emoji>✨</Emoji>
               LLM Alchemy
             </h1>
           </div>
@@ -672,7 +672,7 @@ const LLMAlchemyRefactored = () => {
               </button>
             ) : (
               <>
-                <User size={14} />
+                <Emoji size="sm">🪙</Emoji>
                 <span>{dailyCount}/{GAME_CONFIG.DAILY_FREE_COMBINATIONS} today</span>
               </>
             )}

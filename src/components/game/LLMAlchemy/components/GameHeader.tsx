@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, ArrowLeft, User } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { GAME_CONFIG } from '@/lib/game-config';
 import Emoji from '@/components/ui/Emoji';
 
@@ -51,7 +51,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Sparkles className="text-yellow-400 hidden sm:block" />
+            <Emoji>✨</Emoji>
             LLM Alchemy
           </h1>
         </div>
@@ -98,7 +98,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
             </button>
           ) : (
             <>
-              <User size={14} />
+              <Emoji size="sm">🪙</Emoji>
               <span>{dailyCount}/{GAME_CONFIG.DAILY_FREE_COMBINATIONS} today</span>
             </>
           )}

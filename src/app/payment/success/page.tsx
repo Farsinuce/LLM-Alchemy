@@ -2,7 +2,8 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Sparkles, CheckCircle, ArrowRight, Home } from 'lucide-react';
+import { CheckCircle, ArrowRight, Home } from 'lucide-react';
+import Emoji from '@/components/ui/Emoji';
 
 // Force dynamic rendering to avoid static generation issues
 export const dynamic = 'force-dynamic';
@@ -45,7 +46,7 @@ function PaymentSuccessContent() {
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4">
       <div className="max-w-md w-full text-center">
         <div className="flex items-center justify-center gap-3 mb-8">
-          <Sparkles className="text-yellow-400" size={48} />
+          <Emoji size="lg">✨</Emoji>
           <h1 className="text-3xl font-bold">LLM Alchemy</h1>
         </div>
 
@@ -108,7 +109,7 @@ export default function PaymentSuccess() {
       <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
           <div className="flex items-center justify-center gap-3 mb-8">
-            <Sparkles className="text-yellow-400" size={48} />
+            <Emoji size="lg">✨</Emoji>
             <h1 className="text-3xl font-bold">LLM Alchemy</h1>
           </div>
           <div className="bg-gray-800 rounded-xl p-8 mb-6">
