@@ -66,7 +66,8 @@ const LLMAlchemyRefactored = () => {
     triggerPop,
     animateRemoval,
     playElementLoadAnimation,
-    isElementRemoving
+    isElementRemoving,
+    clearAllAnimations
   } = useGameAnimations();
 
 
@@ -426,9 +427,10 @@ const LLMAlchemyRefactored = () => {
       // Clear UI state
       setShowUnlock(null);
       setReasoningPopup(null);
-      // Clear animations handled by useGameAnimations hook
+      // Clear animations when switching modes
+      clearAllAnimations();
     }
-  }, [gameMode, elements, resetGameState]);
+  }, [gameMode, elements, resetGameState, clearAllAnimations]);
 
   // Global touch handlers and drag cleanup
   useEffect(() => {

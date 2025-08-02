@@ -172,6 +172,7 @@
 .animate-element-load-delayed {
   animation: element-load-delayed 0.3s ease-out forwards;
   animation-delay: var(--animation-delay, 0ms);
+  animation-fill-mode: both;
 }
 
 .animate-element-remove-staggered {

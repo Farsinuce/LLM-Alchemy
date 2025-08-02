@@ -100,7 +100,9 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
         WebkitUserSelect: 'none',
         animationDelay: isPlayingLoadAnimation && animatedElements.has(element.id) 
           ? `${(element.unlockOrder || 0) * 25}ms` 
-          : undefined
+          : undefined,
+        // Fix: Set initial opacity to 0 for elements that will be animated
+        opacity: isPlayingLoadAnimation && animatedElements.has(element.id) ? 0 : 1
       }}
     >
       <OpenMojiDisplay 
