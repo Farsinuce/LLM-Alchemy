@@ -26,7 +26,7 @@ export const ReasoningPopup: React.FC<ReasoningPopupProps> = ({
 
   return (
     <div
-      className={`reasoning-popup fixed z-50 bg-gray-800/95 backdrop-blur-sm border border-gray-600 rounded-lg p-3 max-w-xs shadow-xl ${
+      className={`reasoning-popup fixed z-50 bg-white/95 backdrop-blur-sm border-2 border-black rounded-lg p-3 max-w-xs shadow-xl ${
         reasoningPopup.fromHover ? 'pointer-events-none' : ''
       }`}
       style={{
@@ -47,7 +47,7 @@ export const ReasoningPopup: React.FC<ReasoningPopupProps> = ({
                 size="sm" 
               />
               {index < element.parents!.length - 1 && (
-                <span className="text-gray-400 mx-1">
+                <span className="text-gray-600 mx-1">
                   {element.energyEnhanced ? <Emoji>〰️</Emoji> : '+'}
                 </span>
               )}
@@ -58,7 +58,7 @@ export const ReasoningPopup: React.FC<ReasoningPopupProps> = ({
       
       {/* Show reasoning text */}
       {element.reasoning && (
-        <div className="text-gray-300 italic text-center text-xs">
+        <div className="text-gray-700 italic text-center text-xs">
           {element.reasoning}
         </div>
       )}
@@ -66,7 +66,7 @@ export const ReasoningPopup: React.FC<ReasoningPopupProps> = ({
       {!reasoningPopup.fromHover && (
         <button
           onClick={onClose}
-          className="absolute top-1 right-1 text-gray-400 hover:text-white"
+          className="absolute top-1 right-1 text-gray-600 hover:text-black"
         >
           <X size={12} />
         </button>
@@ -74,7 +74,7 @@ export const ReasoningPopup: React.FC<ReasoningPopupProps> = ({
       
       {/* Arrow pointing down */}
       <div className="absolute top-full left-1/2 transform -translate-x-1/2">
-        <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-600"></div>
+        <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black"></div>
       </div>
     </div>
   );

@@ -18,22 +18,22 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 max-w-md mx-4 border border-gray-600 max-h-[80vh] flex flex-col">
+      <div className="om-modal max-w-md mx-4 max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold flex items-center gap-2">
+          <h3 className="text-xl font-bold flex items-center gap-2 text-black">
             <Emoji>🏆</Emoji>
             Achievements
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white"
+            className="text-gray-600 hover:text-black"
           >
             <X size={20} />
           </button>
         </div>
         <div className="overflow-y-auto flex-1">
           {achievements.length === 0 ? (
-            <div className="text-center text-gray-400 py-8">
+            <div className="text-center text-gray-600 py-8">
               <div className="text-4xl mb-2">
                 <Emoji size="lg">🎯</Emoji>
               </div>
@@ -45,13 +45,13 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
               {achievements.map((achievement) => (
                 <div
                   key={achievement.id}
-                  className="bg-gray-700/50 rounded-lg p-3 border border-gray-600"
+                  className="bg-gray-100 rounded-lg p-3 border-2 border-gray-300"
                 >
                   <div className="flex items-start gap-3">
                     <Emoji>{achievement.emoji}</Emoji>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-yellow-400">{achievement.name}</h4>
-                      <p className="text-sm text-gray-300 mt-1">{achievement.description}</p>
+                      <h4 className="font-semibold text-amber-600">{achievement.name}</h4>
+                      <p className="text-sm text-gray-700 mt-1">{achievement.description}</p>
                       {achievement.unlocked && (
                         <p className="text-xs text-gray-500 mt-2">
                           Unlocked: {new Date(achievement.unlocked).toLocaleDateString()}
