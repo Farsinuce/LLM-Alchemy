@@ -4,6 +4,7 @@ import { getStaticOpenMoji } from '@/lib/openmoji-service';
 interface EmojiProps extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src' | 'children'> {
   children: string;  // Unicode emoji
   size?: 'sm' | 'md' | 'lg';
+  scale?: number;    // Scale factor (e.g., 1.5 = 150% size)
   className?: string;
   alt?: string;
 }
@@ -18,12 +19,14 @@ interface EmojiProps extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'sr
  * ```tsx
  * <Emoji>🏆</Emoji>
  * <Emoji size="lg">🌟</Emoji>
+ * <Emoji size="lg" scale={1.5}>✨</Emoji>
  * <Emoji className="my-class">🎯</Emoji>
  * ```
  */
 const Emoji: React.FC<EmojiProps> = React.memo(({ 
   children, 
   size = 'md', 
+  scale,
   className, 
   alt, 
   ...props 
@@ -41,11 +44,16 @@ const Emoji: React.FC<EmojiProps> = React.memo(({
   const sizeClass = sizeClasses[size];
   const combinedClassName = `inline-block ${sizeClass} ${className || ''}`.trim();
   
+  // Apply scale transform if provided
+  const scaleStyle = scale ? { transform: `scale(${scale})` } : {};
+  const combinedStyle = { ...scaleStyle, ...props.style };
+  
   return (
     <img 
       src={src} 
       alt={alt || children}
       className={combinedClassName}
+      style={combinedStyle}
       onError={(e) => {
         // Fallback to Unicode if OpenMoji SVG fails to load
         const target = e.currentTarget as HTMLImageElement;
