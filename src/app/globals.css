@@ -2,7 +2,7 @@
 @import "../styles/animations.css";
 
 @theme {
-  /* Custom Colors */
+  /* Custom Colors - Legacy (will be phased out) */
   --color-primary: #8b5cf6;
   --color-primary-hover: #7c3aed;
   --color-primary-light: #a78bfa;
@@ -34,6 +34,30 @@
   --color-surface-primary: #111827;
   --color-surface-secondary: #1f2937;
   --color-surface-tertiary: #374151;
+
+  /* OpenMoji Design System - Using Tailwind native colors */
+  /* Primary colors for main UI elements */
+  --om-primary: theme('colors.sky.400');     /* Primary actions */
+  --om-danger: theme('colors.red.400');      /* Errors, destructive actions */
+  --om-success: theme('colors.lime.400');    /* Success states */
+  --om-warning: theme('colors.yellow.300');  /* Warnings - low contrast, use carefully */
+  
+  /* Hover/active states - darker variants */
+  --om-primary-dark: theme('colors.sky.500');
+  --om-danger-dark: theme('colors.red.600');
+  --om-success-dark: theme('colors.green.600');
+  
+  /* Base UI colors */
+  --om-bg: theme('colors.white');
+  --om-text: theme('colors.black');
+  --om-border: theme('colors.black');
+  --om-muted-bg: theme('colors.gray.300');
+  --om-muted-text: theme('colors.gray.500');
+  
+  /* Standard measurements */
+  --border-width: 2px;
+  --border-radius: 0.5rem; /* 8px */
+  --gap-min: 0.125rem; /* 2px minimum gap */
 }
 
 :root {
@@ -41,12 +65,8 @@
   --foreground: #171717;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Dark mode removed - OpenMoji aesthetic is inherently light and bright */
+/* If accessibility mode is needed later, implement as a toggle, not automatic */
 
 body {
   background: var(--background);
@@ -288,7 +308,159 @@ body {
     opacity: 0.3;
   }
   
-  /* OpenMoji Style System - Future-ready for Phase 4.1 Visual Redesign */
+  /* ===== OPENMOJI DESIGN SYSTEM ===== */
+  /* Core UI patterns for OpenMoji visual redesign */
+  
+  /* ===== BUTTONS ===== */
+  .om-btn {
+    @apply px-4 py-2 font-bold text-center transition-colors;
+    border: var(--border-width) solid var(--om-border);
+    border-radius: var(--border-radius);
+    background-color: var(--om-muted-bg);
+    color: var(--om-text);
+  }
+  .om-btn:hover {
+    background-color: theme('colors.gray.500');
+  }
+  .om-btn:active {
+    background-color: theme('colors.gray.600');
+  }
+  .om-btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  .om-btn:focus-visible {
+    outline: var(--border-width) solid var(--om-primary);
+    outline-offset: 2px;
+  }
+  
+  /* Button variants */
+  .om-btn-primary {
+    background-color: var(--om-primary);
+  }
+  .om-btn-primary:hover {
+    background-color: var(--om-primary-dark);
+  }
+  
+  .om-btn-danger {
+    background-color: var(--om-danger);
+  }
+  .om-btn-danger:hover {
+    background-color: var(--om-danger-dark);
+  }
+  
+  .om-btn-success {
+    background-color: var(--om-success);
+  }
+  .om-btn-success:hover {
+    background-color: var(--om-success-dark);
+  }
+  
+  /* ===== CARDS & CONTAINERS ===== */
+  .om-card {
+    background-color: var(--om-bg);
+    border: var(--border-width) solid var(--om-border);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+  }
+  
+  .om-container {
+    @apply om-card;
+  }
+  
+  /* ===== INPUTS & FORM ELEMENTS ===== */
+  .om-input {
+    @apply w-full px-3 py-2;
+    background: var(--om-bg);
+    border: var(--border-width) solid var(--om-border);
+    border-radius: var(--border-radius);
+    color: var(--om-text);
+  }
+  .om-input:focus {
+    outline: none;
+    border-color: var(--om-primary);
+  }
+  .om-input:focus-visible {
+    outline: var(--border-width) solid var(--om-primary);
+    outline-offset: 2px;
+  }
+  
+  .om-select {
+    @apply om-input;
+  }
+  
+  .om-textarea {
+    @apply om-input;
+    min-height: 4rem;
+  }
+  
+  /* ===== MODALS ===== */
+  .om-modal-backdrop {
+    @apply fixed inset-0 flex items-center justify-center z-50 p-4;
+    background-color: rgba(0, 0, 0, 0.2); /* Light overlay */
+  }
+  
+  .om-modal-content {
+    @apply om-card w-full max-w-md;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .om-modal-header {
+    @apply font-bold text-lg mb-4 pb-4;
+    border-bottom: var(--border-width) solid var(--om-border);
+  }
+  
+  /* ===== PROGRESS BARS ===== */
+  .om-progress-track {
+    @apply w-full h-2;
+    background-color: var(--om-muted-bg);
+    border: var(--border-width) solid var(--om-border);
+    border-radius: var(--border-radius);
+  }
+  .om-progress-fill {
+    @apply h-full;
+    background-color: var(--om-primary);
+    border-radius: calc(var(--border-radius) - 2px);
+  }
+  
+  /* ===== BADGES & CHIPS ===== */
+  .om-badge {
+    @apply inline-flex px-2 py-1 text-sm font-medium;
+    border: var(--border-width) solid var(--om-border);
+    border-radius: var(--border-radius);
+    background-color: var(--om-muted-bg);
+  }
+  
+  /* ===== DIVIDERS ===== */
+  .om-divider {
+    height: var(--border-width);
+    background-color: var(--om-border);
+    margin: 1rem 0;
+  }
+  
+  /* ===== ELEMENT CARDS (game specific) ===== */
+  .om-element {
+    @apply relative cursor-pointer;
+    border: var(--border-width) solid var(--om-border);
+    border-radius: var(--border-radius);
+    padding: 0.5rem;
+    background-color: var(--element-color, var(--om-muted-bg));
+  }
+  .om-element:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease-out;
+  }
+  
+  /* ===== UTILITY CLASSES ===== */
+  .om-text-muted {
+    color: var(--om-muted-text);
+  }
+  
+  .om-border-thick {
+    border-width: 4px;
+  }
+
+  /* Legacy OpenMoji Style System - keeping for compatibility */
   .openmoji-outline {
     outline: var(--openmoji-outline-width, 3px) solid var(--openmoji-outline-color, #000000);
     outline-offset: -1px;
@@ -323,6 +495,22 @@ body {
   
   .text-responsive-lg {
     @apply text-lg sm:text-xl;
+  }
+}
+
+/* OpenMoji Animation Guidelines - Minimal animations for feedback */
+@media (prefers-reduced-motion: no-preference) {
+  .om-btn, .om-element {
+    transition: background-color 0.2s, transform 0.2s;
+  }
+}
+
+/* Respect user preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

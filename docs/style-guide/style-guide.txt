@@ -30,30 +30,13 @@ The lighter color should be used for the fill, the darker color for the shading.
 
 ---
 
+Openmoji Color palette (tailwind native):
+
 Primary colors:
-Color palette:
-#92D3F5 lightblue
-#EA5A47 lightred
-#B1CC33 lightgreen
-#FCEA2B lightyellow
-#61B2E4 blue
-#D22F27 red
-#5C9E31 green
-#F1B31C yellow-orange
+sky-400, red-400, lime-400, yellow-300, sky-500, red-600, green-600, amber-400
 
 Grayscale:
-#FFFFFF white
-#D0CFCE lightgray
-#9B9B9A gray
-#3F3F3F darkgray
-#000000 black
+white, gray-300, gray-500, gray-800, black
 
-Secondary colors (only use if necessary):
-#FFA7C0 lightpink
-#B399C8 lightpurple
-#F4AA41 lightorange
-#A57939 lightbrown
-#E67A94 pink
-#8967AA purple
-#E27022 orange
-#6A462F brown
+Secondary colors:
+pink-300, purple-400, orange-400, amber-700, pink-500, purple-600, orange-600, amber-90

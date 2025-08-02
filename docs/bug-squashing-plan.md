@@ -18,15 +18,9 @@ LLM Alchemy is a web-based alchemy game where players combine elements to discov
 ### Development Workflow
 - **Commit and push**: `git add . && git commit -m "Fix: [bug description]" && git push`
 - **Test on live site**: Vercel auto-deploys within ~1 minute to https://llm-alchemy-beta2.vercel.app
-- **Usually don't Run tests locally**: `npm run test` (optional, as GitHub Actions will also run them)
 
 **Important**: We do NOT build locally. All testing happens on the live Vercel deployment.
 
-### Key Files for Bug Fixes
-- **Main game component**: `src/components/game/LLMAlchemy/LLMAlchemyRefactored.tsx`
-- **State management**: `src/components/game/LLMAlchemy/contexts/GameStateProvider.tsx`
-- **Animation logic**: `src/components/game/LLMAlchemy/hooks/useGameAnimations.ts`
-- **Animation styles**: `src/styles/animations.css`
 
 ---
 
@@ -38,15 +32,7 @@ This document outlines a refined, developer-centric plan to address three critic
 
 ## 2. Active Bug Fixes
 
-### 2.1. Bug 2: Desktop Repositioning Fails
-
--   **Status**: **CRITICAL**
--   **Priority**: **High**
--   **The Problem**: On desktop, once an element is placed in the mixing area, it cannot be dragged again. The `onDrop` event that should handle repositioning never works correctly because the reference to the dragged element is cleared prematurely.
--   **The Root Cause**: A race condition exists between two event handlers in `LLMAlchemyRefactored.tsx`. The `onDragEnd` event on the draggable element fires *before* the `onDrop` event on the mixing area. This `onDragEnd` handler immediately sets `draggedElement.current = null`, so by the time `onDrop` executes, it has no element to work with and aborts. This explains why it fails on desktop (which uses HTML5 drag-and-drop) but works on mobile (which uses a separate `onTouch...` event system).
--   **The Solution**: Centralize all drag state cleanup within the `onDrop` handler of the mixing area. The `onDragEnd` handler on the individual elements will be removed to prevent it from clearing the state too early. This ensures that the `onDrop` handler always has the necessary information to correctly identify the element and its origin, allowing it to reliably reposition it.
-
-### 2.3. Bug X: "Clear" Animation is Incorrect
+### 2.1. Bug X: "Clear" Animation is Incorrect
 
 -   **Status**: **BUGGED**
 -   **Priority**: **Medium**
@@ -58,84 +44,19 @@ This document outlines a refined, developer-centric plan to address three critic
     1.  First, I will correct the `@keyframes` in `animations.css` to match the specified animation curve: `transform: scale(1) -> scale(1.1) -> scale(0)` and `opacity: 1 -> 1 -> 0`.
     2.  Second, I will update the `animateRemoval` function in `useGameAnimations.ts`. This function will be modified to temporarily remove the conflicting `transition: 'none'` style from the elements during the animation, allowing the corrected keyframes to apply properly.
 
-## 3. Recently Fixed Bugs
+### 2.2. New feature request: Hover modal only for premium players
+Don't show the hover modal for elements discovered with the cheaper "Gemini Flash" LLM. We want to reward paying players (or API key players) with the feature of being able to see the reasoning modals. So when the cheap LLM has been used to discover a new element, that elements hover modal should simply just not be shown.
 
-### 3.1. Bug A: Save/Load State ✅ FIXED
+### 2.3. Support landscape mode for mobile
+If the mobile is flipped into LANDSCAPE MODE, I want our game to be responsive in such a degree, that the entire top part of the game (the header: logo, element counter, back button, tokens, filter, achivements button, sorting, game mode) becomes hidden in a hamburger menu. NOT in default PORTRAIT mode, mind you - only in mobile landscape mode, when the full game can simply not be displayed in its full height (due to landscape mode), yet there is plenty of horizontal space. Furthermore, the element grid list and the mixing area should not be split horisontally, but VERTICALLY. This requires quite some well-thoughtout plan from you to achieve.
 
--   **Status**: **FIXED** (as of recent commits)
--   **The Problem**: Games could not save or load state. Browser console showed `Could not find the 'state_version' column of 'game_states' in the schema cache` error and HTTP 400 responses when trying to save.
--   **The Root Cause**: Commit 86c5b19 introduced a `state_version` field for future compatibility, but this column didn't exist in the database schema.
--   **The Solution Applied**: Removed the problematic `state_version` field from save operations while keeping the `game_mode` validation for proper conflict resolution.
+### 2.4 Testing emoji logic system
+If I visit our https://llm-alchemy-beta2.vercel.app/test-openmoji and test our emoji conversion system, it works well most of the time. But occasionally it still fails.
 
-### 3.2. Bug D: Floating Emoji Background ✅ FIXED
+Good: LLM-suggested unicode emoji: "🐋"; LLM title: "Narwhal"; Conversion to openmoji "[narwhal emoji]". It works fine, when the title is 1:1 identical with a PUA emoji in openmoji.
 
--   **Status**: **FIXED** (as of recent commits)
--   **The Problem**: The background animation was inefficient, causing performance issues ("lagging blobs"). It also failed to meet the visual requirements: large, semi-transparent emojis that drift across the screen. Additionally, emojis would stop moving during their fade-out phase.
--   **The Solution Applied**: Complete rewrite using dedicated `FloatingEmojiBackground.tsx` component with pure CSS animations. Fixed fade-out animation to continue movement while fading (extending travel distance by 20% in final keyframe). The new implementation uses hardware-accelerated CSS `@keyframe` animations and efficient spawning logic with `onAnimationEnd` events.
+Bad (testing): My suggested unicode emoji: "🏭"; LLM title: "Exhaust factory"; tags: "facility, co2"; Conversion to openmoji FAILS with this browser console error: Error resolving emoji: TypeError: can't access property "hexcode", e is undefined
+    NextJS 9
+684-f4e54b07556c370d.js:1:107922
 
----
-
-## 4. 🐛 OpenMoji Emoji Selection Bug ✅ FIXED
-
-### 4.1. The Problem
-**What happened**: Element "Coal" got matched to "collaboration" emoji 🤝 instead of ⚫ or 🪨
-**Why it was bad**: Completely nonsensical emoji assignments broke game immersion
-**Root cause**: Fuzzy search in `openmoji-service.ts` was too aggressive with partial string matching
-
-### 4.2. The Solution Applied
-Implemented multi-stage guard logic with LLM confidence scoring:
-
-1. **Added `emojiConfidence`** to LLM prompts (0.0-1.0 range)
-2. **Multi-stage decision logic**:
-   - Stage 1: Prefer exact PUA matches with token overlap (preserves narwhal, oil-spill)
-   - Stage 2: Trust LLM when confidence ≥ 0.85 AND Unicode exists (respects glass → window)
-   - Stage 3: Use fuzzy search only with meaningful word overlap (prevents coal → collaboration)
-   - Stage 4: Fallback to LLM's choice
-3. **Added `tokenOverlap` helper** to prevent prefix-only matches
-4. **Enhanced caching** with confidence bucketing
-5. **Improved thresholds**: Fuse 0.32→0.25, override 0.35→0.15
-
-### 4.3. Result
-- ✅ "Coal" → ⚫ coal (no more collaboration bug)
-- ✅ Preserves valuable PUA emojis (narwhal, oil-spill) 
-- ✅ Respects LLM's intelligent choices when confident
-- ✅ Better emoji selection overall
-
-**Files modified**: `src/lib/llm-prompts.ts`, `src/app/api/generate/route.ts`, `src/lib/openmoji-service.ts`
-**Commit**: 552e0ae - "Fix: Implement OpenMoji emoji selection bug fix"
-
----
-
-## 5. 🚨 New Critical Issues Found During Testing
-
-### 5.1. Bug: JSON Parse Fallback Wrong Format (CRITICAL)
-
--   **Status**: **MAYBE SOLVED - TESTING**
--   **Priority**: **High**
--   **The Problem**: When Gemini Flash returns malformed JSON (which it's prone to do), the API's fallback response uses the old single-outcome format instead of the new multi-outcome format expected by the frontend. This causes 500 errors.
--   **The Root Cause**: In `src/app/api/generate/route.ts` lines 117-137, the JSON parse error fallback returns:
-    ```javascript
-    {
-      result: null,
-      emoji: '❌',
-      // ... old format
-    }
-    ```
-    But the frontend expects `{outcomes: null, reasoning: "..."}` format.
--   **The Solution**: Update the fallback to return the correct format that matches the frontend expectations.
-
-### 5.2. Bug: "Null" Element Creation (MISSING FEATURE)
-
--   **Status**: **MISSING FEATURE**
--   **Priority**: **High**
--   **The Problem**: Gemini Flash can return `{result: "Null", ...}` which gets accepted as a valid element name, creating a literal "Null" element in the game.
--   **The Root Cause**: No validation exists to prevent invalid element names like "Null", "null", "undefined", "Unknown", empty strings, etc.
--   **Missing Feature**: The game should have validation in the API route to filter out reserved/invalid element names before processing outcomes. However, this validation is currently not implemented as it may interfere with legitimate creative elements that happen to have these names.
-
-### 5.3. Bug: Timeout Too Short for Complex Combinations
-
--   **Status**: **SOLVED**
--   **Priority**: **Medium**
--   **The Problem**: 8-second timeout in `useElementMixing.ts` is too short for complex 3-element combinations, especially with Gemini Flash which needs more time to process.
--   **The Root Cause**: Current timeout of 8000ms (line 134 in `useElementMixing.ts`) doesn't account for complex reasoning required by 3-element mixes.
--   **The Solution**: Increase timeout to 13000ms (13 seconds) to allow LLM sufficient processing time.
+Why? Openmoji do have a fitting emoji called "exhaust gases factory". How can we refine our openmoji system to not fail, and to successfully select the right emoji in this case - WITHOUT overcomplicating things?

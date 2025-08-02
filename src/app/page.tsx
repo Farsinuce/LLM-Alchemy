@@ -375,47 +375,47 @@ export default function Home() {
   };
 
   if (loading) {
-    return (
-      <main className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
-      </main>
-    );
+  return (
+    <main className="min-h-screen flex items-center justify-center">
+      <div className="text-xl">Loading...</div>
+    </main>
+  );
   }
 
   return (
-    <main className="min-h-screen bg-surface-primary text-white flex flex-col items-center justify-center p-4">
+    <main className="min-h-screen flex flex-col items-center justify-center p-4">
       <div className="max-w-lg w-full text-center">
         <div className="flex items-center justify-center gap-3 mb-8">
           <Emoji size="xl">🎇</Emoji>
-          <h1 className="text-5xl font-bold">LLM Alchemy</h1>
+          <h1 className="text-5xl font-bold text-black">LLM Alchemy</h1>
         </div>
         
-        <p className="text-body mb-8">
+        <p className="text-gray-600 mb-8">
           Combine elements to discover new ones using AI.
         </p>
 
         {/* Progress Display */}
         {hasAnyProgress && (
-          <div className="bg-gray-800/50 rounded-lg p-6 mb-6 text-left">
-            <h3 className="text-lg font-semibold mb-4 text-center">Your Progress</h3>
+          <div className="om-card mb-6 text-left">
+            <h3 className="text-lg font-semibold mb-4 text-center text-black">Your Progress</h3>
             
             <div className="space-y-3">
               {progress?.science && (
-                <div className="flex justify-between items-center py-2 px-3 bg-blue-600/20 rounded">
+                <div className="flex justify-between items-center py-2 px-3 bg-sky-100 border-2 border-black rounded-lg">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium flex items-center gap-1">
+                    <span className="font-medium flex items-center gap-1 text-black">
                       <Emoji>🧪</Emoji>
                       Science
                     </span>
-                    <span className="text-xs text-gray-400">|</span>
-                    <span className="text-sm text-gray-300">
+                    <span className="text-xs text-gray-500">|</span>
+                    <span className="text-sm text-gray-600">
                       {progress.science.elements} elements
                       {progress.science.endElements > 0 && `, ${progress.science.endElements} end`}
                     </span>
                   </div>
                   <button
                     onClick={() => handleResetMode('science')}
-                    className="text-red-400 hover:text-red-300 transition-colors text-lg"
+                    className="text-red-500 hover:text-red-600 transition-colors text-lg"
                     title="Reset Science Mode"
                   >
                     <Emoji>❌</Emoji>
@@ -424,20 +424,20 @@ export default function Home() {
               )}
               
               {progress?.creative && (
-                <div className="flex justify-between items-center py-2 px-3 bg-purple-600/20 rounded">
+                <div className="flex justify-between items-center py-2 px-3 bg-purple-100 border-2 border-black rounded-lg">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium flex items-center gap-1">
+                    <span className="font-medium flex items-center gap-1 text-black">
                       <Emoji>🎨</Emoji>
                       Creative
                     </span>
-                    <span className="text-xs text-gray-400">|</span>
-                    <span className="text-sm text-gray-300">
+                    <span className="text-xs text-gray-500">|</span>
+                    <span className="text-sm text-gray-600">
                       {progress.creative.elements} elements
                     </span>
                   </div>
                   <button
                     onClick={() => handleResetMode('creative')}
-                    className="text-red-400 hover:text-red-300 transition-colors text-lg"
+                    className="text-red-500 hover:text-red-600 transition-colors text-lg"
                     title="Reset Creative Mode"
                   >
                     <Emoji>❌</Emoji>
@@ -452,13 +452,13 @@ export default function Home() {
         <div className="space-y-4">
           <button 
             onClick={handleContinueGame}
-            className="flex items-center justify-center gap-2 max-w-md mx-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105"
+            className="om-btn om-btn-primary flex items-center justify-center gap-2 max-w-md mx-auto py-4 px-8 text-white font-bold transform hover:scale-105"
           >
             {hasAnyProgress ? 'Continue Game' : 'New Game'}
             <ArrowRight size={20} />
           </button>
           
-          <div className="text-sm text-gray-400 font-medium">
+          <div className="text-sm text-gray-600 font-medium">
             {userApiKey ? (
               "Unlimited combinations"
             ) : dbUser?.subscription_status === 'premium' || (dbUser?.token_balance && dbUser.token_balance > 0) ? (
@@ -588,23 +588,23 @@ export default function Home() {
 
         {/* Challenges Preview - Moved to Bottom */}
         {isRegistered && showChallenges && todaysChallenges.length > 0 && (
-          <div className="bg-gray-800/50 rounded-lg p-4 mt-6 text-left">
-            <h3 className="text-sm font-semibold mb-3 text-center">Today&apos;s Challenges</h3>
+          <div className="om-card mt-6 text-left">
+            <h3 className="text-sm font-semibold mb-3 text-center text-black">Today&apos;s Challenges</h3>
             <div className="space-y-2">
               {todaysChallenges.slice(0, 3).map(challenge => (
                 <div key={challenge.id} className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     <Emoji>{challenge.challenge_type === 'daily' ? '🌟' : '🏆'}</Emoji>
-                    <span className={`${challenge.isCompleted ? 'line-through text-green-400' : 'text-gray-300'}`}>
+                    <span className={`${challenge.isCompleted ? 'line-through text-green-600' : 'text-gray-700'}`}>
                       {challenge.title}
                     </span>
                     {challenge.isCompleted && challenge.completionDetails?.element_discovered && (
-                      <span className="text-green-400 text-xs">
+                      <span className="text-green-600 text-xs">
                         ✓ {challenge.completionDetails.element_discovered}
                       </span>
                     )}
                   </div>
-                  <span className={`${challenge.isCompleted ? 'text-green-400' : 'text-warning'}`}>
+                  <span className={`${challenge.isCompleted ? 'text-green-600' : 'text-yellow-600'}`}>
                     {challenge.isCompleted ? '✓' : `+${challenge.reward_tokens}`}
                   </span>
                 </div>
@@ -613,7 +613,7 @@ export default function Home() {
             <div className="mt-3 text-center">
               <button
                 onClick={handleViewAllChallenges}
-                className="text-xs text-blue-400 hover:text-blue-300 underline"
+                className="text-xs text-sky-600 hover:text-sky-700 underline"
               >
                 View all challenges →
               </button>
@@ -625,14 +625,14 @@ export default function Home() {
       {/* LLM Options Modal */}
       {showApiKeyModal && (
         <div 
-          className="modal-backdrop"
+          className="om-modal-backdrop"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowApiKeyModal(false);
             }
           }}
         >
-          <div className="modal-content max-w-md">
+          <div className="om-modal-content max-w-md">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-heading">LLM Options</h3>
               <button
