@@ -692,7 +692,7 @@ const LLMAlchemyRefactored = () => {
               onClick={() => setShowAchievements(true)}
               className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-all flex items-center gap-1"
             >
-              <Emoji size="sm">🏆</Emoji>
+              <Emoji>🏆</Emoji>
               <span className="hidden sm:inline text-sm">Achievements</span>
             </button>
             <button
@@ -703,21 +703,21 @@ const LLMAlchemyRefactored = () => {
               <span className="hidden sm:inline flex items-center gap-1">
                 {sortMode === 'unlock' ? (
                   <>
-                    <Emoji size="sm">🔢</Emoji>
+                    <Emoji>🔢</Emoji>
                     <span>1-2-3</span>
                   </>
                 ) : (
                   <>
-                    <Emoji size="sm">🔤</Emoji>
+                    <Emoji>🔤</Emoji>
                     <span>A-Z</span>
                   </>
                 )}
               </span>
               <span className="sm:hidden">
                 {sortMode === 'unlock' ? (
-                  <Emoji size="sm">🔢</Emoji>
+                  <Emoji>🔢</Emoji>
                 ) : (
-                  <Emoji size="sm">🔤</Emoji>
+                  <Emoji>🔤</Emoji>
                 )}
               </span>
             </button>

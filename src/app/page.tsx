@@ -404,7 +404,7 @@ export default function Home() {
                 <div className="flex justify-between items-center py-2 px-3 bg-blue-600/20 rounded">
                   <div className="flex items-center gap-2">
                     <span className="font-medium flex items-center gap-1">
-                      <Emoji size="sm">🧪</Emoji>
+                      <Emoji>🧪</Emoji>
                       Science
                     </span>
                     <span className="text-xs text-gray-400">|</span>
@@ -418,7 +418,7 @@ export default function Home() {
                     className="text-red-400 hover:text-red-300 transition-colors text-lg"
                     title="Reset Science Mode"
                   >
-                    <Emoji size="sm">❌</Emoji>
+                    <Emoji>❌</Emoji>
                   </button>
                 </div>
               )}
@@ -427,7 +427,7 @@ export default function Home() {
                 <div className="flex justify-between items-center py-2 px-3 bg-purple-600/20 rounded">
                   <div className="flex items-center gap-2">
                     <span className="font-medium flex items-center gap-1">
-                      <Emoji size="sm">🎨</Emoji>
+                      <Emoji>🎨</Emoji>
                       Creative
                     </span>
                     <span className="text-xs text-gray-400">|</span>
@@ -440,7 +440,7 @@ export default function Home() {
                     className="text-red-400 hover:text-red-300 transition-colors text-lg"
                     title="Reset Creative Mode"
                   >
-                    <Emoji size="sm">❌</Emoji>
+                    <Emoji>❌</Emoji>
                   </button>
                 </div>
               )}
