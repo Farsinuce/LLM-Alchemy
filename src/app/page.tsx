@@ -13,7 +13,7 @@ import {
   getChallengePreference,
   updateChallengePreference
 } from '@/lib/supabase';
-import { getStaticOpenMoji } from '@/lib/openmoji-service';
+import Emoji from '@/components/ui/Emoji';
 import dynamic from 'next/dynamic';
 
 const AuthModal = dynamic(() => import('@/components/auth/AuthModal'), { ssr: false });
@@ -404,7 +404,7 @@ export default function Home() {
                 <div className="flex justify-between items-center py-2 px-3 bg-blue-600/20 rounded">
                   <div className="flex items-center gap-2">
                     <span className="font-medium flex items-center gap-1">
-                      <img src={getStaticOpenMoji('🧪')} alt="Science" className="w-4 h-4 hidden sm:inline" />
+                      <Emoji size="sm">🧪</Emoji>
                       Science
                     </span>
                     <span className="text-xs text-gray-400">|</span>
@@ -418,7 +418,7 @@ export default function Home() {
                     className="text-red-400 hover:text-red-300 transition-colors text-lg"
                     title="Reset Science Mode"
                   >
-                    <img src={getStaticOpenMoji('❌')} alt="Reset" className="w-4 h-4" />
+                    <Emoji size="sm">❌</Emoji>
                   </button>
                 </div>
               )}
@@ -427,7 +427,7 @@ export default function Home() {
                 <div className="flex justify-between items-center py-2 px-3 bg-purple-600/20 rounded">
                   <div className="flex items-center gap-2">
                     <span className="font-medium flex items-center gap-1">
-                      <img src={getStaticOpenMoji('🎨')} alt="Creative" className="w-4 h-4 hidden sm:inline" />
+                      <Emoji size="sm">🎨</Emoji>
                       Creative
                     </span>
                     <span className="text-xs text-gray-400">|</span>
@@ -440,7 +440,7 @@ export default function Home() {
                     className="text-red-400 hover:text-red-300 transition-colors text-lg"
                     title="Reset Creative Mode"
                   >
-                    <img src={getStaticOpenMoji('❌')} alt="Reset" className="w-4 h-4" />
+                    <Emoji size="sm">❌</Emoji>
                   </button>
                 </div>
               )}
@@ -476,7 +476,7 @@ export default function Home() {
                   onClick={() => handleShowAuth('register')}
                   className="btn btn-surface btn-sm"
                 >
-                  <span>👤</span>
+                  <Emoji>👤</Emoji>
                   <span>Register / Sign in</span>
                 </button>
                 <button
@@ -488,7 +488,7 @@ export default function Home() {
                   }}
                   className="btn btn-surface btn-sm"
                 >
-                  <span>⚙️</span>
+                  <Emoji>⚙️</Emoji>
                   <span>LLM Options</span>
                 </button>
               </div>
@@ -503,7 +503,7 @@ export default function Home() {
                     onClick={handleLogout}
                     className="btn btn-sm status-error"
                   >
-                    <span>🚪</span>
+                    <Emoji>🚪</Emoji>
                     <span>Logout</span>
                   </button>
                 </div>
@@ -517,7 +517,7 @@ export default function Home() {
                     }}
                     className="btn btn-surface btn-sm"
                   >
-                    <span>⚙️</span>
+                    <Emoji>⚙️</Emoji>
                     <span>LLM Options</span>
                   </button>
                 </div>
@@ -532,7 +532,7 @@ export default function Home() {
                 onClick={() => setShowPaymentSection(!showPaymentSection)}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-lg transition-colors text-sm text-white font-medium"
               >
-                <span>⭐</span>
+                <Emoji>⭐</Emoji>
                 <span>{showPaymentSection ? 'Hide Options' : 'Upgrade'}</span>
               </button>
             </div>
@@ -594,7 +594,7 @@ export default function Home() {
               {todaysChallenges.slice(0, 3).map(challenge => (
                 <div key={challenge.id} className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <span>{challenge.challenge_type === 'daily' ? '🌟' : '🏆'}</span>
+                    <Emoji>{challenge.challenge_type === 'daily' ? '🌟' : '🏆'}</Emoji>
                     <span className={`${challenge.isCompleted ? 'line-through text-green-400' : 'text-gray-300'}`}>
                       {challenge.title}
                     </span>
@@ -895,7 +895,9 @@ export default function Home() {
               </div>
             ) : completedChallenges.length === 0 ? (
               <div className="text-center py-8">
-                <div className="text-gray-400 text-lg mb-2">🎯</div>
+                <div className="text-gray-400 text-lg mb-2">
+                  <Emoji size="lg">🎯</Emoji>
+                </div>
                 <div className="text-gray-400">No completed challenges yet</div>
                 <div className="text-gray-500 text-sm mt-1">Complete challenges in-game to see them here</div>
               </div>
@@ -906,7 +908,7 @@ export default function Home() {
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">
-                          {completion.challenges?.challenge_type === 'daily' ? '🌟' : '🏆'}
+                          <Emoji>{completion.challenges?.challenge_type === 'daily' ? '🌟' : '🏆'}</Emoji>
                         </span>
                         <div>
                           <div className="font-medium text-white">

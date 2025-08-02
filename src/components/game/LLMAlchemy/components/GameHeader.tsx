@@ -3,6 +3,7 @@
 import React from 'react';
 import { Sparkles, ArrowLeft, User } from 'lucide-react';
 import { GAME_CONFIG } from '@/lib/game-config';
+import Emoji from '@/components/ui/Emoji';
 
 interface GameHeaderProps {
   regularElementCount: number;
@@ -117,7 +118,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
             onClick={onShowAchievements}
             className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-all flex items-center gap-1"
           >
-            <span>🏆</span>
+            <Emoji size="sm">🏆</Emoji>
             <span className="hidden sm:inline text-sm">Achievements</span>
           </button>
           <select

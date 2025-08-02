@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/browser';
 import { getTurnstileToken } from '@/lib/turnstile';
-import { getStaticOpenMoji } from '@/lib/openmoji-service';
+import Emoji from '@/components/ui/Emoji';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -212,7 +212,7 @@ export default function AuthModal({
         {showUpgradeBenefits && (
           <div className="mb-6 p-4 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg border border-primary/30">
             <h3 className="text-subheading mb-2 flex items-center gap-2">
-              <img src={getStaticOpenMoji('🚀')} alt="Rocket" className="w-5 h-5" />
+              <Emoji>🚀</Emoji>
               Upgrade Benefits
             </h3>
             <ul className="text-caption space-y-1">

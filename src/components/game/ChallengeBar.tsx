@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSupabase } from '@/components/auth/SupabaseProvider';
 import { createClient, getChallengePreference } from '@/lib/supabase';
-import { getStaticOpenMoji } from '@/lib/openmoji-service';
+import Emoji from '@/components/ui/Emoji';
 import { Challenge, ChallengeBarProps } from '@/types';
 
 export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps) {
@@ -138,7 +138,7 @@ export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps
           >
             <div className="flex items-center justify-between p-3 rounded-lg bg-surface-secondary border border-primary/20">
               <div className="flex items-center gap-3 flex-1">
-                <img src={getStaticOpenMoji('🌟')} alt="Star" className="w-8 h-8" />
+                <Emoji size="lg">🌟</Emoji>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted uppercase tracking-wider">Daily Quest</span>
@@ -148,9 +148,9 @@ export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps
                         challenge.game_mode === 'creative' ? 'bg-purple-500/20 text-purple-300' :
                         'bg-gray-500/20 text-gray-300'
                       }`}>
-                        {challenge.game_mode === 'science' ? <><img src={getStaticOpenMoji('🔬')} alt="Science" className="inline w-3 h-3" /> Science</> :
-                         challenge.game_mode === 'creative' ? <><img src={getStaticOpenMoji('🎨')} alt="Creative" className="inline w-3 h-3" /> Creative</> :
-                         <><img src={getStaticOpenMoji('🌟')} alt="Star" className="inline w-3 h-3" /> Any Mode</>}
+                        {challenge.game_mode === 'science' ? <><Emoji size="sm">🔬</Emoji> Science</> :
+                         challenge.game_mode === 'creative' ? <><Emoji size="sm">🎨</Emoji> Creative</> :
+                         <><Emoji size="sm">🌟</Emoji> Any Mode</>}
                       </span>
                     )}
                     {challenge.isCompleted && (
@@ -192,7 +192,7 @@ export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps
           >
             <div className="flex items-center justify-between p-3 rounded-lg bg-surface-secondary border border-warning/30">
               <div className="flex items-center gap-3 flex-1">
-                <img src={getStaticOpenMoji('🏆')} alt="Trophy" className="w-8 h-8" />
+                <Emoji size="lg">🏆</Emoji>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted uppercase tracking-wider">Weekly Challenge</span>
@@ -202,9 +202,9 @@ export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps
                         challenge.game_mode === 'creative' ? 'bg-purple-500/20 text-purple-300' :
                         'bg-gray-500/20 text-gray-300'
                       }`}>
-                        {challenge.game_mode === 'science' ? <><img src={getStaticOpenMoji('🔬')} alt="Science" className="inline w-3 h-3" /> Science</> :
-                         challenge.game_mode === 'creative' ? <><img src={getStaticOpenMoji('🎨')} alt="Creative" className="inline w-3 h-3" /> Creative</> :
-                         <><img src={getStaticOpenMoji('🌟')} alt="Star" className="inline w-3 h-3" /> Any Mode</>}
+                        {challenge.game_mode === 'science' ? <><Emoji size="sm">🔬</Emoji> Science</> :
+                         challenge.game_mode === 'creative' ? <><Emoji size="sm">🎨</Emoji> Creative</> :
+                         <><Emoji size="sm">🌟</Emoji> Any Mode</>}
                       </span>
                     )}
                     {challenge.isCompleted && (

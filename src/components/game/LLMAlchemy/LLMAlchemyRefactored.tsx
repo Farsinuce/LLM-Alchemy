@@ -10,6 +10,7 @@ import { GAME_CONFIG } from '@/lib/game-config';
 import { ChallengeBar } from '@/components/game/ChallengeBar';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 import { isTouchDevice } from '@/lib/ui-utils';
+import Emoji from '@/components/ui/Emoji';
 
 // Import our new state management
 import { useGameMode, useElements, useMixingArea, useCombinations, useAchievements, useGameUndo, useGameStats, useGamePersistence, useElementInteractionState } from './contexts/GameStateProvider';
@@ -691,7 +692,7 @@ const LLMAlchemyRefactored = () => {
               onClick={() => setShowAchievements(true)}
               className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-all flex items-center gap-1"
             >
-              <span>🏆</span>
+              <Emoji size="sm">🏆</Emoji>
               <span className="hidden sm:inline text-sm">Achievements</span>
             </button>
             <button
@@ -699,11 +700,25 @@ const LLMAlchemyRefactored = () => {
               className="px-2 py-1 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded text-white text-sm transition-colors focus:outline-none focus:border-purple-500"
               title={`Currently sorting: ${sortMode === 'unlock' ? 'By Discovery' : 'Alphabetical'}. Click to toggle.`}
             >
-              <span className="hidden sm:inline">
-                {sortMode === 'unlock' ? '🔢 1-2-3' : '🔤 A-Z'}
+              <span className="hidden sm:inline flex items-center gap-1">
+                {sortMode === 'unlock' ? (
+                  <>
+                    <Emoji size="sm">🔢</Emoji>
+                    <span>1-2-3</span>
+                  </>
+                ) : (
+                  <>
+                    <Emoji size="sm">🔤</Emoji>
+                    <span>A-Z</span>
+                  </>
+                )}
               </span>
               <span className="sm:hidden">
-                {sortMode === 'unlock' ? '🔢' : '🔤'}
+                {sortMode === 'unlock' ? (
+                  <Emoji size="sm">🔢</Emoji>
+                ) : (
+                  <Emoji size="sm">🔤</Emoji>
+                )}
               </span>
             </button>
           </div>

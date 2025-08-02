@@ -2,6 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 import { Element } from '@/types/game.types';
+import Emoji from '@/components/ui/Emoji';
 
 interface ReasoningPopup {
   element: Element;
@@ -47,7 +48,7 @@ export const ReasoningPopup: React.FC<ReasoningPopupProps> = ({
               />
               {index < element.parents!.length - 1 && (
                 <span className="text-gray-400 mx-1">
-                  {element.energyEnhanced ? '〰️' : '+'}
+                  {element.energyEnhanced ? <Emoji>〰️</Emoji> : '+'}
                 </span>
               )}
             </React.Fragment>

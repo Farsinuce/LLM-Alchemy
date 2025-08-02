@@ -4,6 +4,7 @@ import React from 'react';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
 import { MixingElement } from '../hooks/useGameState';
 import { getContrastColor, getRarityHoverColor } from '@/lib/ui-utils';
+import Emoji from '@/components/ui/Emoji';
 
 interface MixingAreaViewProps {
   mixingArea: MixingElement[];
@@ -58,7 +59,7 @@ export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
           className="absolute top-4 left-4 px-3 py-2 rounded-lg transition-all z-20 flex items-center gap-1 bg-gray-700 hover:bg-gray-600 text-white cursor-pointer"
           title="Undo last action"
         >
-          <span>↩️</span>
+          <Emoji>↩️</Emoji>
           <span className="hidden sm:inline text-sm">Undo</span>
         </button>
       )}

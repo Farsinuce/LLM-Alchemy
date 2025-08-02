@@ -1,6 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { Achievement } from '@/types';
+import Emoji from '@/components/ui/Emoji';
 
 interface AchievementsModalProps {
   isOpen: boolean;
@@ -20,7 +21,7 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
       <div className="bg-gray-800 rounded-lg p-6 max-w-md mx-4 border border-gray-600 max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-bold flex items-center gap-2">
-            <span>🏆</span>
+            <Emoji>🏆</Emoji>
             Achievements
           </h3>
           <button
@@ -33,7 +34,9 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
         <div className="overflow-y-auto flex-1">
           {achievements.length === 0 ? (
             <div className="text-center text-gray-400 py-8">
-              <div className="text-4xl mb-2">🎯</div>
+              <div className="text-4xl mb-2">
+                <Emoji size="lg">🎯</Emoji>
+              </div>
               <p>No achievements yet!</p>
               <p className="text-sm mt-1">Keep discovering elements to unlock achievements.</p>
             </div>

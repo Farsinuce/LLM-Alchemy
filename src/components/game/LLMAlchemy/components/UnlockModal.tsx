@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Element, Achievement } from '@/types/game.types';
 import { OpenMojiDisplay } from '@/components/game/OpenMojiDisplay';
+import Emoji from '@/components/ui/Emoji';
 
 interface ShowUnlock extends Element {
   isNew: boolean;
@@ -117,7 +118,7 @@ export const UnlockModal: React.FC<UnlockModalProps> = ({ showUnlock, onClose })
           {showUnlock.achievement && (
             <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-3 mb-4">
               <div className="flex items-center gap-2 justify-center">
-                <span className="text-2xl">🏆</span>
+                <Emoji size="lg">🏆</Emoji>
                 <div>
                   <h5 className="font-semibold text-yellow-400">{showUnlock.achievement.name}</h5>
                   <p className="text-xs text-gray-300">{showUnlock.achievement.description}</p>
@@ -127,7 +128,7 @@ export const UnlockModal: React.FC<UnlockModalProps> = ({ showUnlock, onClose })
           )}
           {showUnlock.isEndElement && (
             <div className="bg-purple-500/20 border border-purple-500/50 rounded-lg p-2 mb-4">
-              <span className="text-sm text-purple-300">🏁 End Element</span>
+              <span className="text-sm text-purple-300"><Emoji>🏁</Emoji> End Element</span>
             </div>
           )}
           
