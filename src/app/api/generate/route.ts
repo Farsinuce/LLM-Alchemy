@@ -157,63 +157,44 @@ export async function POST(req: NextRequest) {
           reasoning: parsedResult.reasoning || 'No reaction'
         });
       } else if (Array.isArray(parsedResult.outcomes)) {
-        // Valid outcomes found - validate each outcome and resolve emojis
-        const invalidNames = ['null', 'undefined', 'unknown', 'none', '', 'error', 'invalid', 'failed'];
-        
-        const validatedOutcomes = parsedResult.outcomes
-          .filter((outcome: { result: string }) => {
-            // Filter out invalid element names
-            if (!outcome.result || typeof outcome.result !== 'string') {
-              return false;
-            }
-            const normalizedName = outcome.result.toLowerCase().trim();
-            return !invalidNames.includes(normalizedName);
-          })
-          .map((outcome: {
-            result: string;
-            emoji: string;
-            emojiConfidence?: number;
-            color: string;
-            rarity: string;
-            reasoning: string;
-            tags: string[];
-            emojiTags?: string[];
-            isEndElement: boolean;
-          }) => {
-            // Extract and clamp confidence
-            const raw = outcome.emojiConfidence;
-            const confidence = typeof raw === 'number' ? Math.min(Math.max(raw, 0), 1) : 0.5;
-            
-            // Resolve emoji using OpenMoji service
-            const emojiResult = resolveEmoji({
-              unicodeEmoji: outcome.emoji || '✨',
-              name: outcome.result,
-              tags: outcome.emojiTags || [],
-              confidence
-            });
+        // Valid outcomes found - resolve emojis for each outcome
+        const validatedOutcomes = parsedResult.outcomes.map((outcome: {
+          result: string;
+          emoji: string;
+          emojiConfidence?: number;
+          color: string;
+          rarity: string;
+          reasoning: string;
+          tags: string[];
+          emojiTags?: string[];
+          isEndElement: boolean;
+        }) => {
+          // Extract and clamp confidence
+          const raw = outcome.emojiConfidence;
+          const confidence = typeof raw === 'number' ? Math.min(Math.max(raw, 0), 1) : 0.5;
+          
+          // Resolve emoji using OpenMoji service
+          const emojiResult = resolveEmoji({
+            unicodeEmoji: outcome.emoji || '✨',
+            name: outcome.result || 'Unknown',
+            tags: outcome.emojiTags || [],
+            confidence
+          });
 
-            return {
-              result: outcome.result,
-              emoji: outcome.emoji || '✨',
-              emojiHexcode: emojiResult.hexcode,
-              emojiSvgPath: emojiResult.svgPath,
-              emojiIsExtra: emojiResult.isExtra,
-              color: outcome.color || '#808080',
-              rarity: outcome.rarity || 'common',
-              reasoning: outcome.reasoning || '',
-              tags: Array.isArray(outcome.tags) ? outcome.tags : [],
-              emojiTags: Array.isArray(outcome.emojiTags) ? outcome.emojiTags : [],
-              isEndElement: outcome.isEndElement || false
-            };
-          });
-        
-        // If all outcomes were filtered out, return null
-        if (validatedOutcomes.length === 0) {
-          return NextResponse.json({
-            outcomes: null,
-            reasoning: 'Invalid element names detected - no valid outcomes'
-          });
-        }
+          return {
+            result: outcome.result || 'Unknown',
+            emoji: outcome.emoji || '✨',
+            emojiHexcode: emojiResult.hexcode,
+            emojiSvgPath: emojiResult.svgPath,
+            emojiIsExtra: emojiResult.isExtra,
+            color: outcome.color || '#808080',
+            rarity: outcome.rarity || 'common',
+            reasoning: outcome.reasoning || '',
+            tags: Array.isArray(outcome.tags) ? outcome.tags : [],
+            emojiTags: Array.isArray(outcome.emojiTags) ? outcome.emojiTags : [],
+            isEndElement: outcome.isEndElement || false
+          };
+        });
         
         return NextResponse.json({
           outcomes: validatedOutcomes

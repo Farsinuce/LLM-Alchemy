@@ -124,13 +124,13 @@ Implemented multi-stage guard logic with LLM confidence scoring:
     But the frontend expects `{outcomes: null, reasoning: "..."}` format.
 -   **The Solution**: Update the fallback to return the correct format that matches the frontend expectations.
 
-### 5.2. Bug: "Null" Element Creation (CRITICAL)
+### 5.2. Bug: "Null" Element Creation (MISSING FEATURE)
 
--   **Status**: **CRITICAL**
+-   **Status**: **MISSING FEATURE**
 -   **Priority**: **High**
 -   **The Problem**: Gemini Flash can return `{result: "Null", ...}` which gets accepted as a valid element name, creating a literal "Null" element in the game.
 -   **The Root Cause**: No validation exists to prevent invalid element names like "Null", "null", "undefined", "Unknown", empty strings, etc.
--   **The Solution**: Add validation in the API route to filter out reserved/invalid element names before processing outcomes.
+-   **Missing Feature**: The game should have validation in the API route to filter out reserved/invalid element names before processing outcomes. However, this validation is currently not implemented as it may interfere with legitimate creative elements that happen to have these names.
 
 ### 5.3. Bug: Timeout Too Short for Complex Combinations
 
