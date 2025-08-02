@@ -1,0 +1,59 @@
+OpenMoji Style Guide:
+Design with 2px black strokes (rounded corners/ends), flat colors, and simple 2D front views.
+
+- 2px black outlines with ROUND ends and corners
+- Leave open gaps in outlines for overlapping elements (more dynamic)
+- Use lighter colors for fills, darker versions for shadows only
+- Everything viewed from the front (2D) - no 3D
+- Minimum 2px gap between overlapping strokes
+- Build from 4 basic shapes: circle, square, rounded square, rectangle
+
+Color strategy: Light colors as default, dark colors only for shadows. Stick to their primary palette.
+The vibe: Clean, friendly, consistent - like a well-organized icon library with subtle personality through those open contours.
+
+---
+
+Contour:
+The stroke settings are: 2px weight, round corners and ends. Two overlapping contours should have a minimum gap of 2px.
+
+Open Contour:
+The open contours result in a nice dynamic look and should be used for overlapping lines or perspective.
+
+Contour and Fill:
+The fill should continue as if the contour was still there
+
+Color:
+Please aim to mainly use the primary colors. Use the lighter colours as default colours and reserve the darker colors for shadowing. The four secondary colors should only be used in special cases.
+
+Shadow:
+The lighter color should be used for the fill, the darker color for the shading.
+
+---
+
+Primary colors:
+Color palette:
+#92D3F5 lightblue
+#EA5A47 lightred
+#B1CC33 lightgreen
+#FCEA2B lightyellow
+#61B2E4 blue
+#D22F27 red
+#5C9E31 green
+#F1B31C yellow-orange
+
+Grayscale:
+#FFFFFF white
+#D0CFCE lightgray
+#9B9B9A gray
+#3F3F3F darkgray
+#000000 black
+
+Secondary colors (only use if necessary):
+#FFA7C0 lightpink
+#B399C8 lightpurple
+#F4AA41 lightorange
+#A57939 lightbrown
+#E67A94 pink
+#8967AA purple
+#E27022 orange
+#6A462F brown
