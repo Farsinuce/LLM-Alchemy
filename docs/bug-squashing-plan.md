@@ -110,7 +110,7 @@ Implemented multi-stage guard logic with LLM confidence scoring:
 
 ### 5.1. Bug: JSON Parse Fallback Wrong Format (CRITICAL)
 
--   **Status**: **CRITICAL**
+-   **Status**: **MAYBE SOLVED - TESTING**
 -   **Priority**: **High**
 -   **The Problem**: When Gemini Flash returns malformed JSON (which it's prone to do), the API's fallback response uses the old single-outcome format instead of the new multi-outcome format expected by the frontend. This causes 500 errors.
 -   **The Root Cause**: In `src/app/api/generate/route.ts` lines 117-137, the JSON parse error fallback returns:
@@ -134,7 +134,7 @@ Implemented multi-stage guard logic with LLM confidence scoring:
 
 ### 5.3. Bug: Timeout Too Short for Complex Combinations
 
--   **Status**: **BUGGED**
+-   **Status**: **SOLVED**
 -   **Priority**: **Medium**
 -   **The Problem**: 8-second timeout in `useElementMixing.ts` is too short for complex 3-element combinations, especially with Gemini Flash which needs more time to process.
 -   **The Root Cause**: Current timeout of 8000ms (line 134 in `useElementMixing.ts`) doesn't account for complex reasoning required by 3-element mixes.

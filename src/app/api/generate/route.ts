@@ -196,6 +196,19 @@ export async function POST(req: NextRequest) {
           };
         });
         
+        // Check for invalid element names that should be treated as null responses
+        const invalidNames = ['null', 'undefined', 'none', 'nothing', 'void', 'empty', 'unknown'];
+        const hasInvalidResult = validatedOutcomes.some((outcome: { result: string }) => 
+          invalidNames.includes(outcome.result.toLowerCase().trim())
+        );
+
+        if (hasInvalidResult) {
+          return NextResponse.json({
+            outcomes: null,
+            reasoning: validatedOutcomes[0]?.reasoning || 'No reaction'
+          });
+        }
+        
         return NextResponse.json({
           outcomes: validatedOutcomes
         });
