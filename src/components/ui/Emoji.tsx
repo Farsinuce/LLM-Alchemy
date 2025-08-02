@@ -3,8 +3,7 @@ import { getStaticOpenMoji } from '@/lib/openmoji-service';
 
 interface EmojiProps extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src' | 'children'> {
   children: string;  // Unicode emoji
-  size?: 'sm' | 'md' | 'lg';
-  scale?: number;    // Scale factor (e.g., 1.5 = 150% size)
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   alt?: string;
 }
@@ -19,14 +18,12 @@ interface EmojiProps extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'sr
  * ```tsx
  * <Emoji>🏆</Emoji>
  * <Emoji size="lg">🌟</Emoji>
- * <Emoji size="lg" scale={1.5}>✨</Emoji>
  * <Emoji className="my-class">🎯</Emoji>
  * ```
  */
 const Emoji: React.FC<EmojiProps> = React.memo(({ 
   children, 
   size = 'md', 
-  scale,
   className, 
   alt, 
   ...props 
@@ -38,22 +35,18 @@ const Emoji: React.FC<EmojiProps> = React.memo(({
   const sizeClasses = {
     sm: 'w-4 h-4',
     md: 'w-6 h-6', 
-    lg: 'w-8 h-8'
+    lg: 'w-8 h-8',
+    xl: 'w-16 h-16'
   };
   
   const sizeClass = sizeClasses[size];
   const combinedClassName = `inline-block ${sizeClass} ${className || ''}`.trim();
-  
-  // Apply scale transform if provided
-  const scaleStyle = scale ? { transform: `scale(${scale})` } : {};
-  const combinedStyle = { ...scaleStyle, ...props.style };
   
   return (
     <img 
       src={src} 
       alt={alt || children}
       className={combinedClassName}
-      style={combinedStyle}
       onError={(e) => {
         // Fallback to Unicode if OpenMoji SVG fails to load
         const target = e.currentTarget as HTMLImageElement;

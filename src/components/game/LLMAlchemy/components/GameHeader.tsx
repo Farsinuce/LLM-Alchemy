@@ -51,7 +51,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Emoji>✨</Emoji>
+            <Emoji>{gameMode === 'science' ? '🧪' : '🎨'}</Emoji>
             LLM Alchemy
           </h1>
         </div>
