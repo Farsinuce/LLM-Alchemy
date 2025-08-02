@@ -47,18 +47,18 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   onGetMoreTokens
 }) => {
   return (
-    <div className="relative z-10 bg-gray-800/80 backdrop-blur-sm p-4 shadow-lg">
+    <div className="relative z-10 bg-white/90 backdrop-blur-sm p-4 shadow-lg border-b-2 border-black">
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
+          <h1 className="text-2xl font-bold flex items-center gap-2 text-black">
             <Emoji>{gameMode === 'science' ? '🧪' : '🎨'}</Emoji>
             LLM Alchemy
           </h1>
         </div>
-        <div className="text-lg font-semibold flex flex-col items-end gap-1">
+        <div className="text-lg font-semibold flex flex-col items-end gap-1 text-black">
           <span>Elements: {regularElementCount}</span>
           {gameMode === 'science' && endElementCount > 0 && (
-            <span className="text-gray-300 text-base">Ends: {endElementCount}</span>
+            <span className="text-gray-600 text-base">Ends: {endElementCount}</span>
           )}
         </div>
       </div>
@@ -66,19 +66,19 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
       <div className="flex justify-between items-center mb-3">
         <button
           onClick={onBackToHome}
-          className="flex items-center gap-2 px-3 py-1 hover:bg-gray-700 rounded transition-colors text-gray-400 hover:text-white"
+          className="om-btn flex items-center gap-2"
           title="Back to Menu"
         >
           <ArrowLeft size={16} />
           <span className="text-sm">Back</span>
         </button>
         
-        <div className="text-sm text-gray-400 flex items-center gap-2">
+        <div className="text-sm text-gray-600 flex items-center gap-2">
           {/* Undo Button */}
           {undoAvailable && !isUndoing && (
             <button
               onClick={onUndo}
-              className="px-2 py-1 bg-orange-600 hover:bg-orange-500 rounded text-white font-medium transition-colors text-xs"
+              className="om-btn om-btn-primary px-2 py-1 font-medium text-xs"
               title="Undo last combination"
             >
               ↶ Undo
@@ -86,13 +86,13 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
           )}
           
           {userApiKey ? (
-            <span className="text-green-400">Using your API key</span>
+            <span className="text-green-600">Using your API key</span>
           ) : tokenBalance > 0 ? (
-            <span className="text-yellow-400">Tokens: {tokenBalance}</span>
+            <span className="text-yellow-600">Tokens: {tokenBalance}</span>
           ) : dailyCount >= GAME_CONFIG.DAILY_FREE_COMBINATIONS ? (
             <button
               onClick={onGetMoreTokens}
-              className="px-3 py-1 bg-purple-600 hover:bg-purple-500 rounded text-white font-medium transition-colors"
+              className="om-btn om-btn-primary"
             >
               Get more
             </button>
@@ -112,11 +112,11 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
             placeholder="Filter..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-20 sm:w-20 px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+            className="om-input w-20 sm:w-20 px-2 py-1 text-sm"
           />
           <button
             onClick={onShowAchievements}
-            className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-all flex items-center gap-1"
+            className="om-btn flex items-center gap-1"
           >
             <Emoji size="sm">🏆</Emoji>
             <span className="hidden sm:inline text-sm">Achievements</span>
@@ -124,7 +124,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
           <select
             value={sortMode}
             onChange={(e) => setSortMode(e.target.value)}
-            className="px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-purple-500"
+            className="om-select px-2 py-1 text-sm"
           >
             <option value="unlock">By Discovery</option>
             <option value="alpha">Alphabetical</option>

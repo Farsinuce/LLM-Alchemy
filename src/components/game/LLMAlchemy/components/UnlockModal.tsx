@@ -87,14 +87,13 @@ export const UnlockModal: React.FC<UnlockModalProps> = ({ showUnlock, onClose })
       onClick={onClose}
     >
       <div 
-        className={`om-modal max-w-sm mx-4 cursor-pointer ${
+        className={`om-modal-content max-w-sm mx-4 cursor-pointer ${
           animationStage === 'anticipation' 
             ? 'scale-75 opacity-50 transition-all duration-200' 
             : 'animate-element-unlock-bounce'
         }`}
         style={{
           borderColor: rarityStyle.borderColor,
-          backgroundColor: `white`,
           boxShadow: animationStage === 'reveal' ? `${rarityStyle.glowColor}, 0 4px 6px -1px rgba(0, 0, 0, 0.1)` : '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
         }}
         onClick={(e) => e.stopPropagation()}

@@ -84,15 +84,15 @@ export const ElementListView: React.FC<ElementListViewProps> = ({
       onClick={(e) => onElementClick(element, e)}
       onContextMenu={(e) => e.preventDefault()}
       className={`
-        ${getElementSizeClasses()} flex flex-col items-center justify-center rounded-lg cursor-move 
-        hover:scale-110 transition-transform select-none
+        om-element ${getElementSizeClasses()} flex flex-col items-center justify-center cursor-move 
+        select-none
         ${popElement === element.id ? 'animate-element-pop-in' : ''}
         ${shakeElement === element.id ? 'animate-element-shake' : ''}
         ${isPlayingLoadAnimation && animatedElements.has(element.id) ? 'animate-element-load-delayed' : ''}
         ${dimmedElements.has(element.name) ? 'element-dimmed' : ''}
       `}
       style={{ 
-        backgroundColor: element.color,
+        ...({'--element-color': element.color} as React.CSSProperties),
         color: getContrastColor(element.color),
         boxShadow: !isDragging && hoveredElement === element.id ? `0 0 0 2px ${getRarityHoverColor(element.rarity)}` : '',
         touchAction: 'none',

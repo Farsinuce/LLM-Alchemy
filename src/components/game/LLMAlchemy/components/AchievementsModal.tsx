@@ -17,8 +17,8 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="om-modal max-w-md mx-4 max-h-[80vh] flex flex-col">
+    <div className="om-modal-backdrop">
+      <div className="om-modal-content max-w-md mx-4 max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-bold flex items-center gap-2 text-black">
             <Emoji>🏆</Emoji>

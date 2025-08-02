@@ -26,7 +26,7 @@ export const ReasoningPopup: React.FC<ReasoningPopupProps> = ({
 
   return (
     <div
-      className={`reasoning-popup fixed z-50 bg-white/95 backdrop-blur-sm border-2 border-black rounded-lg p-3 max-w-xs shadow-xl ${
+      className={`reasoning-popup fixed z-50 om-card p-3 max-w-xs shadow-xl ${
         reasoningPopup.fromHover ? 'pointer-events-none' : ''
       }`}
       style={{

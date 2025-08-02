@@ -56,7 +56,7 @@ export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
           onClick={onUndo}
           onMouseEnter={() => {}}
           onMouseLeave={() => {}}
-          className="absolute top-4 left-4 px-3 py-2 rounded-lg transition-all z-20 flex items-center gap-1 bg-gray-700 hover:bg-gray-600 text-white cursor-pointer"
+          className="absolute top-4 left-4 om-btn om-btn-primary z-20 flex items-center gap-1 cursor-pointer"
           title="Undo last action"
         >
           <Emoji>↩️</Emoji>
@@ -70,7 +70,7 @@ export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
           onClick={onClearMixingArea}
           onMouseEnter={() => {}}
           onMouseLeave={() => {}}
-          className="absolute top-4 right-4 p-2 rounded-full z-20 bg-red-600 hover:bg-red-500 text-white transition-colors"
+          className="absolute top-4 right-4 om-btn om-btn-danger p-2 rounded-full z-20"
           title="Clear mixing area"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -83,7 +83,7 @@ export const MixingAreaView: React.FC<MixingAreaViewProps> = ({
       {/* Empty state */}
       {mixingArea.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <p className="text-gray-500 text-center px-4">
+          <p className="text-black text-center px-4">
             Drag elements here to mix them!
           </p>
         </div>
