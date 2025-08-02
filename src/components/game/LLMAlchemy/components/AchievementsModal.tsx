@@ -48,7 +48,7 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
                   className="bg-gray-700/50 rounded-lg p-3 border border-gray-600"
                 >
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl">{achievement.emoji}</span>
+                    <Emoji>{achievement.emoji}</Emoji>
                     <div className="flex-1">
                       <h4 className="font-semibold text-yellow-400">{achievement.name}</h4>
                       <p className="text-sm text-gray-300 mt-1">{achievement.description}</p>
