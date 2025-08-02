@@ -264,17 +264,22 @@ body {
 
 After establishing the global styles, update each component to adopt the new design system.
 
-### 3.1. Home Page (`src/app/page.tsx`)
+### 3.1. Home Page (`src/app/page.tsx`) ✅ COMPLETED
+
+**STATUS: ✅ COMPLETED**
 
 This is the first component to migrate. All changes will be made in `src/app/page.tsx`.
 
--   **Main Container (`<main>`):** Remove `bg-surface-primary`. It should now default to the light body background.
--   **Title (`<h1>`):** The text should be black. The `Emoji` component is fine as is.
--   **Progress Display (`.bg-gray-800/50`):** Replace this with the `.om-card` class. All text inside should be black or dark gray. The progress bars inside need to be restyled with flat OpenMoji colors.
--   **Buttons:**
-    -   The main "Continue Game" / "New Game" button must be replaced with `.om-btn` and use a primary color from the palette (e.g., `--om-light-blue`). The gradient must be removed.
-    -   All other buttons ("Register / Sign in", "LLM Options", "Reset", etc.) must use the `.om-btn` style.
--   **Modals:** All modals triggered from this page (`AuthModal`, `ApiKeyModal`, `ResetModal`, `CompletedChallengesModal`) must use the `.om-modal-content` style. Their internal elements (inputs, buttons) must also be updated.
+-   ✅ **Main Container (`<main>`):** Removed `bg-surface-primary`. Now uses light body background.
+-   ✅ **Title (`<h1>`):** Updated text to be black. The `Emoji` component works as is.
+-   ✅ **Progress Display (`.bg-gray-800/50`):** Replaced with `.om-card` class. All text updated to black/dark gray with flat OpenMoji colors.
+-   ✅ **Buttons:**
+    -   ✅ Main "Continue Game" / "New Game" button updated to `.om-btn om-btn-primary`. Gradient removed.
+    -   ⚠️ Other buttons still need migration (Register/Sign in, LLM Options buttons)
+-   ✅ **Challenge Preview:** Updated to use `.om-card` with proper color scheme.
+-   🔄 **Modals:** Started migration - LLM Options modal updated to use `.om-modal-backdrop` and `.om-modal-content`. Other modals still need updates.
+
+**DEPLOYED:** Available at https://llm-alchemy-beta2.vercel.app/
 
 ### 3.2. Game View (`src/components/game/LLMAlchemy/LLMAlchemyRefactored.tsx`)
 

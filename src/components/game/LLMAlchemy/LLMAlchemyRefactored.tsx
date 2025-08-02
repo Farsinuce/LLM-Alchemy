@@ -617,15 +617,10 @@ const LLMAlchemyRefactored = () => {
 
 
   return (
-    <div className="min-h-screen max-h-screen bg-gray-900 text-white flex flex-col relative overflow-hidden select-none" style={{ touchAction: touchDragging || isDraggingDivider ? 'none' : 'auto' }}>
-      <div className={`absolute inset-0 ${
-        gameMode === 'science' 
-          ? 'bg-gradient-to-br from-blue-900/20 via-gray-900 to-blue-900/20'
-          : 'bg-gradient-to-br from-purple-900/20 via-gray-900 to-purple-900/20'
-      }`}></div>
+    <div className="min-h-screen max-h-screen bg-white text-black flex flex-col relative overflow-hidden select-none" style={{ touchAction: touchDragging || isDraggingDivider ? 'none' : 'auto' }}>
       
       {/* Header */}
-      <div className="relative z-10 bg-gray-800/80 backdrop-blur-sm p-4 shadow-lg">
+      <div className="relative z-10 p-4 border-b-2 border-black">
         <div className="flex justify-between items-start mb-3">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-black flex items-center gap-2">
@@ -636,7 +631,7 @@ const LLMAlchemyRefactored = () => {
           <div className="text-lg font-semibold flex flex-col items-end gap-1">
             <span>Elements: {regularElementCount}</span>
             {gameMode === 'science' && endElementCount > 0 && (
-              <span className="text-gray-300 text-base">Ends: {endElementCount}</span>
+              <span className="text-gray-600 text-base">Ends: {endElementCount}</span>
             )}
           </div>
         </div>
@@ -644,18 +639,18 @@ const LLMAlchemyRefactored = () => {
         <div className="flex justify-between items-center mb-3">
           <button
             onClick={handleBackToHome}
-            className="flex items-center gap-2 px-3 py-1 hover:bg-gray-700 rounded transition-colors text-gray-400 hover:text-white"
+            className="om-btn flex items-center gap-2"
             title="Back to Menu"
           >
             <ArrowLeft size={16} />
             <span className="text-sm">Back</span>
           </button>
           
-          <div className="text-sm text-gray-400 flex items-center gap-2">
+          <div className="text-sm text-gray-600 flex items-center gap-2">
             {userApiKey ? (
-              <span className="text-green-400">Using your API key</span>
+              <span className="text-green-600">Using your API key</span>
             ) : tokenBalance > 0 ? (
-              <span className="text-yellow-400">Tokens: {tokenBalance}</span>
+              <span className="text-amber-600">Tokens: {tokenBalance}</span>
             ) : dailyCount >= GAME_CONFIG.DAILY_FREE_COMBINATIONS ? (
               <button
                 onClick={async () => {
@@ -666,7 +661,7 @@ const LLMAlchemyRefactored = () => {
                     showToast('+10 tokens added!');
                   }
                 }}
-                className="px-3 py-1 bg-purple-600 hover:bg-purple-500 rounded text-white font-medium transition-colors"
+                className="om-btn om-btn-primary"
               >
                 Get more
               </button>
@@ -686,18 +681,18 @@ const LLMAlchemyRefactored = () => {
               placeholder="Filter..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-20 sm:w-20 px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+              className="om-input w-20 sm:w-20 px-2 py-1 text-sm"
             />
             <button
               onClick={() => setShowAchievements(true)}
-              className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-all flex items-center gap-1"
+              className="om-btn flex items-center gap-1"
             >
               <Emoji>🏆</Emoji>
               <span className="hidden sm:inline text-sm">Achievements</span>
             </button>
             <button
               onClick={() => setSortMode(sortMode === 'unlock' ? 'alpha' : 'unlock')}
-              className="px-2 py-1 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded text-white text-sm transition-colors focus:outline-none focus:border-purple-500"
+              className="om-btn text-sm"
               title={`Currently sorting: ${sortMode === 'unlock' ? 'By Discovery' : 'Alphabetical'}. Click to toggle.`}
             >
               <span className="hidden sm:inline flex items-center gap-1">
@@ -727,18 +722,18 @@ const LLMAlchemyRefactored = () => {
           <button
             onClick={handleGameModeToggle}
             disabled={isMixing}
-            className={`relative inline-flex h-8 w-32 cursor-pointer items-center rounded-full bg-gray-700 transition-colors hover:bg-gray-600 ${
+            className={`relative inline-flex h-8 w-32 cursor-pointer items-center rounded-lg border-2 border-black bg-gray-200 transition-colors hover:bg-gray-300 ${
               isMixing ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            <div className={`absolute left-1 h-6 w-14 rounded-full transition-transform ${
-              gameMode === 'creative' ? 'bg-purple-600 translate-x-16' : 'bg-blue-500'
+            <div className={`absolute left-1 h-6 w-14 rounded-md transition-transform ${
+              gameMode === 'creative' ? 'bg-purple-400 translate-x-16' : 'bg-sky-400'
             }`}></div>
             <span className={`absolute left-3 text-xs font-medium z-10 ${
-              gameMode === 'science' ? 'text-white' : 'text-gray-400'
+              gameMode === 'science' ? 'text-white' : 'text-gray-600'
             }`}>Science</span>
             <span className={`absolute right-3 text-xs font-medium z-10 ${
-              gameMode === 'creative' ? 'text-white' : 'text-gray-400'
+              gameMode === 'creative' ? 'text-white' : 'text-gray-600'
             }`}>Creative</span>
           </button>
         </div>
@@ -748,7 +743,7 @@ const LLMAlchemyRefactored = () => {
       <div className="flex-1 flex flex-col relative z-10 min-h-0">
         {/* Element List */}
         <div 
-          className="bg-gray-800/30 backdrop-blur-sm"
+          className="bg-gray-100 border-b-2 border-black"
           style={{ height: `${listHeight}px` }}
         >
             <ElementListView
@@ -890,7 +885,7 @@ const LLMAlchemyRefactored = () => {
         <div 
           ref={dropZoneRef}
           data-testid="mixing-area"
-          className="flex-1 bg-gray-800/30 backdrop-blur-sm relative"
+          className="flex-1 bg-gray-50 relative"
           style={{ minHeight: '200px', touchAction: 'none' }}
           onDragOver={(e) => {
             e.preventDefault();
