@@ -136,17 +136,17 @@ export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps
             key={challenge.id}
             className="challenge-item transition-all duration-300 flex-1 min-w-0 max-w-md"
           >
-            <div className="flex items-center justify-between p-3 rounded-lg bg-surface-secondary border border-primary/20">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-yellow-50 border-2 border-yellow-400">
               <div className="flex items-center gap-3 flex-1">
                 <Emoji size="lg">🌟</Emoji>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted uppercase tracking-wider">Daily Quest</span>
+                    <span className="text-xs text-gray-600 uppercase tracking-wider">Daily Quest</span>
                     {challenge.game_mode && (
                       <span className={`text-xs px-2 py-0.5 rounded ${
-                        challenge.game_mode === 'science' ? 'bg-blue-500/20 text-blue-300' :
-                        challenge.game_mode === 'creative' ? 'bg-purple-500/20 text-purple-300' :
-                        'bg-gray-500/20 text-gray-300'
+                        challenge.game_mode === 'science' ? 'bg-blue-100 text-blue-700' :
+                        challenge.game_mode === 'creative' ? 'bg-purple-100 text-purple-700' :
+                        'bg-gray-100 text-gray-700'
                       }`}>
                         {challenge.game_mode === 'science' ? <><Emoji size="sm">🔬</Emoji> Science</> :
                          challenge.game_mode === 'creative' ? <><Emoji size="sm">🎨</Emoji> Creative</> :
@@ -154,27 +154,27 @@ export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps
                       </span>
                     )}
                     {challenge.isCompleted && (
-                      <span className="text-xs text-success">✓ Completed</span>
+                      <span className="text-xs text-green-600">✓ Completed</span>
                     )}
                   </div>
-                  <p className="text-body font-medium">{challenge.title}</p>
+                  <p className="text-black font-medium">{challenge.title}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <div className="text-right">
                   <div className="flex items-center gap-1">
-                    <span className="text-sm text-warning">+{challenge.reward_tokens}</span>
-                    <span className="text-xs text-muted">tokens</span>
+                    <span className="text-sm text-amber-600">+{challenge.reward_tokens}</span>
+                    <span className="text-xs text-gray-600">tokens</span>
                   </div>
                   {challenge.isCompleted && challenge.completionDetails && (
-                    <p className="text-xs text-muted mt-1">
+                    <p className="text-xs text-gray-600 mt-1">
                       Found: {challenge.completionDetails.element_discovered}
                     </p>
                   )}
                 </div>
                 <button
                   onClick={() => hideChallenge(challenge.id)}
-                  className="text-gray-400 hover:text-gray-300 transition-colors p-1"
+                  className="text-gray-600 hover:text-black transition-colors p-1"
                   title="Hide challenge"
                 >
                   ✕
@@ -190,17 +190,17 @@ export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps
             key={challenge.id}
             className="challenge-item transition-all duration-300"
           >
-            <div className="flex items-center justify-between p-3 rounded-lg bg-surface-secondary border border-warning/30">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-orange-50 border-2 border-orange-400">
               <div className="flex items-center gap-3 flex-1">
                 <Emoji size="lg">🏆</Emoji>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted uppercase tracking-wider">Weekly Challenge</span>
+                    <span className="text-xs text-gray-600 uppercase tracking-wider">Weekly Challenge</span>
                     {challenge.game_mode && (
                       <span className={`text-xs px-2 py-0.5 rounded ${
-                        challenge.game_mode === 'science' ? 'bg-blue-500/20 text-blue-300' :
-                        challenge.game_mode === 'creative' ? 'bg-purple-500/20 text-purple-300' :
-                        'bg-gray-500/20 text-gray-300'
+                        challenge.game_mode === 'science' ? 'bg-blue-100 text-blue-700' :
+                        challenge.game_mode === 'creative' ? 'bg-purple-100 text-purple-700' :
+                        'bg-gray-100 text-gray-700'
                       }`}>
                         {challenge.game_mode === 'science' ? <><Emoji size="sm">🔬</Emoji> Science</> :
                          challenge.game_mode === 'creative' ? <><Emoji size="sm">🎨</Emoji> Creative</> :
@@ -208,27 +208,27 @@ export function ChallengeBar({ isAnonymous, currentGameMode }: ChallengeBarProps
                       </span>
                     )}
                     {challenge.isCompleted && (
-                      <span className="text-xs text-success">✓ Completed</span>
+                      <span className="text-xs text-green-600">✓ Completed</span>
                     )}
                   </div>
-                  <p className="text-body font-medium">{challenge.title}</p>
+                  <p className="text-black font-medium">{challenge.title}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <div className="text-right">
                   <div className="flex items-center gap-1">
-                    <span className="text-sm text-warning">+{challenge.reward_tokens}</span>
-                    <span className="text-xs text-muted">tokens</span>
+                    <span className="text-sm text-amber-600">+{challenge.reward_tokens}</span>
+                    <span className="text-xs text-gray-600">tokens</span>
                   </div>
                   {challenge.isCompleted && challenge.completionDetails && (
-                    <p className="text-xs text-muted mt-1">
+                    <p className="text-xs text-gray-600 mt-1">
                       Mode: {challenge.completionDetails.game_mode}
                     </p>
                   )}
                 </div>
                 <button
                   onClick={() => hideChallenge(challenge.id)}
-                  className="text-gray-400 hover:text-gray-300 transition-colors p-1"
+                  className="text-gray-600 hover:text-black transition-colors p-1"
                   title="Hide challenge"
                 >
                   ✕
