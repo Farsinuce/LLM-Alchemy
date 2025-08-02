@@ -386,7 +386,7 @@ export default function Home() {
     <main className="min-h-screen bg-surface-primary text-white flex flex-col items-center justify-center p-4">
       <div className="max-w-lg w-full text-center">
         <div className="flex items-center justify-center gap-3 mb-8">
-          <Emoji size="lg">✨</Emoji>
+          <Emoji size="xl">✨</Emoji>
           <h1 className="text-5xl font-bold">LLM Alchemy</h1>
         </div>
         
